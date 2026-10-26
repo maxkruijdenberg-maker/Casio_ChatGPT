@@ -1,3 +1,5 @@
+**Nieuwste versie: [V11](UPGRADE-V11.md). Daarvoor ook de Atom bijwerken.**
+
 # V10 — ALPHA-lock, wiskundetoetsen en automatisch verbinden
 
 **Vervang alleen ChatGPT.g3a als je Atom V3 hebt.** Geen nieuwe Atom-upload of

@@ -137,7 +137,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V10",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V11",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=autoProbeActive&&!linkOnline?"Atom...":linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -438,6 +438,34 @@ static void screenSettings(void){
  }
  applyView(original);
 }
+/* Phone setup is opt-in. Status polling never sends a paid request. */
+static void phoneSetup(void){
+ WFrame r;uint8_t action=1;int tick,k;char network[32],password[13];
+ if(atomMajor<11){message("Atom-update nodig","Installeren via telefoon vereist Atom-firmware V11. Werk eerst de Atom bij. De bestaande instellingen blijven behouden.");return;}
+ if(!checkedRpc(W_SETUP,&action,1,&r)||r.len!=17)return;
+ settingsEpoch++;tick=RTC_GetTicks();
+ while(!quitting){
+  if(r.data[1]==1){
+   sprintf(network,"ChatGPT-%04X",w_get16(r.data+3));memcpy(password,r.data+5,12);password[12]=0;
+   clear("Installeren via telefoon");
+   printAt(12,40,"1. Verbind je telefoon met wifi:",C_TEXT);printAt(24,60,network,C_MINT);
+   printAt(12,84,"Wachtwoord:",C_MUTED);printAt(144,84,password,C_TEXT);
+   printAt(12,108,"2. Open in je browser:",C_TEXT);printAt(24,128,"http://192.168.4.1",C_MINT);
+   printAt(12,152,"3. Vul wifi in en plak je API-sleutel.",C_TEXT);
+   printAt(12,176,"Geen internet op dit netwerk is normaal.",C_MUTED);
+  }else{
+   clear("Installeren via telefoon");
+   printAt(12,60,r.data[1]==3?"Verbonden - klaar voor gebruik":r.data[1]==2?"Opgeslagen - verbinden met wifi...":r.data[1]==4?"Wifi verbinden niet gelukt":"Installatie gesloten",r.data[1]==4?C_RED:C_MINT);
+   printAt(12,100,r.data[1]==3?"API-sleutel wordt bij je vraag getest.":r.data[1]==4?"Controleer wifi-naam en wachtwoord.":"Je bestaande chats blijven bewaard.",C_MUTED);
+   printAt(12,128,"Opslaan verstuurt geen API-vraag.",C_MUTED);
+  }
+  footer("Terug","","","","","");show();
+  do{k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||quitting)break;OS_InnerWait_ms(10);}while(!elapsed(tick,1000));
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||quitting)break;
+  action=0;if(rpc(W_SETUP,&action,1,&r,0)!=1||r.len!=17)break;tick=RTC_GetTicks();
+ }
+ {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
+}
 static void settings(void){
  int selected=0,k,i,known;uint8_t configured[4]={0};WFrame r;
  const char *names[]={"Hotspotnaam","Hotspotwachtwoord","API-sleutel","Model","Taal","Versie","Instellingen wissen"};
@@ -452,18 +480,19 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"10.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"11.0 / Atom %s",atomMajor==11?"11.0":atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
-  footer("Wijzig","","Test","Scherm","","");show();k=waitKey();
+  footer("Wijzig","Telefoon","Test","Scherm","","");show();k=waitKey();
   if(k==KEY_PRGM_EXIT)break;
+  if(k==KEY_PRGM_F2){phoneSetup();known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_F3){known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_F4){screenSettings();continue;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V10.0\nCompatibel met Atom-firmware V3.0.\nMenu-route: %s\n\nVervang alleen ChatGPT.g3a. Gesprekken en Atom-instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
+  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V11.0\nTelefooninstallatie: Atom V11.0 nodig.\nMenu-route: %s\n\nWerk voor telefooninstallatie ook de Atom bij. Gesprekken en instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -566,7 +595,7 @@ static void beginSession(void){
  linkKnown=linkOnline=linkSeen=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
- SetQuitHandler(cleanup);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();
+ SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();
  /* libfxcg/Utilities documents that color mode may need one OS GetKey pass.
   * Consume a synthetic EXIT here, never dispatch it into our own close dialog. */
  {int discarded;Bdisp_EnableColor(1);Keyboard_PutKeycode(-1,-1,KEY_CTRL_EXIT);do {GetKey(&discarded);}while(discarded!=KEY_CTRL_EXIT);}
@@ -593,9 +622,8 @@ static void runSession(void){
  }
 }
 static void endSession(void){
- /* Keep UART alive until native MENU takes over. In particular, do not send
-  * W_CANCEL or closeSerial here: a failed menu handoff must not drop the link.
-  * SetQuitHandler releases it when the OS switches applications. */
+ /* Finish local work here. Native handoff releases UART synchronously before
+  * OS dispatch; no add-in callback may run while another application loads. */
  storageClose();erase(field,sizeof(field));waitForKeyRelease();stopAutoProbe();
 }
 /* The OS key-wait must be active when a fallback MENU event is injected.
@@ -614,18 +642,20 @@ static int nativeMainMenu(void){
  Bkey_ClrAllFlags();drainNativeKeys();Native_ClearKeyBuffer();
  target=nativeMenuTarget();prepareMenuSnapshot();
  if(target){
-  EnableStatusArea(0);DrawFrame(0xffff);
+  stopAutoProbe();storageClose();closeSerial();SetQuitHandler(0);
+  Bkey_ClrAllFlags();EnableStatusArea(0);DrawFrame(0xffff);
   menuInvoke(target); /* Saves app continuation; returns on actual re-selection. */
   cleanup();return 1;
  }
  menuTimerInjected=0;
  menuTimer=Timer_Install(0,menuTimerHandler,20);
  if(menuTimer<=0){menuTimer=-1;return 0;}
- EnableStatusArea(0);DrawFrame(0xffff);
- if(Timer_Start(menuTimer)<0){stopMenuTimer();return 0;}
+ stopAutoProbe();storageClose();closeSerial();SetQuitHandler(0);
+ Bkey_ClrAllFlags();EnableStatusArea(0);DrawFrame(0xffff);
+ if(Timer_Start(menuTimer)<0){stopMenuTimer();ensureSerial();return 0;}
  result=GetKeyWait_OS(&column,&row,KEYWAIT_HALTON_TIMEROFF,1,0,&key);
  (void)result;stopMenuTimer();
- if(!menuTimerInjected)return 0;
+ if(!menuTimerInjected){ensureSerial();return 0;}
  cleanup();return 1;
 }
 

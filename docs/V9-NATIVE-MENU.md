@@ -1,3 +1,5 @@
+**V11 wijzigt het opruimen: geen quit-callback meer; resources vóór OS-dispatch vrijgeven. Zie [UPGRADE-V11.md](../UPGRADE-V11.md). De resolver blijft gelijk.**
+
 # V9: onderbouwde native menuovergang
 
 ## Feiten uit de apparaatmelding

@@ -191,3 +191,14 @@ API request or sends question/config text. Foreground RPC preempts the probe.
 Delayed response typing, offline recovery and stale-reply preemption are tested.
 Ten sanitized host groups pass, SH4 add-in built, Atom remains byte-identical V3.
 New V10 behavior still needs hardware confirmation; see UPGRADE-V10.md.
+
+## V11.0
+
+- Tijdelijke WPA2-wifi-installatie met willekeurig wachtwoord op de Casio,
+  Nederlandse telefoonpagina, lokale gezamenlijke NVS-configuratiecommit,
+  CSRF-token, timeout, status en geen betaalde setup-aanvragen.
+- Atom-firmware nu V11, Casio V11; bestaande instellingen migreren zonder wissen.
+- Geen add-in-quitcallback meer bij OS-dispatch; UART en bestanden vóór menu
+  sluiten. Aanpassing naar aanleiding van ADDRESS(W) TARGET=00000001 PC=8C09CA4.
+- Bestaande iconen, menu-resolver, bediening, chats en schermgeometrie behouden.
+- Elf softwaretestgroepen; hardwareherstel en telefoonnetwerk nog fysiek testen.

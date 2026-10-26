@@ -1,27 +1,29 @@
-# ChatGPT V10.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V11.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3 t/m V9 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V10.md](UPGRADE-V10.md).**
+**Bijwerken naar V11: werk zowel de Casio-app als de Atom bij. Zie [UPGRADE-V11.md](UPGRADE-V11.md).**
 
-Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
+Nieuw: F6 Instellingen → F2 Telefoon opent een tijdelijk, met een willekeurig
+wachtwoord beveiligd wifi-netwerk. Verbind je telefoon, open http://192.168.4.1
+en plak je eigen OpenAI API-sleutel. Wifi en sleutel worden op de Atom opgeslagen;
+het installatienetwerk sluit na opslaan, Terug of tien minuten. Geen betaalde
+API-vraag wordt tijdens installatie verstuurd. De Casio toont of wifi verbinden lukt;
+de API-sleutel wordt pas bij de eerste vraag bij OpenAI gecontroleerd.
 
-V10 gebruikt ALPHA als lettervergrendeling, F5 voor hoofdletters en eenmalige
-SHIFT voor de gele wiskundefuncties. Gewone sin/cos/tan/log/ln werken in de
-cijfer-/wiskundestand. Bij openen en heropenen wordt de Atom automatisch via
-UART gecontroleerd, zonder API-aanvraag. De native menuovergang bewaart nu het
-invoerscherm in plaats van het afsluitdialoog, tegen de flits bij heropenen.
-Bekijk [de V10-interface in hosttests](docs/design/V10-actual-screens.png).
+V11 verwijdert ook de geregistreerde add-in-opruimcallback bij het verlaten van
+ChatGPT. UART, bestanden en invoervlaggen worden vóór de OS-overdracht opgeruimd,
+zodat geen ChatGPT-opruimcode wordt uitgevoerd tijdens het laden van andere apps.
+Dit adresseert de gemelde System ERROR na het kiezen van een ander pictogram.
+De exacte foutlocatie kan zonder de OS-ROM en een apparaattest niet worden bewezen.
 
-Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
-Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
-verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
-verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
-in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
+De bestaande vormgeving, pictogrammen, ALPHA-lock, eenmalige SHIFT, chats,
+scherminstellingen en automatische UART-verbinding blijven behouden. Geen slaapstand.
+Bekijk [de interface uit de echte UI-renderer in hosttests](docs/design/V11-actual-screens.png).
+Het taalmodel draait bij OpenAI; de Atom verstuurt HTTPS-verzoeken met certificaatcontrole.
 
-**Status V10:** de gebruiker bevestigt dat de V9-menuovergang werkt op OS
-03.81.0202. De V10-toetsen, automatische UART-verbinding en het bewaarde
-invoerbeeld zijn in tien softwaretestgroepen gecontroleerd; de SH4-add-in is
-gebouwd. De nieuwe werking en het verdwijnen van de flits moeten nog fysiek
-op jouw Casio worden bevestigd. Atom-broncode en binaries blijven V3.
+**Validatie:** beide programma's worden gebouwd; elf softwaretestgroepen testen
+ook de telefooninstallatie en het opruimen vóór het menu. Geen fysieke Casio/Atom,
+telefoon-wifitest of betaalde API-test beschikbaar in deze omgeving. Test de stappen
+in UPGRADE-V11.md op het apparaat vóór gebruik voor verkoop.
 
 ## Windows: installeren
 
@@ -32,7 +34,7 @@ op jouw Casio worden bevestigd. Atom-broncode en binaries blijven V3.
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 5. Installeer in Boardbeheer **esp32 by Espressif Systems 3.3.0**.
 6. Installeer in Bibliotheekbeheer **ArduinoJson by Benoit Blanchon 7.4.2**.
-7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V3 bevat extra
+7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V11 bevat extra
    gedeelde headers; alleen het `.ino`-bestand overnemen is niet voldoende.
 8. Selecteer board **M5Atom** (originele ESP32, geen M5AtomS3), de bijbehorende
    COM-poort en uploadsnelheid 115200. Compileer en upload. De firmware gebruikt
@@ -43,11 +45,10 @@ op jouw Casio worden bevestigd. Atom-broncode en binaries blijven V3.
     **USB Flash / USB-opslag**. Kopieer `dist\ChatGPT.g3a` naar de hoofdmap van
     het Casio-station. Werp het station veilig uit en ontkoppel de kabel.
 11. Open in MENU het pictogram **ChatGPT**. Druk F3 voor de UART-diagnose.
-12. Open F6 Instellingen. Voer hotspotnaam, hotspotwachtwoord en API-sleutel in.
-    Gebruik een 2,4GHz-hotspot. Kies desgewenst een ander model. Standaard:
-    `gpt-4.1-mini`. De firmware controleert dit model bij de API voordat de
-    betaalde vraag wordt verstuurd. Beschikbaarheid voor jouw account is hier
-    nog niet gecontroleerd.
+12. Open **F6 Instellingen → F2 Telefoon**. Verbind je telefoon met het netwerk
+    en wachtwoord op de Casio. Open **http://192.168.4.1**, vul je 2,4GHz-wifi in
+    en plak je volledige OpenAI API-sleutel. Laat de Casio open tot de wifi-status
+    verschijnt. Het model blijft je bestaande keuze (standaard `gpt-4.1-mini`).
 13. Typ een korte vraag en druk F1. De eerste verbinding synchroniseert ook
     de klok voor certificaatcontrole. Zie `docs/HARDWARETEST.md` voor de tests.
 
@@ -117,7 +118,7 @@ API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
-V3 toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
+Instellingen toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
 toont Instellingen alleen of een waarde is ingesteld. De sleutel en het
 hotspotwachtwoord worden afgeschermd ingevoerd en niet teruggelezen. Kies de
 instelling opnieuw om deze te vervangen. Een leeg opgeslagen hotspot-, wachtwoord- of sleutelveld wist die
@@ -126,7 +127,10 @@ De enige taalkeuze in deze versie is Nederlands. Bij een onbereikbare Atom
 verschijnt geen foutpopup vóór het instellingenmenu: de waarden staan als
 Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
-niet-opgeslagen wijziging weg. MENU sluit ook het geheime invoerveld.
+niet-opgeslagen wijziging weg. MENU sluit ook het afgeschermde invoerveld.
+
+Met **F2 Telefoon** kun je wifi en API-sleutel ook plakken via de tijdelijke
+installatiepagina. Zie [UPGRADE-V11.md](UPGRADE-V11.md) voor de stappen.
 
 ## Lokale chatgeschiedenis
 
@@ -168,7 +172,7 @@ Alleen de app wordt aangepast. Zie UPGRADE-V4.md voor herstel en grenzen.
 - Instellingen staan in gewone ESP32 NVS-flash, **zonder flashversleuteling**.
   Afscherming op het scherm beschermt niet tegen fysieke toegang tot de Atom.
   Geheimen gaan over de directe UART **zonder encryptie**, daarna via HTTPS
-  met certificaatcontrole naar OpenAI. Configuratie- en USB-debuglogs zijn uit.
+  met certificaatcontrole naar OpenAI. USB-debuglogs zijn uit. De tijdelijke installatiepagina toont geen opgeslagen geheimen.
 - De Atom blijft via USB gevoed. GPIO26 is tijdens actieve firmware UART-TX
   met hoog rustniveau. TX wordt niet per bericht losgekoppeld. Softwarematig
   loskoppelen kan via de ESP32-pinmatrix, maar dat vereist apart testen van

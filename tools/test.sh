@@ -13,3 +13,6 @@ build/tests/test_api
 
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function tests/test_context.cpp -o build/tests/test_context
 build/tests/test_context
+
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function -I"$ARDUINOJSON_HOME/src" tests/test_phone.cpp -o build/tests/test_phone
+build/tests/test_phone

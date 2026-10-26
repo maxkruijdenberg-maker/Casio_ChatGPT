@@ -1,8 +1,10 @@
-/* ChatGPT V3.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V11.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
-   Secrets are entered on the Casio, not in this sketch or USB logs. */
+   Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WebServer.h>
+#include <DNSServer.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
@@ -130,6 +132,8 @@ static void performApi() {
 }
 static void runApi(void*){performApi();vTaskDelete(nullptr);}
 
+#include "phone_setup.h"
+
 static bool sameFrame(const WFrame&a,const WFrame&b){return a.type==b.type&&a.seq==b.seq&&a.len==b.len&&!memcmp(a.data,b.data,a.len);}
 static void sendFrame(const WFrame& f){uint8_t out[WIRE_ENCODED];size_t n=w_encode(&f,out);Calc.write(out,n);}
 static void handle(const WFrame& in) {
@@ -138,7 +142,13 @@ static void handle(const WFrame& in) {
  WFrame out={};out.type=in.type|0x80;out.seq=in.seq;out.len=1;out.data[0]=E_NONE;
  bool start=false;
  {Lock l;
- switch(in.type){
+ if(portalActive && in.type!=W_SETUP && in.type!=W_HELLO && in.type!=W_INFO && in.type!=W_DEVICE && in.type!=W_STATUS && in.type!=W_GET_CONFIG){out.data[0]=E_BUSY;}else switch(in.type){
+ case W_SETUP:
+  if(in.len!=1||in.data[0]>2){out.data[0]=E_REQUEST;break;}
+  if(in.data[0]==1){if(busy()){out.data[0]=E_BUSY;break;}if(!portalActive&&!startPortal()){out.data[0]=E_WIFI;break;}}
+  if(in.data[0]==2)stopPortal();
+  out.len=17;out.data[1]=portalStatus;out.data[2]=WiFi.status()==WL_CONNECTED;
+  w_put16(out.data+3,portalId);if(portalActive)memcpy(out.data+5,portalPassword.c_str(),12);break;
  case W_HELLO:
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=5;out.data[1]=1;out.data[2]=state;w_put16(out.data+3,ANSWER_MAX);break;
@@ -169,11 +179,11 @@ static void handle(const WFrame& in) {
    if(restored.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
    out.data[0]=upload.target==5?context.restoreQuestion(restored):context.restoreAnswer(restored);
   }else {
-   int idx=upload.target-1;const char *names[]={"ssid","pass","key","model"};
+   int idx=upload.target-1;
    String next=upload.bytes;if(next.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
-   bool saved=upload.used?prefs.putString(names[idx],next)==upload.used:(!prefs.isKey(names[idx])||prefs.remove(names[idx]));
-   if(!saved){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
-   cfg[idx]=std::move(next);if(idx<2)wifiDirty=true;clearHistory();context.restoring=false;context.pending="";
+   String values[4];for(int i=0;i<4;i++)values[i]=cfg[i];values[idx]=next;
+   if(!saveConfiguration(values)){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
+   if(idx<2)wifiDirty=true;clearHistory();context.restoring=false;context.pending="";
   }
   upload_clear(&upload);break;
  case W_ASK:
@@ -215,7 +225,7 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=3;out.data[2]=0;out.data[3]=7;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=11;out.data[2]=0;out.data[3]=15;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
@@ -228,12 +238,9 @@ static void handle(const WFrame& in) {
   if(in.len!=4||memcmp(in.data,"WIPE",4)){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
   /* Keep request ledger so erasing settings cannot make old POSTs replayable. */
-  {const char *names[]={"ssid","pass","key","model"};
-   for(int i=0;i<4;i++){
-    if(prefs.isKey(names[i])&&!prefs.remove(names[i])){out.data[0]=E_MEMORY;break;}
-    cfg[i]="";
-   }}
-  if(!cfg[3].length())cfg[3]="gpt-4.1-mini";
+  {String empty[4];empty[3]="gpt-4.1-mini";
+   if(!saveConfiguration(empty)){out.data[0]=E_MEMORY;break;}
+   const char *names[]={"ssid","pass","key","model"};for(int i=0;i<4;i++)prefs.remove(names[i]);}
   upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  default:out.data[0]=E_REQUEST;
  }
@@ -246,12 +253,14 @@ void setup(){
  bootId=esp_random();pinMode(TX_PIN,INPUT);gate=xSemaphoreCreateMutex();if(!gate)return;
  prefs.begin("casiochat",false);cfg[0]=prefs.getString("ssid","");cfg[1]=prefs.getString("pass","");
  cfg[2]=prefs.getString("key","");cfg[3]=prefs.getString("model","gpt-4.1-mini");
+ loadConfiguration();
  ledger.next=prefs.getUInt("next",0);ledger.last=prefs.getUInt("last",0);
  if(ledger.last){state=S_ERROR;errorCode=E_RESET;}
  Calc.setRxBufferSize(512);Calc.begin(9600,SERIAL_8N1,RX_PIN,TX_PIN,false);
 }
 void loop(){
  if(!gate){delay(1000);return;}
+ servicePortal();
  if(parser.n&&millis()-lastByte>500)memset(&parser,0,sizeof(parser));
  while(Calc.available()){
   WFrame f;uint8_t c=Calc.read();lastByte=millis();if(w_feed(&parser,c,&f)==1)handle(f);

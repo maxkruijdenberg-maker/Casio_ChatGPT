@@ -21,6 +21,7 @@ static int failTimerInstall=0,failTimerStart=0,interruptNativeWait=0,timerStops=
 static void (*timerCallback)(void);
 static jmp_buf lifecycleDone;
 static void (*quitCallback)(void);
+static int fakeAtomMajor=3,fakePortal=0;
 static void menuReturned(void);
 typedef struct {unsigned char*data;size_t size,pos;} TestFile;
 static TestFile testFiles[32];
@@ -115,7 +116,7 @@ int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
 void OS_InnerWait_ms(int ms){timeTicks+=ms;}
 int Serial_ClearTX(void){return 0;}int Serial_ClearRX(void){rxAt=rxEnd=0;return 0;}
-int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(menuVisible);serialCloses++;return 0;}int Serial_IsOpen(void){return 0;}
+int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(!quitCallback);serialCloses++;return 0;}int Serial_IsOpen(void){return 0;}
 int Serial_Open(unsigned char *p){(void)p;return 0;}
 int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return timeTicks<replyReadyAt?0:(int)(rxEnd-rxAt);}
 int Serial_ReadSingle(unsigned char*p){if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];return 0;}
@@ -126,7 +127,10 @@ int Serial_Write(const unsigned char*p,int n){
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
- case W_DEVICE:r.len=8;r.data[1]=3;r.data[2]=0;r.data[3]=7;w_put32(r.data+4,fakeBoot);break;
+ case W_DEVICE:r.len=8;r.data[1]=fakeAtomMajor;r.data[2]=0;r.data[3]=15;w_put32(r.data+4,fakeBoot);break;
+ case W_SETUP:
+  assert(f.len==1);fakePortal=f.data[0]==1?1:f.data[0]==2?0:fakePortal;
+  r.len=17;r.data[1]=fakePortal;w_put16(r.data+3,0x1234);if(fakePortal)memcpy(r.data+5,"EXAMPLE23456",12);break;
  case W_CONTEXT:case W_NEW:case W_CANCEL:break;
  case W_GET_CONFIG:{
   if(f.data[0]!=1&&f.data[0]!=4){privateReads++;r.data[0]=E_REQUEST;break;}
@@ -160,13 +164,17 @@ static const int lifeOne[]={31,31,0,0,0,0,47,47,0,0,0,79,79,0,0,0};
 static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0};
 static const int lifeThree[]={31,31,0,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
- assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
+ assert(lifecycleTesting&&quitting&&serialOpen==0&&storageReadHandle<0&&storageWriteHandle<0);
  assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu&&linkOnline);
  assert(!memcmp(deviceFramebuffer,startupSnapshot,sizeof(startupSnapshot)));
  /* OS SaveAndOpenMainMenu (or its timer fallback) suspends the app.
   * Return only after a simulated re-selection; count no app draws in MENU. */
  menuVisible=1;copiesAtMenu=fullCopies;
- if(nativeMenus!=1&&quitCallback)quitCallback();nativeMenus++;
+ /* Switch through unrelated native icons before returning. OS must never
+  * retain an add-in cleanup pointer or open UART/file resource. */
+ assert(!quitCallback&&!serialOpen&&menuTimer==-1);
+ for(int otherApp=0;otherApp<8;otherApp++){assert(!quitCallback);assert(storageReadHandle<0&&storageWriteHandle<0);}
+ nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
  if(nativeMenus==3)longjmp(lifecycleDone,1);
  assert(fullCopies==copiesAtMenu);
@@ -203,13 +211,13 @@ static void testLifecycle(int direct){
 
 static void testMenuFailures(void){
  nativeResolverReady=0;serialOpen=1;quitting=1;vram=framebuffer;
- clear("MENU-test");show();int closes=serialCloses,stops=timerStops,deletes=timerDeletes;
+ clear("MENU-test");show();int closes=serialCloses,stops=timerStops,deletes=timerDeletes;SetQuitHandler(0);
  failTimerInstall=1;assert(!nativeMainMenu());failTimerInstall=0;
  assert(serialOpen&&serialCloses==closes&&!timerInstalled&&lcdFrame==C_BG);
  failTimerStart=1;assert(!nativeMainMenu());failTimerStart=0;
- assert(serialOpen&&serialCloses==closes&&!timerInstalled&&timerStops==stops+1&&timerDeletes==deletes+1);
+ assert(serialOpen&&serialCloses==closes+1&&!timerInstalled&&timerStops==stops+1&&timerDeletes==deletes+1);
  interruptNativeWait=1;assert(!nativeMainMenu());interruptNativeWait=0;
- assert(serialOpen&&serialCloses==closes&&!timerInstalled&&menuTimer==-1);
+ assert(serialOpen&&serialCloses==closes+2&&!timerInstalled&&menuTimer==-1);
  assert(timerStops==stops+2&&timerDeletes==deletes+2);
  quitting=0;clear("ChatGPT");show();assert(lcdFrame==C_BG&&statusMode==3);cleanup();
  nativeResolverReady=1;
@@ -302,6 +310,12 @@ int main(int argc,char **argv){
  const int resetTune[]={59,0,79};SCRIPT(resetTune);screenSettings();assert(viewProfile.percent==100&&view_load(&disk).percent==100);
  failCreate=1;const int failedTune[]={38,0,79,0,47,0,47};SCRIPT(failedTune);screenSettings();failCreate=0;
  assert(viewProfile.percent==100&&view_load(&disk).percent==100);
+ {int before=requestCount[W_SETUP],paidBefore=requestCount[W_ASK];
+  const int back[]={47};connected=1;atomMajor=3;SCRIPT(back);phoneSetup();assert(requestCount[W_SETUP]==before);
+  atomMajor=11;SCRIPT(back);phoneSetup();assert(requestCount[W_SETUP]==before+2&&!fakePortal);
+  const int menuBack[]={48};SCRIPT(menuBack);phoneSetup();assert(requestCount[W_SETUP]==before+4&&!fakePortal&&quitting);
+  assert(requestCount[W_ASK]==paidBefore);quitting=0;
+ }
  testMathInput();testAutoConnect();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();
@@ -317,10 +331,11 @@ int main(int argc,char **argv){
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
-  SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
+  fakeAtomMajor=11;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
+  atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and automatic free UART connection and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, deferred UART cleanup, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and automatic free UART connection and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, synchronous UART cleanup before OS dispatch, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }

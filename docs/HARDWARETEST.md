@@ -206,3 +206,13 @@ Herhaal EXIT → Ja → opnieuw openen vijfmaal: geen oud afsluitdialoog, wel ee
 automatisch verbonden Atom. Test RUN-MAT ertussen en behoud chats/schermranden.
 De snapshot- en asynchrone UART-werking zijn host-getest; V10 zelf is hier nog
 niet fysiek uitgevoerd. Achtergrondverbinding gebruikt alleen gratis HELLO.
+
+## V11 — telefoon en wisselen naar andere apps
+
+Zie UPGRADE-V11.md voor installatie van **beide** programma's en de apparaattest.
+Controleer specifiek EXIT → Ja → RUN-MAT/SYSTEM/STAT → ChatGPT, vijf cycli,
+zonder ADDRESS(W) System ERROR. Herhaal met MENU. Hosttests bewaken dat geen
+quit-callback, UART of bestandsresource achterblijft bij OS-dispatch; dit is geen
+fysieke OS-emulatie. Test op Android/iOS de lokale pagina, verkeerd wachtwoord,
+WPA2-wachtwoord, opslaan, Terug, tienminutentimeout en opnieuw opstarten.
+Wifi-status is geen API-sleutelvalidatie. Een API-test vereist eigen tegoed.
