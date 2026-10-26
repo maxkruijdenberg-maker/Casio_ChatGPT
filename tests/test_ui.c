@@ -7,7 +7,7 @@
 #undef main
 #include <assert.h>
 #include "../atom/ChatGPTAtom/upload.h"
-static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216];
+static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216],startupSnapshot[384*216];
 static unsigned short *deviceFramebuffer=framebuffer;
 static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initKeys=0;
 static unsigned short lcdFrame=0xffff;
@@ -49,7 +49,7 @@ void Bdisp_PutDisp_DD_stripe(int first,int last){(void)first;(void)last;stripeCa
 void Bdisp_DefineDMARange(int x1,int x2,int y1,int y2){dma[0]=x1;dma[1]=x2;dma[2]=y1;dma[3]=y2;}
 
 static unsigned char rx[8192];static size_t rxAt,rxEnd;
-static int connected=1,busyUntil,requestCount[32],privateReads;
+static int connected=1,busyUntil,requestCount[32],privateReads,replyDelay=0,replyReadyAt=0;
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
@@ -117,12 +117,12 @@ void OS_InnerWait_ms(int ms){timeTicks+=ms;}
 int Serial_ClearTX(void){return 0;}int Serial_ClearRX(void){rxAt=rxEnd=0;return 0;}
 int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(menuVisible);serialCloses++;return 0;}int Serial_IsOpen(void){return 0;}
 int Serial_Open(unsigned char *p){(void)p;return 0;}
-int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return (int)(rxEnd-rxAt);}
+int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return timeTicks<replyReadyAt?0:(int)(rxEnd-rxAt);}
 int Serial_ReadSingle(unsigned char*p){if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];return 0;}
 int Serial_Write(const unsigned char*p,int n){
  WParser parser={0};WFrame f,r={0};int got=0;for(int i=0;i<n;i++)if(w_feed(&parser,p[i],&f)==1)got=1;
  assert(got&&f.type<32);requestCount[f.type]++;
- if(!connected){busyUntil=timeTicks+800;return 0;}
+ if(!connected){if(!autoProbeActive)busyUntil=timeTicks+800;return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
@@ -144,7 +144,7 @@ int Serial_Write(const unsigned char*p,int n){
  default:r.data[0]=E_REQUEST;
  }
  if(rxAt==rxEnd)rxAt=rxEnd=0;
- rxEnd+=w_encode(&r,rx+rxEnd);assert(rxEnd<=sizeof(rx));return 0;
+ rxEnd+=w_encode(&r,rx+rxEnd);replyReadyAt=timeTicks+replyDelay;assert(rxEnd<=sizeof(rx));return 0;
 }
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
@@ -156,12 +156,13 @@ static void dumpFrame(const char*path){
  FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n384 216\n255\n");
  for(int i=0;i<384*216;i++){unsigned short v=vram[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
 }
-static const int lifeOne[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,79,79,0,0,0};
-static const int lifeTwo[]={31,31,0,0,0,59,0,47,0,78,0,65,0,48,48,0,0,0};
-static const int lifeThree[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
+static const int lifeOne[]={31,31,0,0,0,0,47,47,0,0,0,79,79,0,0,0};
+static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0};
+static const int lifeThree[]={31,31,0,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
- assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu);
+ assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu&&linkOnline);
+ assert(!memcmp(deviceFramebuffer,startupSnapshot,sizeof(startupSnapshot)));
  /* OS SaveAndOpenMainMenu (or its timer fallback) suspends the app.
   * Return only after a simulated re-selection; count no app draws in MENU. */
  menuVisible=1;copiesAtMenu=fullCopies;
@@ -181,7 +182,10 @@ static void testLifecycle(int direct){
  lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView(view_default());cleanup();
- int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses,drains=drainedEvents;
+ autoProbeStarted=1;autoProbeAt=RTC_GetTicks();autoProbeActive=1;linkKnown=1;linkOnline=0;
+ {char empty[PROMPT_MAX+1]="";const int done[]={79};SCRIPT(done);editor(empty,sizeof(empty),"ChatGPT - Vraag",0,1,0,1);}
+ memcpy(startupSnapshot,framebuffer,sizeof(startupSnapshot));cleanup();
+ int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses,drains=drainedEvents,hellos=requestCount[W_HELLO];
  nativeResolverReady=direct;
  int directBefore=nativeDirectCalls,timerBefore=nativeTimerCalls;
  lifecycleTesting=1;nativeMenus=0;initKeys=0;menuReturnEnabled=0;menuVisible=0;copiesAtMenu=0;
@@ -189,6 +193,7 @@ static void testLifecycle(int direct){
  quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
  if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main must remain available for native MENU re-entry");}
  assert(nativeMenus==3&&initKeys==3&&requestCount[W_ASK]==paid);
+ assert(requestCount[W_HELLO]==hellos+3);
  assert(nativeDirectCalls==directBefore+(direct?3:0)&&nativeTimerCalls==timerBefore+(direct?0:3));
  assert(!timerInstalled&&!timerArmed&&menuTimer==-1);
  assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
@@ -210,19 +215,54 @@ static void testMenuFailures(void){
  nativeResolverReady=1;
 }
 
+static void testAutoConnect(void){
+ int counts[32];char text[128]="";WFrame r;memcpy(counts,requestCount,sizeof(counts));
+ cleanup();connected=1;replyDelay=150;Serial_ClearRX();autoProbeStarted=0;quitting=0;linkKnown=linkOnline=0;
+ int start=timeTicks;assert(autoConnectTick()&&autoProbeActive&&!linkOnline);
+ const int typing[]={77,0,66,0,66,0,79};SCRIPT(typing);editor(text,sizeof(text),"Test",0,1,0,1);
+ assert(!strcmp(text,"Bb")&&timeTicks-start<150&&autoProbeActive);
+ size_t at=keyAt;timeTicks+=150;assert(autoConnectTick()&&linkOnline&&!autoProbeActive&&keyAt==at);
+ /* A pending heartbeat cannot hijack a foreground RPC or consume its reply. */
+ timeTicks+=15000;assert(autoConnectTick()&&autoProbeActive);replyDelay=0;
+ assert(rpc(W_INFO,0,0,&r,0)==1&&r.type==(W_INFO|0x80)&&!autoProbeActive);
+ connected=0;linkOnline=0;autoProbeStarted=0;busyUntil=0;Serial_ClearRX();
+ assert(autoConnectTick()&&autoProbeActive);timeTicks+=601;
+ assert(autoConnectTick()&&!linkOnline&&!autoProbeActive);
+ connected=1;timeTicks+=3000;assert(autoConnectTick()&&autoProbeActive);
+ assert(autoConnectTick()&&linkOnline&&!autoProbeActive);
+ for(int i=0;i<32;i++)if(i!=W_HELLO&&i!=W_INFO)assert(requestCount[i]==counts[i]);
+ cleanup();replyDelay=0;autoProbeStarted=0;
+}
+static void testMathInput(void){
+ char text[256]="";
+ const int trigs[]={46,0,36,0,26,0,66,0,56,0,67,0,57,0,79};SCRIPT(trigs);
+ editor(text,sizeof(text),"Test",0,1,0,1);assert(!strcmp(text,"sin(cos(tan(log(ln(^2^("));
+ const int shifted[]={78,0,46,0,36,0,78,0,26,0,78,0,66,0,78,0,56,0,78,0,67,0,78,0,57,0,78,0,51,0,78,0,61,0,79};
+ text[0]=0;SCRIPT(shifted);editor(text,sizeof(text),"Test",0,1,0,1);
+ assert(!strcmp(text,"asin(cos(atan(10^(e^(sqrt(root(π="));
+ const int mixedMath[]={77,0,66,0,78,0,46,0,66,0,77,0,26,0,79};
+ text[0]=0;SCRIPT(mixedMath);editor(text,sizeof(text),"Test",0,1,0,1);assert(!strcmp(text,"Basin(btan("));
+ const int cancelShift[]={78,0,78,0,46,0,79};text[0]=0;SCRIPT(cancelShift);editor(text,sizeof(text),"Test",0,1,0,1);assert(!strcmp(text,"sin("));
+ int alphabet[55],n=0;const int map[]={76,66,56,46,36,26,75,65,55,45,35,25,74,64,54,73,63,53,43,33,72,62,52,42,32,71};
+ alphabet[n++]=77;alphabet[n++]=0;for(int i=0;i<26;i++){alphabet[n++]=map[i];alphabet[n++]=0;}alphabet[n++]=79;
+ text[0]=0;script(alphabet,n);editor(text,sizeof(text),"Test",0,1,0,1);assert(!strcmp(text,"Abcdefghijklmnopqrstuvwxyz"));
+ /* Too-small capacity must not leave a half function token. */
+ char tiny[5]="a";const int noSpace[]={78,0,46,0,47,0,79};SCRIPT(noSpace);editor(tiny,sizeof(tiny),"Test",0,0,0,1);assert(!strcmp(tiny,"a"));
+}
+
 int main(int argc,char **argv){
  char b[128]="";
- const int hello[]={78,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
+ const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
  assert(editor(b,sizeof(b),"Test",0,1,0,1)==79);assert(!strcmp(b,"Hello"));
- const int exact[]={78,0,76,0,39,0,66,0,39,0,56,0,79};b[0]=0;SCRIPT(exact);
+ const int exact[]={77,0,76,0,39,0,66,0,39,0,56,0,79};b[0]=0;SCRIPT(exact);
  assert(editor(b,sizeof(b),"API",1,0,1,0)==79);assert(!strcmp(b,"aBc"));
  /* Secret editor displays '*' in its first content cell. */
  rect(0,0,384,216,C_PANEL);glyph(12,52,'*',C_TEXT);unsigned short expected[14*8];
  for(int y=0;y<14;y++)for(int x=0;x<8;x++)expected[y*8+x]=framebuffer[(52+y)*384+12+x];
  const int done[]={79};SCRIPT(done);editor(b,sizeof(b),"API",1,0,1,0);
  for(int y=0;y<13;y++)for(int x=0;x<8;x++)assert(framebuffer[(52+y)*384+12+x]==expected[y*8+x]);
- /* One SHIFT locks letters for every subsequent key; second restores digits. */
- const int mixed[]={78,0,76,0,66,0,78,0,72,0,79};b[0]=0;SCRIPT(mixed);editor(b,sizeof(b),"Test",0,1,0,1);assert(!strcmp(b,"Ab1"));
+ /* One ALPHA locks letters; second restores numeric/math input. */
+ const int mixed[]={77,0,76,0,66,0,77,0,72,0,79};b[0]=0;SCRIPT(mixed);editor(b,sizeof(b),"Test",0,1,0,1);assert(!strcmp(b,"Ab1"));
  const int edit[]={38,0,44,0,79};strcpy(b,"Aéπ");SCRIPT(edit);editor(b,sizeof(b),"Test",0,0,0,1);assert(!strcmp(b,"Aπ"));
  /* Offline settings must open without a misleading configuration popup. */
  const int leave[]={47};connected=0;SCRIPT(leave);settings();assert(!linkOnline&&requestCount[W_INFO]>0);
@@ -262,6 +302,7 @@ int main(int argc,char **argv){
  const int resetTune[]={59,0,79};SCRIPT(resetTune);screenSettings();assert(viewProfile.percent==100&&view_load(&disk).percent==100);
  failCreate=1;const int failedTune[]={38,0,79,0,47,0,47};SCRIPT(failedTune);screenSettings();failCreate=0;
  assert(viewProfile.percent==100&&view_load(&disk).percent==100);
+ testMathInput();testAutoConnect();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();
  if(argc==3&&!strcmp(argv[1],"--screens")){
@@ -270,7 +311,7 @@ int main(int argc,char **argv){
   assert(lib_append(&disk,1,&savedChats[1],"Leg breuken eenvoudig uit.","Een breuk is een deel van een geheel.",&savedChats[1]));
   activeChatSlot=0;viewTurn=0;
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
-  strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={78,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
+  strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
   strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
@@ -280,6 +321,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, deferred UART cleanup, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and automatic free UART connection and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, deferred UART cleanup, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }

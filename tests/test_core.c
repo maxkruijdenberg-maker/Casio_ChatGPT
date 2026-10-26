@@ -47,4 +47,20 @@ static void test_text(void){
  CHECK(alpha_key(76)=='a');CHECK(alpha_key(71)=='z');CHECK(alpha_key(61)==' ');CHECK(number_key(72)=='1');
  for(i=0;i<26;i++)CHECK(alpha_key((int[]){76,66,56,46,36,26,75,65,55,45,35,25,74,64,54,73,63,53,43,33,72,62,52,42,32,71}[i])=='a'+(int)i);
 }
-int main(void){test_frames();test_text();printf("PASS: %u assertions; frame roundtrips, corruption, recovery, bounds, UTF-8, editing, key mapping.\n",checks);return 0;}
+static void test_math_tokens(void){
+ CHECK(!strcmp(math_key(66,0),"log("));CHECK(!strcmp(math_key(66,1),"10^("));
+ CHECK(!strcmp(math_key(46,0),"sin("));CHECK(!strcmp(math_key(46,1),"asin("));
+ CHECK(!strcmp(math_key(36,0),"cos("));CHECK(!strcmp(math_key(36,1),"acos("));
+ CHECK(!strcmp(math_key(26,0),"tan("));CHECK(!strcmp(math_key(26,1),"atan("));
+ CHECK(!strcmp(math_key(67,1),"sqrt("));CHECK(!strcmp(math_key(57,1),"root("));
+ CHECK(!strcmp(math_key(51,1),"π"));CHECK(!math_key(79,0));
+ char s[16]="ab",before[16];size_t cursor=1;
+ CHECK(u_insert_text(s,sizeof(s),&cursor,"sin("));CHECK(!strcmp(s,"asin(b")&&cursor==5);
+ strcpy(s,"é");cursor=1;CHECK(!u_insert_text(s,sizeof(s),&cursor,"x"));CHECK(!strcmp(s,"é")&&cursor==1);
+ cursor=2;CHECK(u_insert_text(s,sizeof(s),&cursor,"π"));CHECK(!strcmp(s,"éπ")&&cursor==4);
+ strcpy(before,s);CHECK(!u_insert_text(s,8,&cursor,"sqrt("));CHECK(!strcmp(s,before)&&cursor==4);
+ CHECK(!u_insert_text(s,sizeof(s),&cursor,"\xc0\xaf"));CHECK(!strcmp(s,before));
+ CHECK(!u_insert_text(s,0,&cursor,"x"));CHECK(!u_insert_text(s,sizeof(s),&cursor,""));
+}
+
+int main(void){test_frames();test_text();test_math_tokens();printf("PASS: %u assertions; frame roundtrips, corruption, recovery, bounds, UTF-8, editing, key mapping.\n",checks);return 0;}

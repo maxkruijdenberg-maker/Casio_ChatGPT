@@ -1,3 +1,5 @@
+> Nieuwste versie: [V10 installeren](UPGRADE-V10.md).
+
 > Nieuwste versie: [V9 installeren](UPGRADE-V9.md).
 
 # V8 — sluiten én opnieuw openen, wit paneel in het pictogram

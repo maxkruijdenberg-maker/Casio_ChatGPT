@@ -170,3 +170,24 @@ black logo lowered and requested J badge. Native name and dark screen frame
 retained. Ten sanitized host test groups pass, including resolver and six
 menu sessions; actual SH4 add-in built. The actual 03.81.0202 OS has not been
 executed here. See docs/V9-NATIVE-MENU.md and UPGRADE-V9.md. Atom stays V3.
+
+## V10.0: ALPHA lock, one-shot math SHIFT, async UART and clean menu snapshot
+
+User confirmed V9 native MENU works on 03.81.0202, but re-entry briefly restored
+the closing dialog and needed F3 to reconnect. Paint the ordinary blank editor
+through the shared renderer before native MENU saves VRAM. Preserve the working
+V9 native helper and icon assets. Six-session tests compare the saved framebuffer
+against the normal startup editor, with no manual F3 in any session.
+
+ALPHA toggles persistent letters; F5 toggles case. SHIFT is one-shot (or cancelled
+by pressing again) and inserts yellow-label math text, including inverse trig,
+roots, powers and pi. Primary trig/log/powers work in numeric mode. All red-label
+letters including B/log are exercised. Multi-character function tokens insert
+atomically under byte limits and UTF-8 cursor boundaries.
+
+Startup and idle input use a nonblocking W_HELLO-only UART probe. 600ms response
+window, offline retry 3s, online heartbeat 15s. It never reads keys, allocates an
+API request or sends question/config text. Foreground RPC preempts the probe.
+Delayed response typing, offline recovery and stale-reply preemption are tested.
+Ten sanitized host groups pass, SH4 add-in built, Atom remains byte-identical V3.
+New V10 behavior still needs hardware confirmation; see UPGRADE-V10.md.

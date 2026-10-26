@@ -193,3 +193,16 @@ rim is not a menu, and physical MENU there also failed; do not count that as
 success. The native helper is based on gint; actual OS execution is unverified.
 Check lowered rounded white panel, J at top-right and one native app name.
 The J badge is visual; the calculator still determines the actual menu index.
+
+## V10: ALPHA, wiskundetoetsen en automatisch opnieuw verbinden
+
+De gebruiker bevestigt V9 MENU op 03.81.0202. Volg UPGRADE-V10.md: controleer
+10.0, laat F3 achterwege en controleer Atom OK na openen/heropenen. Test typen
+tijdens offline zijn en herstel na opnieuw voeden. Controleer alle rode letters,
+vooral B/log, ALPHA aan/uit, F5-case en gewone/SHIFT sin/cos/tan, log/ln, x²/^
+en pi. Controleer API-sleutelcase zonder echte sleutel in logs te zetten.
+
+Herhaal EXIT → Ja → opnieuw openen vijfmaal: geen oud afsluitdialoog, wel een
+automatisch verbonden Atom. Test RUN-MAT ertussen en behoud chats/schermranden.
+De snapshot- en asynchrone UART-werking zijn host-getest; V10 zelf is hier nog
+niet fysiek uitgevoerd. Achtergrondverbinding gebruikt alleen gratis HELLO.

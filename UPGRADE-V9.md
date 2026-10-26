@@ -1,3 +1,5 @@
+> Nieuwste versie: [V10 installeren](UPGRADE-V10.md).
+
 # V9 — native OS-menu en pictogram volgens de CG50-template
 
 **Vervang alleen ChatGPT.g3a als je Atom V3 hebt.** Geen nieuwe Atom-upload,

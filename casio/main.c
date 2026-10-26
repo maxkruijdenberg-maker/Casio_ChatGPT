@@ -1,6 +1,6 @@
 /* Casio fx-CG50 add-in. libfxcg SDK; no sleep implementation.
- * Raw key polling is intentional: native GetKey consumes SHIFT itself, whereas
- * this app must interpret one SHIFT press as a persistent letter-mode toggle.
+ * Raw key polling is intentional: native GetKey handles modifiers itself, whereas
+ * this editor uses ALPHA lock and one-shot SHIFT for math text.
  * UTF-8 editor + an explicit bitmap repertoire avoid guessing Casio code pages.
  */
 #include <fxcg/display.h>
@@ -34,7 +34,7 @@ static uint8_t seq=0;
 static WParser parser;
 static LibraryEntry savedChats[STORE_SLOTS];
 static int libraryReady=0,activeChatSlot=-1,contextDirty=1,viewTurn=0,unsavedReply=0;
-enum {UI_CHATS=2000};
+enum {UI_CHATS=2000,UI_LINK_REFRESH=2001};
 static int chatSidebar(void);
 static int saveReply(void);
 static int restoreChat(void);
@@ -64,7 +64,8 @@ static void closeSerial(void){
  SetSetupSetting(0x14,oldSetup);
 }
 static void stopMenuTimer(void);
-static void cleanup(void){stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
+static void stopAutoProbe(void);
+static void cleanup(void){stopAutoProbe();stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
 /* The menu launch key and the key which opened a dialog must not become a
  * command in the newly opened screen. Require a stable all-keys-up edge. */
 static void waitForKeyRelease(void){
@@ -93,6 +94,10 @@ static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_In
 enum {C_BG=0x10a2,C_PANEL=0x2104,C_RAISED=0x2965,C_TEXT=0xef7d,
  C_MUTED=0xa514,C_LINE=0x39c7,C_MINT=0x7737,C_RED=0xfc10};
 static int linkKnown=0,linkOnline=0,linkSeen=0;
+static int autoProbeActive=0,autoProbeStarted=0,autoProbeAt=0;
+static uint8_t autoProbeSeq=0;
+static WParser autoProbeParser;
+static void stopAutoProbe(void){autoProbeActive=0;memset(&autoProbeParser,0,sizeof(autoProbeParser));}
 static void applyView(ViewProfile p){viewProfile=view_valid(p)?p:view_default();view_build(&viewMap,viewProfile);viewReady=1;}
 static void physicalRect(int x,int y,int w,int h,unsigned short color){
  int xx,yy;for(yy=y;yy<y+h;yy++)for(xx=x;xx<x+w;xx++)
@@ -132,11 +137,11 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V9",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V10",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
-  const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
-  rounded(304,7,6,6,linkKnown&&!linkOnline?C_RED:fresh?C_MINT:C_MUTED);
+  const char *status=autoProbeActive&&!linkOnline?"Atom...":linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
+  rounded(304,7,6,6,linkKnown&&!linkOnline&&!autoProbeActive?C_RED:fresh?C_MINT:C_MUTED);
   printAt(316,7,status,C_MUTED);
  }
 }
@@ -216,6 +221,7 @@ static int ensureSerial(void){
  * -2 user cancelled/menu. Identical encoded bytes are retried at most 4 times. */
 static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  WFrame req;uint8_t bytes[WIRE_ENCODED];size_t n;int attempt,start,k;
+ stopAutoProbe();
  if(len>WIRE_MAX)return -1;
  if(!ensureSerial()){linkKnown=1;linkOnline=0;return -1;}
  req.type=(uint8_t)type;req.seq=++seq;req.len=(uint8_t)len;if(len)memcpy(req.data,data,len);
@@ -253,6 +259,40 @@ static int uploadText(int target,const char *s){
   if(!checkedRpcEx(W_APPEND,b,n+2,&r,target>=5))return 0;pos+=n;
  }return checkedRpcEx(W_APPLY,0,0,&r,target>=5);
 }
+/* Nonblocking, free UART heartbeat. It never calls keyEvent or an API command.
+ * Foreground RPC takes ownership by stopping this probe before sending. */
+static int autoConnectTick(void){
+ WFrame frame;unsigned char bytes[WIRE_ENCODED];size_t n;int changed=0;
+ if(quitting)return 0;
+ if(autoProbeActive){
+  int limit=2*WIRE_ENCODED;
+  while(limit--&&Serial_PollRX()>0){
+   unsigned char c;int ok;if(Serial_ReadSingle(&c)!=0)break;
+   ok=w_feed(&autoProbeParser,c,&frame);if(ok<0)errors++;
+   if(ok==1&&frame.type==(W_HELLO|0x80)&&frame.seq==autoProbeSeq&&frame.len>=2){
+    linkKnown=1;linkOnline=frame.data[0]==E_NONE&&frame.data[1]==1;
+    if(linkOnline)linkSeen=RTC_GetTicks();stopAutoProbe();return 1;
+   }
+  }
+  if(!elapsed(autoProbeAt,600))return 0;
+  stopAutoProbe();linkKnown=1;linkOnline=0;return 1;
+ }
+ if(autoProbeStarted&&!elapsed(autoProbeAt,linkOnline?15000:3000))return 0;
+ autoProbeStarted=1;autoProbeAt=RTC_GetTicks();
+ if(!ensureSerial()){changed=!linkKnown||linkOnline;linkKnown=1;linkOnline=0;return changed;}
+ memset(&frame,0,sizeof(frame));frame.type=W_HELLO;frame.seq=autoProbeSeq=++seq;
+ memset(&autoProbeParser,0,sizeof(autoProbeParser));n=w_encode(&frame,bytes);
+ autoProbeActive=1;
+ if(Serial_Write(bytes,(int)n)!=0){stopAutoProbe();changed=!linkKnown||linkOnline;linkKnown=1;linkOnline=0;return changed;}
+ return 1;
+}
+static int waitEditorKey(int promptMode){
+ int k;while(!quitting){
+  k=keyEvent();if(k)return k;
+  if(promptMode==1&&autoConnectTick())return UI_LINK_REFRESH;
+  OS_InnerWait_ms(10);
+ }return KEY_PRGM_MENU;
+}
 /* All printable ASCII plus a named Unicode repertoire. API keys use ASCII only. */
 static uint32_t pickCharacter(int asciiOnly){
  static const char extras[]="éëèêáàâäíïìîóöòôúüùûçñÉËπθαβγδμωφ∞√≤≥≠×÷±∑∫∆→←↑↓²³°€";
@@ -272,39 +312,63 @@ static uint32_t pickCharacter(int asciiOnly){
   if(k==KEY_PRGM_UP&&sel>=12)sel-=12;if(k==KEY_PRGM_DOWN&&sel+12<count)sel+=12;
  }return 0;
 }
+/* Shared paint path: the OS saves this neutral input page before opening MENU,
+ * so resuming cannot first restore the old "Ja/Nee" closing dialog. */
+static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *title,int secret,int promptMode,
+ int letters,int upper,int shifted,int firstLetter,int first){
+ int row,col;char label[100];cursorPosition(buf,cursor,&row,&col);
+ clear(title);rounded(8,35,152,15,C_RAISED);
+ sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA-lock":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
+ sprintf(label,"%u/%u bytes",(unsigned)strlen(buf),(unsigned)(cap-1));printAt(240,35,label,C_MUTED);
+ rounded(6,50,368,120,C_LINE);rounded(7,51,366,118,C_PANEL);
+ if(promptMode==1&&!buf[0]){
+  drawLogo(172,62,40,C_TEXT);printAt(104,109,"Waar wil je hulp bij?",C_TEXT);
+  printAt(76,135,"Typ een vraag. F1 verstuurt.",C_MUTED);
+ }else textPage(buf,first,secret);
+ {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
+ if(promptMode==1)footer("Stuur","Nieuw","Test","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
+ printAt(8,175,promptMode==1?"OPTN: chats · EXIT: terug":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();
+}
+static void prepareMenuSnapshot(void){
+ int known=linkKnown,online=linkOnline,seen=linkSeen,active=autoProbeActive;
+ linkKnown=1;linkOnline=0;linkSeen=0;autoProbeActive=1;
+ renderEditor("",PROMPT_MAX+1,0,"ChatGPT - Vraag",0,1,0,0,0,1,0);
+ linkKnown=known;linkOnline=online;linkSeen=seen;autoProbeActive=active;
+}
 /* Returns F1/F2/F3/F6/EXIT. Secret input is never revealed or retained on Casio. */
 static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
- size_t cursor=strlen(buf);int letters=0,upper=0,first=0,row,col,k,cp,firstLetter=autoCapital&&cursor==0;
- char label[100];
+ size_t cursor=strlen(buf);int letters=0,upper=0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
  while(!quitting){
+  const char *token=0;
   cursorPosition(buf,cursor,&row,&col);if(row<first)first=row;if(row>=first+ROWS)first=row-ROWS+1;
-  clear(title);rounded(8,35,152,15,C_RAISED);
-  sprintf(label,"%s %s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"SHIFT-lock":"SHIFT: letters");printAt(12,35,label,C_MUTED);
-  sprintf(label,"%u/%u bytes",(unsigned)strlen(buf),(unsigned)(cap-1));printAt(240,35,label,C_MUTED);
-  rounded(6,50,368,120,C_LINE);rounded(7,51,366,118,C_PANEL);
-  if(promptMode==1&&!buf[0]){
-   drawLogo(172,62,40,C_TEXT);printAt(104,109,"Waar wil je hulp bij?",C_TEXT);
-   printAt(76,135,"Typ een vraag. F1 verstuurt.",C_MUTED);
-  }else textPage(buf,first,secret);
-  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
-  if(promptMode==1)footer("Stuur","Nieuw","Test","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
-  printAt(8,175,promptMode==1?"OPTN: chats · EXIT: terug":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();k=waitKey();
-  if(quitting)return KEY_PRGM_MENU;
-  if(k==KEY_PRGM_SHIFT){letters=!letters;continue;}
-  if(k==KEY_PRGM_ALPHA||k==KEY_PRGM_F5){upper=!upper;continue;}
+  renderEditor(buf,cap,cursor,title,secret,promptMode,letters,upper,shifted,firstLetter,first);
+  k=waitEditorKey(promptMode);if(quitting)return KEY_PRGM_MENU;if(k==UI_LINK_REFRESH)continue;
+  if(k==KEY_PRGM_SHIFT){shifted=!shifted;continue;}
+  if(k==KEY_PRGM_ALPHA){letters=!letters;shifted=0;continue;}
+  useShift=shifted;shifted=0;
+  if(k==KEY_PRGM_F5){upper=!upper;continue;}
   if(promptMode==1&&k==KEY_PRGM_OPTN)return UI_CHATS;
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return KEY_PRGM_F1;
   if(k==KEY_PRGM_EXIT)return k;
   if(promptMode==1&&(k==KEY_PRGM_F2||k==KEY_PRGM_F3||k==KEY_PRGM_F6))return k;
-  if(k==KEY_PRGM_LEFT){cursor=u_prev(buf,cursor);continue;}
-  if(k==KEY_PRGM_RIGHT){if(cursor<strlen(buf))cursor=u_next(buf,cursor);continue;}
+  if(k==KEY_PRGM_LEFT){cursor=useShift?0:u_prev(buf,cursor);continue;}
+  if(k==KEY_PRGM_RIGHT){if(useShift)cursor=strlen(buf);else if(cursor<strlen(buf))cursor=u_next(buf,cursor);continue;}
   if(k==44){u_delete(buf,&cursor);if(!buf[0])firstLetter=autoCapital;continue;}
   if(k==34){if(confirm("Dit invoerveld helemaal wissen?")){erase(buf,cap);cursor=0;firstLetter=autoCapital;}continue;}
   if(k==KEY_PRGM_UP){int i;for(i=0;i<COLS&&cursor;i++)cursor=u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_DOWN){int i;for(i=0;i<COLS&&cursor<strlen(buf);i++)cursor=u_next(buf,cursor);continue;}
   if(k==KEY_PRGM_F4)cp=(int)pickCharacter(asciiOnly);
   else {
-   cp=letters?alpha_key(k):number_key(k);
+   if(useShift||(!letters&&promptMode==1))token=math_key(k,useShift);
+   if(token){
+    size_t at=0,len=strlen(token),n;uint32_t ch;int valid=1;
+    while(at<len){n=u_decode(token+at,len-at,&ch);if((asciiOnly&&(ch<32||ch>126))||glyphIndex(ch)<0){valid=0;break;}at+=n;}
+    if(!valid){message("Ongeldig teken","Dit veld ondersteunt alleen de beschikbare ASCII-tekens.");continue;}
+    if(!u_insert_text(buf,cap,&cursor,token)){message("Invoer vol","De functie past niet meer in dit invoerveld.");continue;}
+    for(at=0;at<len;at++)if((token[at]>='a'&&token[at]<='z')||(token[at]>='A'&&token[at]<='Z'))firstLetter=0;
+    continue;
+   }
+   cp=letters&&!useShift?alpha_key(k):number_key(k);
    if(cp>='a'&&cp<='z'&&(upper||firstLetter))cp-=32;
   }
   if(!cp){if(k!=KEY_PRGM_F4)message("Teken niet ondersteund","Gebruik F4 Tekens voor speciale tekens en formules.");continue;}
@@ -388,7 +452,7 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"9.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"10.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
@@ -399,7 +463,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V9.0\nCompatibel met Atom-firmware V3.0.\nMenu-route: %s\n\nVervang alleen ChatGPT.g3a. Gesprekken en Atom-instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
+  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V10.0\nCompatibel met Atom-firmware V3.0.\nMenu-route: %s\n\nVervang alleen ChatGPT.g3a. Gesprekken en Atom-instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -508,7 +572,7 @@ static void beginSession(void){
  {int discarded;Bdisp_EnableColor(1);Keyboard_PutKeycode(-1,-1,KEY_CTRL_EXIT);do {GetKey(&discarded);}while(discarded!=KEY_CTRL_EXIT);}
  Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  applyView(view_load(&disk));storageClose();configureDisplay();vram=(unsigned short*)GetVRAMAddress();
- loadLibrary();
+ loadLibrary();autoProbeStarted=0;stopAutoProbe();autoConnectTick();
 }
 static void runSession(void){
  int k;unsigned epoch;
@@ -532,7 +596,7 @@ static void endSession(void){
  /* Keep UART alive until native MENU takes over. In particular, do not send
   * W_CANCEL or closeSerial here: a failed menu handoff must not drop the link.
   * SetQuitHandler releases it when the OS switches applications. */
- storageClose();erase(field,sizeof(field));waitForKeyRelease();
+ storageClose();erase(field,sizeof(field));waitForKeyRelease();stopAutoProbe();
 }
 /* The OS key-wait must be active when a fallback MENU event is injected.
  * This ordering follows gint_osmenu_native; pre-queueing then calling GetKey
@@ -548,7 +612,7 @@ static void menuTimerHandler(void){
 static int nativeMainMenu(void){
  uint32_t target;int column=0,row=0,result;unsigned short key=0;
  Bkey_ClrAllFlags();drainNativeKeys();Native_ClearKeyBuffer();
- target=nativeMenuTarget();
+ target=nativeMenuTarget();prepareMenuSnapshot();
  if(target){
   EnableStatusArea(0);DrawFrame(0xffff);
   menuInvoke(target); /* Saves app continuation; returns on actual re-selection. */

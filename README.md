@@ -1,15 +1,15 @@
-# ChatGPT V9.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V10.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3 t/m V8 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V9.md](UPGRADE-V9.md).**
+**Al V3 t/m V9 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V10.md](UPGRADE-V10.md).**
 
 Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
 
-V9 gebruikt de native menu-aanpak van gint: de interne SaveAndOpenMainMenu
-wordt via een begrensd codepatroon gevonden; als die niet herkenbaar is volgt
-de OS-timer/GetKeyWait-route. Geen voorgequeueude MENU gevolgd door GetKey,
-geen directe DisplayMainMenu, geen terugkeer uit main. Het pictogram heeft
-een lager afgerond wit paneel volgens de fx-CG50-template en de gevraagde J.
-Bekijk [de V9-interface in hosttests](docs/design/V9-actual-screens.png).
+V10 gebruikt ALPHA als lettervergrendeling, F5 voor hoofdletters en eenmalige
+SHIFT voor de gele wiskundefuncties. Gewone sin/cos/tan/log/ln werken in de
+cijfer-/wiskundestand. Bij openen en heropenen wordt de Atom automatisch via
+UART gecontroleerd, zonder API-aanvraag. De native menuovergang bewaart nu het
+invoerscherm in plaats van het afsluitdialoog, tegen de flits bij heropenen.
+Bekijk [de V10-interface in hosttests](docs/design/V10-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -17,13 +17,11 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V9:** tien softwaretestgroepen slagen; de SH4-add-in is gebouwd,
-inclusief de aanvullende native ClearKeyBuffer-syscall. De gebruiker meldt
-OS **03.81.0202** en dat ook fysiek MENU op het witte-randscherm van V8 niet
-werkt. De nieuwe route is gebaseerd op de bestaande gint-implementatie;
-bron, codeherkenning, tests en beperkingen staan in docs/V9-NATIVE-MENU.md.
-De echte OS-code van deze calculator is hier niet uitgevoerd. Bevestig sluiten
-en heropenen fysiek; groene hosttests bewijzen dat niet. De Atom blijft V3.
+**Status V10:** de gebruiker bevestigt dat de V9-menuovergang werkt op OS
+03.81.0202. De V10-toetsen, automatische UART-verbinding en het bewaarde
+invoerbeeld zijn in tien softwaretestgroepen gecontroleerd; de SH4-add-in is
+gebouwd. De nieuwe werking en het verdwijnen van de flits moeten nog fysiek
+op jouw Casio worden bevestigd. Atom-broncode en binaries blijven V3.
 
 ## Windows: installeren
 
@@ -81,8 +79,9 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 
 | Toets | Invoerscherm |
 |---|---|
-| SHIFT | Letterstand vast aan/uit, geen herhaalde SHIFT nodig |
-| ALPHA of F5 | Hoofdletters/kleine letters |
+| ALPHA | Lettervergrendeling aan/uit; eenmaal drukken is genoeg |
+| SHIFT | Eenmalige gele functie, bijvoorbeeld sin → asin; nogmaals annuleert SHIFT |
+| F5 | Hoofdletters/kleine letters |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
 | F2 | Nieuw gesprek, na bevestiging |
 | F3 | UART-diagnose |
@@ -100,8 +99,16 @@ De letterlabels op de normale toetsen worden gebruikt. Op het scherm staat
 hoofdletter, daarna volgen kleine letters. Instellingen veranderen nooit
 automatisch de letterkast. In het tekenkeuzescherm zijn alle afdrukbare
 ASCII-tekens beschikbaar, inclusief spatie, streepje en underscore voor sleutels.
-Het standaard GetKey-invoerveld verwerkt SHIFT intern; daarom gebruikt deze app
-een eigen editor met de fysieke Casio-toetsen voor de afgesproken SHIFT-lock.
+De eigen editor gebruikt de rode letterlabels bij ALPHA-lock. In cijferstand
+voeren de wiskundetoetsen functietekst in; SHIFT gebruikt eenmalig de gele
+functie. Bijvoorbeeld sin → `sin(`, SHIFT+sin → `asin(`, SHIFT+x² → `sqrt(`
+en SHIFT+×10ˣ → `π`. Zie UPGRADE-V10.md voor de volledige tabel. Functies zijn
+vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
+
+Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
+op toetsen in het invoerscherm volgen retries na ongeveer 3 seconden offline
+en een controle iedere 15 seconden als de Atom online is. Het typen blijft
+beschikbaar. F3 is nog aanwezig voor diagnose; verbinden vereist geen F3.
 
 Na versturen komt een apart antwoordscherm. Omhoog/omlaag scrolt een regel;
 links/rechts scrolt een pagina. F1 begint een vervolgvraag. F2 wist het gesprek
@@ -213,7 +220,7 @@ de originele SDK 0.6-bibliotheken/linkerscript en mkg3a.
 Op Linux met een C-compiler: `sh tools/test.sh`. De tests gebruiken AddressSanitizer
 en UndefinedBehaviorSanitizer. Resultaten staan in `docs/logs/tests.log`.
 Transport en UTF-8: 19748 asserts; aanvraagregistratie: 10000 cycli met herhaling,
-reset en opslagfalen; editor: SHIFT-lock, hoofdletters, exacte sleutelletterkast,
+reset en opslagfalen; editor: ALPHA-lock en eenmalige SHIFT-functies, hoofdletters, exacte sleutelletterkast,
 maskering, cijferstand en UTF-8-bewerking. De editor-test gebruikt expliciete
 hostapparaatstubs; dat is geen fysieke toetsentest en geen API-test. V3 test
 ook de echte upload-state-machine, woordomloop, offline instellingen,
