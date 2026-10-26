@@ -1,0 +1,10 @@
++ set -euo pipefail
++ export LD_LIBRARY_PATH=/workspace/casio-tools/sh/usr/lib/x86_64-linux-gnu
++ LD_LIBRARY_PATH=/workspace/casio-tools/sh/usr/lib/x86_64-linux-gnu
++ cc=/workspace/casio-tools/sh/usr/bin/sh4-linux-gnu-gcc-14
++ sdk=/workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6
++ root=/workspace/Casio_ChatGPT
++ flags=(-mb -m4a-nofpu -mhitachi -fleading-underscore -fno-pic -fno-pie -ffreestanding -Os -Wall -Wno-misleading-indentation -Wno-unused-function)
++ /workspace/casio-tools/sh/usr/bin/sh4-linux-gnu-gcc-14 -mb -m4a-nofpu -mhitachi -fleading-underscore -fno-pic -fno-pie -ffreestanding -Os -Wall -Wno-misleading-indentation -Wno-unused-function -I/workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/include -c /workspace/Casio_ChatGPT/casio/main.c -o /workspace/casio-build/casio-main.o
++ /workspace/casio-tools/sh/usr/bin/sh4-linux-gnu-ld -T /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/toolchain/prizm.x -L/workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib /workspace/casio-build/casio-main.o -lc -lfxcg /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a -Map=/workspace/casio-build/ChatGPT.map -o /workspace/casio-build/ChatGPT.bin
++ /workspace/casio-tools/bin/mkg3a -n basic:ChatGPT -i uns:/workspace/Casio_ChatGPT/casio/unselected.bmp -i sel:/workspace/Casio_ChatGPT/casio/selected.bmp /workspace/casio-build/ChatGPT.bin /workspace/Casio_ChatGPT/dist/ChatGPT.g3a

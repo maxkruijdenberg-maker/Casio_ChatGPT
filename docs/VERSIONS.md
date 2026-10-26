@@ -122,3 +122,21 @@ rectangular light-blue border, no black shadow/rounding/gradient. See
 docs/V6-REFERENCES.md for the fx-CG50 menu screenshot used for comparison.
 Nine sanitized host test groups pass; SH4 binary built. Physical native-menu
 behavior and exact OS selection appearance remain unverified. Atom stays V3.
+
+## V7.0: return to OS instead of internally reopening
+
+Device feedback: V6 briefly restored the white frame, then rendered ChatGPT
+again. V6's main loop treated any DisplayMainMenu return as an add-in relaunch.
+Remove that loop and return from main to the OS caller, matching V1's exit
+structure. Keep per-launch resets and UART cleanup after the menu call.
+
+Lifecycle fixtures now call main three separate times. DisplayMainMenu returns
+immediately; tests assert no further app framebuffer transfer and a normal
+main return. Running these fixtures against V6 fails (editor re-entry without
+new OS launch); see docs/logs/v7-menu-regression.log. All nine sanitized test
+groups pass with V7; actual SH4 binary built. Device confirmation still needed.
+
+Selected icon is fully light blue, rather than blue outline on white. Shrink
+menu logo from 44px to 32px, keep it in the upper area and leave the bottom
+for OS-drawn app name at native font size. No bitmap label. Preserve DrawFrame
+and Atom V3 unchanged. See UPGRADE-V7.md.

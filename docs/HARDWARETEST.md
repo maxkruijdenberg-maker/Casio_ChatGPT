@@ -159,3 +159,16 @@ de OS-appwisselcallback en de fallback bij terugkeer ruimen op. De werkelijke
 OS-callbacktiming is hier niet uitgevoerd. Controleer behoud van de donkere
 schermrand en vergelijk het rechte lichtblauwe/witte geselecteerde pictogram
 met de standaardapps, inclusief naam/focus die het OS zelf tekent.
+
+## V7: menu laten staan, niet automatisch ChatGPT heropenen
+
+Controleer eerst versie 7.0. Test F3, vervolgens EXIT → Ja en laat F1 los.
+MENU moet blijven staan; open RUN-MAT. Herhaal met ChatGPT vijfmaal en test
+Nee en fysieke MENU. Deze keer keert main terug naar het OS en bevat geen
+interne sessielus. Test dat opnieuw openen geen oude afsluitvraag toont.
+
+Controleer dat het geselecteerde pictogram volledig lichtblauw is, de naam
+volledig onder het kleinere logo staat en dezelfde native lettergrootte heeft
+als andere apps. Controleer behoud van donkere schermranden en chats.
+De hosttests reproduceren de automatische herstart van V6 en slagen met V7;
+de echte OS-menu- en naamweergave zijn hier niet uitgevoerd.

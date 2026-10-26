@@ -1,0 +1,4 @@
+V7 regression test against V6 main.c: EXPECTED FAILURE.
+V6 re-enters the editor after DisplayMainMenu returns, without a new OS launch.
+Exit code: -6
+Editor exceeded key script

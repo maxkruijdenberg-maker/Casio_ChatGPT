@@ -1,4 +1,4 @@
-"""Rebuild V6 logo masks and 92x64 menu icons from the pinned SVG source."""
+"""Rebuild V7 logo masks and 92x64 menu icons from the pinned SVG source."""
 from pathlib import Path
 from io import BytesIO
 import sys
@@ -18,14 +18,12 @@ for size in (16,24,40):
 rows+=['#endif'];(root/'casio/logo.h').write_text('\n'.join(rows)+'\n')
 # No rasterized label: the OS draws its own single gray/black app name.
 black_svg=(root/'assets/openai.svg').read_bytes()
+# A native menu tile includes the app-name area at its bottom. Keep all logo
+# pixels above y=37, leaving y=40..63 for the OS label and its focus drawing.
+# Never rasterize a second name or try to choose its own text size.
 for name in ('unselected','selected'):
- im=Image.new('RGB',(92,64),'white')
- if name=='selected':
-  # Match the requested CG50 style: rectangular blue outline, white interior.
-  # Same 92x64 bitmap and logo placement as the unselected tile; no shadow,
-  # rounded corners, gradient or baked-in app name.
-  ImageDraw.Draw(im).rectangle((0,0,91,63),outline=(82,198,247),width=3)
- mark=Image.open(BytesIO(cairosvg.svg2png(bytestring=black_svg,output_width=176,output_height=176))).convert('RGBA').resize((44,44),Image.Resampling.LANCZOS)
- im.paste(mark,(24,4),mark)
+ im=Image.new('RGB',(92,64),(82,198,247) if name=='selected' else 'white')
+ mark=Image.open(BytesIO(cairosvg.svg2png(bytestring=black_svg,output_width=128,output_height=128))).convert('RGBA').resize((32,32),Image.Resampling.LANCZOS)
+ im.paste(mark,(30,4),mark)
  im.save(root/f'casio/{name}.bmp')
-print('V6 logo masks and label-free normal/selected menu tiles generated.')
+print('V7 menu tiles: full blue selection, white normal tile, 32px logo above native label area.')

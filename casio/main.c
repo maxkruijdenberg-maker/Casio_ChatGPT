@@ -123,7 +123,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V6",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V7",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -379,7 +379,7 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"6.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"7.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
@@ -390,7 +390,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V6.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V6 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
+  if(selected==5){message("Versie","Casio ChatGPT V7.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V7 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -483,8 +483,8 @@ static void ask(void){
   if(elapsed(start,150000)){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
-/* The native menu handler may return when this add-in is selected again. That
- * path must start a fresh session, not return through the old closing path. */
+/* Reset every launch, including warm OS launches which retain static RAM.
+ * Reopening is owned by the OS, not by an internal loop around this session. */
 static void beginSession(void){
  if(serialOpen)closeSerial();storageClose();
  oldSetup=GetSetupSetting(0x14);
@@ -530,8 +530,8 @@ static void nativeMainMenu(void){
  /* Call the native menu directly instead of injecting a translated key and
   * assuming GetKey consumed it as a request to leave this add-in. Explicitly
   * enable main-function return, which can be disabled in the inherited OS state.
-  * cleanup is also the OS quit handler; the call after return is an idempotent
-  * fallback when the same add-in is resumed without an app-switch callback. */
+  * The call can return after drawing MENU: that is not evidence of re-entry.
+  * After cleanup, main must return to the OS without drawing another app frame. */
  Bkey_ClrAllFlags();EnableGetkeyToMainFunctionReturn();
  EnableStatusArea(0);DrawFrame(0xffff);
  DisplayMainMenu();
@@ -539,10 +539,9 @@ static void nativeMainMenu(void){
 }
 
 int main(void){
- for(;;){
-  beginSession();runSession();endSession();
-  nativeMainMenu();
-  /* Re-selecting this add-in resumes here; beginSession clears old quit/key
-   * state and reapplies the full display mode before anything is drawn. */
- }
+ beginSession();runSession();endSession();
+ nativeMainMenu();
+ /* Match V1's return to the OS. Do not restart the app when DisplayMainMenu
+  * returns; only a new OS launch may call beginSession again. */
+ return 0;
 }

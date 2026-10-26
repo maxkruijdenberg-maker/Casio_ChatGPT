@@ -1,6 +1,5 @@
 /* Host-only device stubs exercise the real editor, not OpenAI functionality. */
 #include <stdlib.h>
-#include <setjmp.h>
 #define main casio_program_main
 #include "../casio/main.c"
 #undef main
@@ -13,7 +12,7 @@ static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
 static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
 static int menuVisible=0,menuReturnEnabled=0,serialCloses=0;
-static jmp_buf lifecycleDone;
+static int copiesAtMenu=0;
 static void (*quitCallback)(void);
 static void menuReturned(void);
 typedef struct {unsigned char*data;size_t size,pos;} TestFile;
@@ -126,32 +125,44 @@ static const int lifeThree[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,69,69,0,48,48,0,
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
  assert(statusMode==0&&lcdFrame==0xffff);
- /* Only now is MENU visible. One return omits the OS callback to exercise
-  * the post-menu cleanup fallback as well as actual app-switch callbacks. */
- menuVisible=1;if(nativeMenus!=1&&quitCallback)quitCallback();nativeMenus++;
- if(nativeMenus==2)assert(!strcmp(prompt,"H"));
- if(nativeMenus==3)longjmp(lifecycleDone,1);
- /* Emulate native menus changing both the VRAM pointer and the DMA window. */
- deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
- for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
- lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
- if(nativeMenus==1){keys=lifeTwo;keyCount=sizeof(lifeTwo)/sizeof(lifeTwo[0]);}
- else {keys=lifeThree;keyCount=sizeof(lifeThree)/sizeof(lifeThree[0]);}keyAt=0;
+ /* Model DisplayMainMenu returning immediately after drawing, without a new
+  * add-in launch. V6's old outer loop must fail this model, not pass by
+  * interpreting every return as the user opening the app again. */
+ menuVisible=1;copiesAtMenu=fullCopies;
+ if(nativeMenus==1&&quitCallback)quitCallback();
+ nativeMenus++;
 }
 static void testLifecycle(void){
  lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
- applyView(view_default());
- cleanup(); /* End the preceding independent editor fixtures first. */
+ applyView(view_default());cleanup();
  int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses;
- lifecycleTesting=1;nativeMenus=0;initKeys=0;menuReturnEnabled=0;menuVisible=0;
- SCRIPT(lifeOne);quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
- if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main returned after showing the native menu");}
- assert(nativeMenus==3&&initKeys==3&&keysCleared>=6&&requestCount[W_ASK]==paid);
+ lifecycleTesting=1;nativeMenus=0;initKeys=0;
+ const int *sessions[]={lifeOne,lifeTwo,lifeThree};
+ const size_t counts[]={sizeof(lifeOne)/sizeof(lifeOne[0]),sizeof(lifeTwo)/sizeof(lifeTwo[0]),sizeof(lifeThree)/sizeof(lifeThree[0])};
+ for(int session=0;session<3;session++){
+  /* Three separate OS launches, including old quit/key/cache state and a
+   * changed VRAM pointer and cropped DMA window left by the native menu. */
+  deviceFramebuffer=session%2?otherFramebuffer:framebuffer;
+  for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
+  lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
+  menuReturnEnabled=0;menuVisible=0;
+  script(sessions[session],counts[session]);
+  quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;
+  strcpy(field,"discard this stale value");
+  assert(casio_program_main()==0);
+  /* Return must hand control to the OS, never repaint the ChatGPT canvas. */
+  assert(nativeMenus==session+1&&menuVisible&&fullCopies==copiesAtMenu);
+  assert(statusMode==0&&lcdFrame==0xffff&&!serialOpen&&field[0]==0);
+  assert(storageReadHandle<0&&storageWriteHandle<0&&keyAt==keyCount);
+  if(session==1)assert(!strcmp(prompt,"H"));
+ }
+ assert(initKeys==3&&keysCleared>=6&&requestCount[W_ASK]==paid);
  assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
- assert(statusMode==0&&field[0]==0);applyView(view_default());
+ applyView(view_default());
 }
+
 int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={78,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
@@ -221,6 +232,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three controller close/reopen cycles using direct native MENU with UART kept open until menu entry, quit-callback and return cleanup, held keys, changed display state and a separate LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three separate OS launches: immediate native-menu return without app repaint, deferred UART cleanup with/without OS callback, held keys, stale session state, changed display state and a separate LCD frame.");
  return 0;
 }
