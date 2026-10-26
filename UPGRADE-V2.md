@@ -1,3 +1,5 @@
+> Nieuwste versie: [V5 installeren](UPGRADE-V5.md).
+
 # Van V1 naar ChatGPT V2 — Windows
 
 Voor de huidige Casio V4-update: zie **UPGRADE-V4.md**.

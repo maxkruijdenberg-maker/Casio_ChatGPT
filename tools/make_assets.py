@@ -1,4 +1,4 @@
-"""Rebuild V3 logo masks and 92x64 menu icons from the pinned SVG source."""
+"""Rebuild V5 logo masks and 92x64 menu icons from the pinned SVG source."""
 from pathlib import Path
 from io import BytesIO
 import sys
@@ -20,7 +20,18 @@ rows+=['#endif'];(root/'casio/logo.h').write_text('\n'.join(rows)+'\n')
 black_svg=(root/'assets/openai.svg').read_bytes()
 for name in ('unselected','selected'):
  im=Image.new('RGB',(92,64),'white')
+ if name=='selected':
+  # Supply the entire selected tile. The OS only supplies the app name and
+  # focus around that name; it does not decorate a plain white bitmap for us.
+  # Classic Casio-style neutral raised tile, with a full perimeter and shadow.
+  d=ImageDraw.Draw(im)
+  d.rounded_rectangle((0,0,91,63),radius=5,fill=(112,112,112))
+  d.rounded_rectangle((0,0,90,61),radius=5,fill=(48,48,48))
+  d.rounded_rectangle((1,1,89,60),radius=4,fill=(255,255,255))
+  for y in range(3,59):
+   shade=255-round(33*min(y,34)/34)
+   d.line((3,y,87,y),fill=(shade,shade,shade))
  mark=Image.open(BytesIO(cairosvg.svg2png(bytestring=black_svg,output_width=176,output_height=176))).convert('RGBA').resize((44,44),Image.Resampling.LANCZOS)
  im.paste(mark,(24,4),mark)
  im.save(root/f'casio/{name}.bmp')
-print('V3 logo masks and white, label-free menu icons generated.')
+print('V5 logo masks and label-free normal/selected menu tiles generated.')

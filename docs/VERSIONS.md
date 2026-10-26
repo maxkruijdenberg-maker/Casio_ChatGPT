@@ -90,3 +90,19 @@ use D0A.dat/D0B.dat in CGPT3; chat records are unchanged. The viewport geometry,
 preference storage and full app lifecycle are covered by sanitized host tests,
 including an LCD model and changed VRAM pointers. Physical OS/LCD confirmation
 is still required. See UPGRADE-V4.md and docs/logs/tests.log.
+
+## V5.0 Casio-only fixes after device feedback
+
+V4 closed UART but did not leave the add-in on the user's calculator. Replace
+the matrix-level GetKeyWait_OS handoff with the full GetKey dispatcher for
+the translated MENU queue. Keep the explicit session reset on resume. Host
+stubs now reject the old handoff rather than assuming every poll opens MENU.
+
+DrawFrame(C_BG) fills the OS-managed outer frame separately from VRAM; cleanup
+restores white. This covers the border that viewport zoom cannot reach.
+The selected menu bitmap now supplies a complete raised neutral tile; neither
+bitmap contains baked-in label text. The OS controls its text/focus colors.
+
+Atom source/binaries remain identical to v3.0.0. Nine sanitized test groups
+pass and the SH4 add-in is built. Native menu behavior, border rendering and
+selection style require physical confirmation. See UPGRADE-V5.md.

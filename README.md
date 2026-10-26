@@ -1,13 +1,13 @@
-# ChatGPT V4.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V5.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V4.md](UPGRADE-V4.md).**
+**Al V3/V4 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V5.md](UPGRADE-V5.md).**
 
 Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
 
-V4 repareert opnieuw openen na afsluiten en initialiseert de volledige
-schermoverdracht opnieuw. Via Instellingen → Scherm stel je nu zelf schaal
-en positie in. Het witte pictogram en de lokale chatgeschiedenis blijven.
-Bekijk [de echte V4-interface in hosttests](docs/design/V4-actual-screens.png).
+V5 verandert de native menuoverdracht na EXIT → Ja, kleurt ook de aparte
+Casio-schermrand en voegt een volledig geselecteerd pictogramblok toe.
+Schaal/positie en lokale chatgeschiedenis blijven behouden.
+Bekijk [de V5-interface in hosttests](docs/design/V5-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -15,11 +15,14 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V4:** de Casio-add-in is opnieuw in Linux gebouwd. De meegeleverde
+**Status V5:** de Casio-add-in is opnieuw in Linux gebouwd. De meegeleverde
 Atom-firmware is ongewijzigd V3. Negen softwaretestgroepen slagen, waaronder
-sluiten/heropenen met gewijzigde native schermtoestand en een gesimuleerd LCD.
-V4 is nog niet fysiek op een Casio getest. Windows-hulpmiddelen zijn hier niet
-op Windows uitgevoerd. Zie UPGRADE-V4.md voor de korte installatie- en teststappen.
+de controllerroute voor sluiten/heropenen, de volledige framebuffer en een
+apart gemodelleerde schermrand. V4 bleef volgens de hardwaremelding van de
+gebruiker hangen na afsluiten; de oude teststub stelde de OS-menuoverdracht te
+ruim voor. V5 gebruikt GetKey in plaats van GetKeyWait_OS voor de geïnjecteerde
+MENU-toets. De nieuwe route, schermrand en selectie moeten nog op een fysieke
+Casio worden bevestigd. Zie UPGRADE-V5.md.
 
 ## Windows: installeren
 

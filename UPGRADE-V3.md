@@ -1,3 +1,5 @@
+> Nieuwste versie: [V5 installeren](UPGRADE-V5.md).
+
 # ChatGPT V3 — pictogram, volledig scherm en lokale chatgeschiedenis
 
 Voor de huidige Casio V4-update: zie **UPGRADE-V4.md**.

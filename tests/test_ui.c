@@ -9,6 +9,7 @@
 static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216];
 static unsigned short *deviceFramebuffer=framebuffer;
 static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initKeys=0;
+static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
 static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
 static jmp_buf lifecycleDone;
@@ -53,13 +54,22 @@ void Bdisp_PutDisp_DD(void){
  for(int y=dma[2];y<=dma[3];y++)memcpy(lcd+y*384+dma[0],deviceFramebuffer+y*384+dma[0],(dma[1]-dma[0]+1)*sizeof(unsigned short));fullCopies++;
  assert(!memcmp(lcd,deviceFramebuffer,sizeof(lcd)));
 }
+void DrawFrame(int color){lcdFrame=(unsigned short)color;}
 void Bdisp_EnableColor(int n){colorMode=n;}
 void Bkey_ClrAllFlags(void){keysCleared++;}
 int Keyboard_PutKeycode(int x,int y,int code){assert(x==-1&&y==-1&&!nativeQueued);nativeQueued=code;return 0;}
-int GetKey(int*key){assert(nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;return 0;}
+int GetKey(int*key){
+ assert(nativeQueued==KEY_CTRL_EXIT||nativeQueued==KEY_CTRL_MENU);
+ int queued=nativeQueued;nativeQueued=0;
+ if(queued==KEY_CTRL_MENU){menuReturned();*key=KEY_CTRL_EXE;}
+ else {*key=queued;initKeys++;}
+ return 0;
+}
+/* Matrix-only polling does NOT consume the translated native key queue. This
+ * deliberately catches the V4 handoff even though it passed the older stub. */
 int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code){
- assert(mode==KEYWAIT_HALTOFF_TIMEROFF&&timeout==0&&menu==0&&nativeQueued==KEY_CTRL_MENU);
- nativeQueued=0;*c=*r=0;*code=0;menuReturned();return 0;
+ (void)c;(void)r;(void)mode;(void)timeout;(void)menu;(void)code;
+ assert(!"matrix polling cannot dispatch a queued MENU event");return 0;
 }
 int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}return keys[keyAt++];}
 int RTC_GetTicks(void){return timeTicks;}
@@ -112,17 +122,20 @@ static const int lifeTwo[]={31,31,0,0,0,78,0,65,0,48,48,0,0,0};
 static const int lifeThree[]={31,31,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==0&&storageReadHandle<0&&storageWriteHandle<0);
- assert(statusMode==0);if(quitCallback)quitCallback();nativeMenus++;
+ assert(statusMode==0&&lcdFrame==0xffff);if(quitCallback)quitCallback();nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
  if(nativeMenus==3)longjmp(lifecycleDone,1);
  /* Emulate native menus changing both the VRAM pointer and the DMA window. */
  deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
  for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
- dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
+ lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
  if(nativeMenus==1){keys=lifeTwo;keyCount=sizeof(lifeTwo)/sizeof(lifeTwo[0]);}
  else {keys=lifeThree;keyCount=sizeof(lifeThree)/sizeof(lifeThree[0]);}keyAt=0;
 }
 static void testLifecycle(void){
+ lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
+ applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
+ applyView(view_default());
  int paid=requestCount[W_ASK];lifecycleTesting=1;nativeMenus=0;initKeys=0;
  SCRIPT(lifeOne);quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
  if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main returned after showing the native menu");}
@@ -199,6 +212,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three real controller close/reopen cycles with held keys and changed native display state.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three controller close/reopen cycles using the full native key dispatcher, held keys, changed display state and a separate LCD frame.");
  return 0;
 }

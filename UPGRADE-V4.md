@@ -1,3 +1,5 @@
+> Nieuwste versie: [V5 installeren](UPGRADE-V5.md).
+
 # V4 — opnieuw openen en schermweergave herstellen
 
 V4 repareert de sluit/heropen-route van de Casio-app en de schermverversing.

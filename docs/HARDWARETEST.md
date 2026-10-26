@@ -135,3 +135,16 @@ standaard. Controleer behoud na heropenen en controleer dat gewone Casio-apps
 hun normale weergave houden. De nieuwe displaybestanden zijn alleen D0A.dat
 en D0B.dat; C-bestanden met chats mogen niet verdwijnen of wijzigen door
 alleen scherminstellingen aan te passen. V4 is hier niet fysiek getest.
+
+## V5: menuoverdracht en aparte schermrand
+
+Voer UPGRADE-V5.md uit. EXIT → Ja moet een interactief Casio-menu tonen;
+controleer dit door RUN-MAT te openen. Herhaal vijfmaal met opnieuw openen
+en een F3 Atom-diagnose. Controleer ook EXIT → Nee en MENU. Alleen UART
+sluiten zonder menuoverdracht is een fout (zoals gemeld voor V4).
+
+Controleer bij 100%/0/0 de fysieke zij- en onderrand: die wordt apart via
+DrawFrame ingekleurd. Controleer herstel naar wit in standaardapps. Loop
+naar en van ChatGPT in MENU; de geselecteerde bitmap moet het hele blok
+markeren, met één appnaam. De OS-tekst/focuskleur blijft systeemgedrag.
+Deze hardwarecontroles zijn hier nog niet uitgevoerd.
