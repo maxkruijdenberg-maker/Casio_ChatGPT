@@ -1,11 +1,11 @@
-# ChatGPT V2.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V3.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V1 geïnstalleerd? Begin bij [UPGRADE-V2.md](UPGRADE-V2.md).**
+**Al V1 of V2 geïnstalleerd? Begin bij [UPGRADE-V3.md](UPGRADE-V3.md).**
 
-V2 bevat de donkere ChatGPT-interface, het knooplogo in de app en het menu,
-een beter instellingenmenu en verbeteringen aan geheugenbeheer, uploads en
-foutafhandeling. Bekijk [beelden uit de echte UI-code](docs/design/V2-actual-screens.png)
-(hostrendering op 384×216, geen foto's van fysieke hardware).
+V3 voegt een wit menupictogram met zwart logo, correctie van dubbele naamtekst,
+volledige schermverversing en een zijbalk met lokaal opgeslagen gesprekken toe.
+Bekijk [beelden uit de echte V3-interface](docs/design/V3-actual-screens.png).
+De app opent direct ChatGPT; deze versie bevat geen extra startmenu of andere apps.
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -13,10 +13,10 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V2:** beide programma's zijn in Linux gecompileerd. De gedeelde transport-
+**Status V3:** beide programma's zijn in Linux gecompileerd. De gedeelde transport-
 en tekstfuncties, aanvraagregistratie en echte editorcode zijn softwarematig
 getest. V1-UART is door de gebruiker op eigen hardware bevestigd. De wijzigingen in
-V2 zijn nog niet op een Casio/Atom of met een echte API-sleutel getest.
+V3 zijn nog niet op een Casio/Atom of met een echte API-sleutel getest.
 De Windows-hulpmiddelen zijn geschreven en statisch gecontroleerd, niet op
 Windows uitgevoerd. Deze oplevering is een fysiek te valideren breadboardversie.
 
@@ -29,7 +29,7 @@ Windows uitgevoerd. Deze oplevering is een fysiek te valideren breadboardversie.
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 5. Installeer in Boardbeheer **esp32 by Espressif Systems 3.3.0**.
 6. Installeer in Bibliotheekbeheer **ArduinoJson by Benoit Blanchon 7.4.2**.
-7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V2 bevat extra
+7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V3 bevat extra
    gedeelde headers; alleen het `.ino`-bestand overnemen is niet voldoende.
 8. Selecteer board **M5Atom** (originele ESP32, geen M5AtomS3), de bijbehorende
    COM-poort en uploadsnelheid 115200. Compileer en upload. De firmware gebruikt
@@ -105,16 +105,25 @@ API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
-V2 toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
+V3 toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
 toont Instellingen alleen of een waarde is ingesteld. De sleutel en het
 hotspotwachtwoord worden afgeschermd ingevoerd en niet teruggelezen. Kies de
-instelling opnieuw om deze te vervangen. Een leeg opgeslagen veld wist die
-waarde. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
+instelling opnieuw om deze te vervangen. Een leeg opgeslagen hotspot-, wachtwoord- of sleutelveld wist die
+waarde. Een modelnaam mag niet leeg zijn. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
 De enige taalkeuze in deze versie is Nederlands. Bij een onbereikbare Atom
 verschijnt geen foutpopup vóór het instellingenmenu: de waarden staan als
 Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
 niet-opgeslagen wijziging weg. MENU sluit ook het geheime invoerveld.
+
+## Lokale chatgeschiedenis in V3
+
+Open de zijbalk met **OPTN**, of bij een antwoord met **F4 Chats**. Acht
+lokale gesprekken met elk maximaal acht complete vraag/antwoordparen worden
+in Casio-opslag bewaard. F5/F6 bladeren door eerdere paren; SHIFT toont de
+volledige vraag. Je kunt oude chats offline lezen en later vervolgen met
+begrensde context. Zie UPGRADE-V3.md voor limieten, backups en herstel.
+V2- en ChatGPT-websitegesprekken worden niet geïmporteerd.
 
 ## Limieten en opslag
 
@@ -124,10 +133,12 @@ niet-opgeslagen wijziging weg. MENU sluit ook het geheime invoerveld.
 - Maximaal 1200 completion-tokens per vraag. Het model wordt om beknopte platte
   Nederlandse tekst gevraagd. Overschrijding van de antwoordbuffer geeft een
   fout; tokenafbreking wordt zichtbaar gemeld.
-- Context: maximaal twee eerdere vraag/antwoordparen en gezamenlijk maximaal
+- API-context: maximaal twee eerdere vraag/antwoordparen en gezamenlijk maximaal
   12288 UTF-8-bytes. Het oudste paar wordt zo nodig gewist. Het antwoordscherm
   meldt dat oude context is verwijderd. Reset, instellingen wijzigen of
-  'Nieuw gesprek' verwijdert de context; de instellingen blijven bewaard.
+  'Nieuw gesprek' verwijdert de Atom-context; de instellingen blijven bewaard.
+  V3 bewaart daarnaast afzonderlijke lokale chatbestanden en herstelt de
+  recente context wanneer je een opgeslagen gesprek vervolgt.
 - Het bitmaplettertype bevat ASCII en de expliciete tekens in `casio/font.h`:
   Nederlandse accenten, enkele andere Latijnse letters, Griekse letters en
   veelgebruikte wiskundige tekens. Dit is **niet de volledige Casio-tekentabel**.
@@ -192,12 +203,12 @@ en UndefinedBehaviorSanitizer. Resultaten staan in `docs/logs/tests.log`.
 Transport en UTF-8: 19748 asserts; aanvraagregistratie: 10000 cycli met herhaling,
 reset en opslagfalen; editor: SHIFT-lock, hoofdletters, exacte sleutelletterkast,
 maskering, cijferstand en UTF-8-bewerking. De editor-test gebruikt expliciete
-hostapparaatstubs; dat is geen fysieke toetsentest en geen API-test. V2 test
+hostapparaatstubs; dat is geen fysieke toetsentest en geen API-test. V3 test
 ook de echte upload-state-machine, woordomloop, offline instellingen,
 teruglezen van het bestaande model en de gedeelde OpenAI-responseparser
 (inclusief weigering, limieten, afbreking en ingebedde NUL).
 
-De twee bouwlogs en het Casio-linkoverzicht staan in `docs/logs`. De
+De bouwlogs en het Casio-linkoverzicht staan in `docs/logs`. De
 Arduino-build gebruikt lokaal geïnstalleerde officiële packages omdat de
 CLI in deze cloudomgeving zijn netwerkindexen niet kon ophalen. De zichtbare
 index/discovery-waarschuwingen hebben de succesvolle build niet verhinderd.

@@ -57,3 +57,22 @@ The C++ host API tests use the same ArduinoJson 7.4.2 headers as the firmware.
 GCC emits a may-be-uninitialized warning for an upstream ArduinoJson iterator
 in the sanitized host build; tests finish successfully without sanitizer
 errors. The ESP32 target build also completes successfully.
+
+## V3.0 changes
+
+Toolchain versions and the original Atom pinout remain unchanged. Both programs
+report 3.0. Wire framing is still v1; W_CONTEXT and upload targets 5/6 restore
+recent local history without starting HTTP or consuming a paid request ID.
+The tested ChatContext template is shared by firmware and host tests.
+
+Casio persistence uses the existing SDK Bfile syscalls and a streamed dual-bank
+CRC32 format; a complete conversation is never buffered in application RAM.
+Only ChatGPT chats are included. The native OS renders menu names; the two
+92x64 icon bitmaps now have a white background, black logo and no baked-in text.
+Display refresh explicitly covers rows 0..215 with status-area mode 3.
+These OS/device behaviors still require physical validation.
+
+W_DEVICE also reports a non-secret boot identifier. The add-in checks it
+before sending a new question and reloads recent stored context if the Atom
+has restarted. The host UI tests cover both unchanged and changed boot IDs.
+The eight-group test run is recorded in docs/logs/tests.log.

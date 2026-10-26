@@ -20,7 +20,7 @@ API-sleutel of hotspotwachtwoord in foto's, screenshots of logbestanden.
 3. **Atom flashen.** TX/RX los. Upload de firmware voor M5Atom. Geen S3/C6.
    Upload moet zonder fout voltooien. Sluit Serial Monitor, sluit TX/RX aan.
 4. **Casio installeren.** Kopieer ChatGPT.g3a via USB-opslag naar de hoofdmap;
-   veilig uitwerpen, USB los. MENU moet ChatGPT met het eigen GPT-spraakballon-
+   veilig uitwerpen, USB los. MENU moet ChatGPT met het eigen ChatGPT-knooplogo-
    icoon tonen. Openen moet een invoerscherm geven zonder crash.
 5. **UART beide richtingen.** F3: geldige v1-reactie bij 9600 8N1 zonder
    inversie. Herhaal vijf keer. Er mogen normaal geen CRC-fouten of retries
@@ -75,7 +75,7 @@ XIAO ESP32-C6 vereist een aparte firmwareport en hardwarevalidatie.
 ## Aanvullingen voor V2
 
 - Voer eerst UPGRADE-V2.md uit. Controleer bij Instellingen → Versie dat zowel
-  app als Atom versie 2.0 aangeven. Protocol v1 bij F3 is nog steeds correct.
+  app als Atom dezelfde actuele versie aangeven (V3: 3.0). Protocol v1 bij F3 is nog steeds correct.
 - Controleer leesbaarheid van de donkere interface op je echte scherm en
   de normale/geselecteerde menu-iconen. De voorbeeldafbeeldingen zijn alleen
   hostrendering. Alleen het eigen app-icoon verandert, niet het systeemmenu.
@@ -93,3 +93,31 @@ XIAO ESP32-C6 vereist een aparte firmwareport en hardwarevalidatie.
   te controleren. Deze duurtest is hier nog niet op de Atom uitgevoerd.
 - Controleer na firmware-update dat bestaande instellingen behouden zijn.
   De NVS-indeling is gelijk gebleven, maar behoud is hier niet fysiek getest.
+
+## V3: scherm, menunaam en lokale geschiedenis
+
+1. Voer UPGRADE-V3.md uit en controleer app 3.0 / Atom 3.0. Controleer dat het
+   menu één ChatGPT-naam toont: normaal grijs, geselecteerd zwart. Het logo is
+   zwart op wit; de app zelf tekent geen tweede naam in de bitmap.
+2. Open F6 Instellingen → F4 Scherm. De rand moet rondom zichtbaar zijn met
+   TL/TR/BL/BR, zonder witte OS-balk die een deel bedekt. EXIT keert terug.
+3. Verstuur één korte vraag. Deze moet automatisch lokaal worden opgeslagen.
+   Sluit de app af met MENU, open opnieuw en kies OPTN → opgeslagen gesprek.
+4. Ontkoppel de Atom-signaalverbinding alleen met beide apparaten uit, volgens
+   de eerdere hardwareafspraken. Controleer daarna teruglezen op Casio-batterijen
+   zonder Atom: historie lezen vereist geen netwerk of UART. Herstel de
+   gecontroleerde opstelling voordat je opnieuw een vraag verstuurt.
+5. Stel een vervolgvraag in een heropend gesprek. Controleer of recente context
+   terugkomt. Het herstellen van context op zichzelf mag geen tweede API-vraag
+   starten. De volgende bewust verzonden vraag kan wel worden gefactureerd.
+6. Maak twee chats. Test wisselen, F5/F6 eerdere/volgende berichten, SHIFT voor
+   de volledige vraag, scrollen, en dat een ingetypte maar nog niet verstuurde
+   vraag niet zonder bevestiging verdwijnt bij het wisselen.
+7. Sluit de app af en maak een backup van de CGPT3-map via Casio-USB-opslag.
+   Controleer opnieuw openen nadat alleen het .g3a-bestand vervangen is.
+8. Wis bewust een proefgesprek met F2 in de zijbalk. Controleer dat andere
+   gesprekken blijven bestaan. Op volle opslag moet er een melding komen;
+   opnieuw proberen met Bewaar mag alleen lokaal opslaan, zonder nieuwe POST.
+9. De hosttests simuleren onderbroken schrijfacties en corrupte banken. Doe
+   geen ongecontroleerde stroomonderbreking als vervanging voor een backup.
+   Werkelijke flashfouten en OS-opslaggedrag zijn hier nog niet getest.

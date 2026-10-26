@@ -1,5 +1,7 @@
 # Van V1 naar ChatGPT V2 — Windows
 
+Historische V2-handleiding. Voor de huidige V3: zie **UPGRADE-V3.md**.
+
 Werk **zowel de Atom als ChatGPT.g3a** bij. Alleen de afbeelding of de Casio-app
 vervangen geeft niet alle verbeteringen. De Atom houdt dezelfde NVS-naam,
 instellingssleutels en partitietabel: een gewone upload hoort bestaande

@@ -8,6 +8,8 @@
 #include <fxcg/serial.h>
 #include <fxcg/rtc.h>
 #include <fxcg/system.h>
+#include "storage_device.h"
+#include "library.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -28,6 +30,16 @@ static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
 static uint8_t seq=0;
 static WParser parser;
+static LibraryEntry savedChats[STORE_SLOTS];
+static int libraryReady=0,activeChatSlot=-1,contextDirty=1,viewTurn=0,unsavedReply=0;
+enum {UI_CHATS=2000};
+static int chatSidebar(void);
+static int saveReply(void);
+static int restoreChat(void);
+static void newLocalChat(void);
+static int canLeaveReply(void);
+static int loadChatPair(int slot,int turn);
+
 static unsigned short *vram;
 static const char *const errNames[]={
  "Geen fout","Vul eerst Instellingen in","Wifi niet verbonden: controleer hotspot",
@@ -46,7 +58,7 @@ static void closeSerial(void){
  if(serialOpen){Serial_ClearTX();Serial_Close(1);serialOpen=0;}
  SetSetupSetting(0x14,oldSetup);
 }
-static void cleanup(void){closeSerial();erase(field,sizeof(field));}
+static void cleanup(void){closeSerial();storageClose();EnableStatusArea(0);erase(field,sizeof(field));}
 static int keyEvent(void){
  int k=PRGM_GetKey(),now=RTC_GetTicks();
  if(k==KEY_PRGM_MENU){quitting=1;return k;}
@@ -95,7 +107,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  rect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V2",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V3",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -103,7 +115,7 @@ static void clear(const char *title){
   printAt(316,7,status,C_MUTED);
  }
 }
-static void show(void){Bdisp_PutDisp_DD();}
+static void show(void){EnableStatusArea(3);Bdisp_PutDisp_DD_stripe(0,215);}
 static void footer(const char *a,const char*b,const char*c,const char*d,const char*e,const char*f){
  const char *p[6];int i;p[0]=a;p[1]=b;p[2]=c;p[3]=d;p[4]=e;p[5]=f;
  rect(0,192,384,24,C_PANEL);rect(0,192,384,1,C_LINE);
@@ -158,11 +170,18 @@ static void message(const char *title,const char *body){
 static int confirm(const char *question){clear("Bevestigen");textPage(question,0,0);footer("Ja","Nee","","","","");show();
  while(!quitting){int k=waitKey();if(k==KEY_PRGM_F1)return 1;if(k==KEY_PRGM_F2||k==KEY_PRGM_EXIT)return 0;}return 0;
 }
+static int ensureSerial(void){
+ unsigned char mode[6]={0,5,0,0,0,0};
+ storageClose();if(serialOpen)return 1;
+ if(Serial_IsOpen()==1||Serial_Open(mode)!=0)return 0;
+ serialOpen=1;Serial_ClearRX();Serial_ClearTX();memset(&parser,0,sizeof(parser));return 1;
+}
 /* RPC status: 1 success, 0 device error (reply data[0]), -1 timeout,
  * -2 user cancelled/menu. Identical encoded bytes are retried at most 4 times. */
 static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  WFrame req;uint8_t bytes[WIRE_ENCODED];size_t n;int attempt,start,k;
  if(len>WIRE_MAX)return -1;
+ if(!ensureSerial()){linkKnown=1;linkOnline=0;return -1;}
  req.type=(uint8_t)type;req.seq=++seq;req.len=(uint8_t)len;if(len)memcpy(req.data,data,len);
  n=w_encode(&req,bytes);
  for(attempt=0;attempt<4&&!quitting;attempt++){
@@ -180,20 +199,23 @@ static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancell
   memset(&parser,0,sizeof(parser));
  }if(!quitting){linkKnown=1;linkOnline=0;}return quitting?-2:-1;
 }
-static int checkedRpc(int type,const uint8_t *data,size_t len,WFrame *reply){
- int ok=rpc(type,data,len,reply,0);
- if(ok==1)return 1;if(quitting)return 0;
+static int checkedRpcEx(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
+ int ok=rpc(type,data,len,reply,cancellable);
+ if(ok==1)return 1;if(quitting||ok==-2)return 0;
  if(ok==0){uint8_t e=reply->data[0];message("Atom meldt",e<sizeof(errNames)/sizeof(errNames[0])?errNames[e]:"Onbekende fout");}
  else message("Geen verbinding","Atom niet bereikbaar. Controleer USB-voeding, TX/RX, GND en UART-instellingen. Er is niets automatisch opnieuw bij de API aangevraagd.");
  return 0;
 }
+static int checkedRpc(int type,const uint8_t *data,size_t len,WFrame *reply){return checkedRpcEx(type,data,len,reply,0);}
 static int uploadText(int target,const char *s){
  size_t len=strlen(s),pos=0,n;uint8_t b[WIRE_MAX];WFrame r;
  b[0]=(uint8_t)target;w_put16(b+1,(uint16_t)len);
- if(!checkedRpc(W_BEGIN,b,3,&r))return 0;
- while(pos<len&&!quitting){n=len-pos;if(n>WIRE_MAX-2)n=WIRE_MAX-2;w_put16(b,(uint16_t)pos);memcpy(b+2,s+pos,n);
-  if(!checkedRpc(W_APPEND,b,n+2,&r))return 0;pos+=n;
- }return checkedRpc(W_APPLY,0,0,&r);
+ if(!checkedRpcEx(W_BEGIN,b,3,&r,target>=5))return 0;
+ while(pos<len&&!quitting){
+  if(target>=5&&pos%512<22){char info[64];clear("Gesprek herstellen");sprintf(info,"Context: %u / %u bytes",(unsigned)pos,(unsigned)len);printAt(12,82,info,C_TEXT);printAt(12,112,"EXIT: annuleren · nog geen API-vraag",C_MUTED);show();}
+  n=len-pos;if(n>WIRE_MAX-2)n=WIRE_MAX-2;w_put16(b,(uint16_t)pos);memcpy(b+2,s+pos,n);
+  if(!checkedRpcEx(W_APPEND,b,n+2,&r,target>=5))return 0;pos+=n;
+ }return checkedRpcEx(W_APPLY,0,0,&r,target>=5);
 }
 /* All printable ASCII plus a named Unicode repertoire. API keys use ASCII only. */
 static uint32_t pickCharacter(int asciiOnly){
@@ -224,19 +246,20 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   sprintf(label,"%s %s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"SHIFT-lock":"SHIFT: letters");printAt(12,35,label,C_MUTED);
   sprintf(label,"%u/%u bytes",(unsigned)strlen(buf),(unsigned)(cap-1));printAt(240,35,label,C_MUTED);
   rounded(6,50,368,120,C_LINE);rounded(7,51,366,118,C_PANEL);
-  if(promptMode&&!buf[0]){
+  if(promptMode==1&&!buf[0]){
    drawLogo(172,62,40,C_TEXT);printAt(104,109,"Waar wil je hulp bij?",C_TEXT);
    printAt(76,135,"Typ een vraag. F1 verstuurt.",C_MUTED);
   }else textPage(buf,first,secret);
-  {int x=12+col*8,y=52+(row-first)*14+13;if((!promptMode||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
-  if(promptMode)footer("Stuur","Nieuw","Test","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
-  printAt(8,175,"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();k=waitKey();
+  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
+  if(promptMode==1)footer("Stuur","Nieuw","Test","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
+  printAt(8,175,promptMode==1?"OPTN: chats · EXIT: terug":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();k=waitKey();
   if(quitting)return KEY_PRGM_MENU;
   if(k==KEY_PRGM_SHIFT){letters=!letters;continue;}
   if(k==KEY_PRGM_ALPHA||k==KEY_PRGM_F5){upper=!upper;continue;}
+  if(promptMode==1&&k==KEY_PRGM_OPTN)return UI_CHATS;
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return KEY_PRGM_F1;
   if(k==KEY_PRGM_EXIT)return k;
-  if(promptMode&&(k==KEY_PRGM_F2||k==KEY_PRGM_F3||k==KEY_PRGM_F6))return k;
+  if(promptMode==1&&(k==KEY_PRGM_F2||k==KEY_PRGM_F3||k==KEY_PRGM_F6))return k;
   if(k==KEY_PRGM_LEFT){cursor=u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_RIGHT){if(cursor<strlen(buf))cursor=u_next(buf,cursor);continue;}
   if(k==44){u_delete(buf,&cursor);if(!buf[0])firstLetter=autoCapital;continue;}
@@ -279,6 +302,12 @@ static int refreshSettings(uint8_t flags[4]){
  }
  return linkOnline;
 }
+static void screenTest(void){
+ int k;rect(0,0,384,216,C_BG);rect(0,0,384,2,C_MINT);rect(0,214,384,2,C_MINT);rect(0,0,2,216,C_MINT);rect(382,0,2,216,C_MINT);
+ printAt(5,4,"TL",C_TEXT);printAt(361,4,"TR",C_TEXT);printAt(5,198,"BL",C_TEXT);printAt(361,198,"BR",C_TEXT);
+ printAt(108,76,"Schermtest 384x216",C_TEXT);printAt(60,106,"Zijn alle vier hoeken zichtbaar?",C_MUTED);printAt(140,144,"EXIT: terug",C_MUTED);show();
+ while(!quitting){k=waitKey();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return;}
+}
 static void settings(void){
  int selected=0,k,i,known;uint8_t configured[4]={0};WFrame r;
  const char *names[]={"Hotspotnaam","Hotspotwachtwoord","API-sleutel","Model","Taal","Versie","Instellingen wissen"};
@@ -293,17 +322,18 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"2.0 / Atom %s",atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"3.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
-  footer("Wijzig","","Test","","","");show();k=waitKey();
+  footer("Wijzig","","Test","Scherm","","");show();k=waitKey();
   if(k==KEY_PRGM_EXIT)break;
   if(k==KEY_PRGM_F3){known=refreshSettings(configured);continue;}
+  if(k==KEY_PRGM_F4){screenTest();continue;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V2.0\nOriginele Atom Lite / ESP32-PICO-D4.\n\nWerk zowel de Atom-firmware als ChatGPT.g3a bij. Slaapstand is uit deze versie weggelaten.");continue;}
+  if(selected==5){message("Versie","Casio ChatGPT V3.0\nOriginele Atom Lite / ESP32-PICO-D4.\n\nWerk zowel de Atom-firmware als ChatGPT.g3a bij. Slaapstand is uit deze versie weggelaten.");continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -319,7 +349,7 @@ static void settings(void){
    }
    if(uploadText(selected+1,field)){
     settingsEpoch++;erase(field,sizeof(field));known=refreshSettings(configured);
-    message("Opgeslagen","De instelling is op de Atom opgeslagen. De gesprekscontext is gewist; je nieuwe vraag begint een nieuw gesprek.");break;
+    message("Opgeslagen","De instelling is op de Atom opgeslagen. Je lokale chats blijven bewaard. Voor een vervolgvraag wordt de benodigde context opnieuw hersteld.");break;
    }
    /* Keep failed edits masked in RAM so a UART error does not force retyping. */
   }while(!quitting);
@@ -331,7 +361,7 @@ static void diagnose(void){WFrame r;char text[420];int beforeR=retries,beforeE=e
  if(!checkedRpc(W_HELLO,0,0,&r))return;
  {WFrame version;if(rpc(W_DEVICE,0,0,&version,0)==1&&version.len>=4)atomMajor=version.data[1];else atomMajor=1;}
  sprintf(text,"Atom antwoordt op protocol v%u.\n9600 baud, 8N1, geen inversie.\n\nHerhalingen deze test: %d\nCRC/framefouten deze test: %d\n\nEen geldig antwoord controleert UART-verkeer in beide richtingen. Dit controleert geen wifi of API-toegang.",r.len>1?r.data[1]:0,retries-beforeR,errors-beforeE);
- if(atomMajor!=2)strcat(text,"\n\nAtom V1: werk de firmware bij naar V2.");
+ if(atomMajor<3)strcat(text,"\n\nWerk de Atom-firmware bij naar V3.");
  message("UART-diagnose",text);
 }
 static int fetchAnswer(unsigned int len){
@@ -342,24 +372,40 @@ static int fetchAnswer(unsigned int len){
  }answer[pos]=0;return !quitting;
 }
 static void readAnswer(int contextWasDropped){
- int first=0,k,lines=line_count(answer,43),max=scroll_limit(lines,6);unsigned epoch=settingsEpoch;
- while(!quitting){clear("ChatGPT");rounded(8,37,368,26,C_RAISED);clipped(16,43,lastQuestion,44,C_TEXT);
+ int first=0,k;unsigned epoch=settingsEpoch;
+ while(!quitting){
+  int lines=line_count(answer,43),max=scroll_limit(lines,6);char position[56];
+  clear("ChatGPT");rounded(8,37,368,26,C_RAISED);clipped(16,43,lastQuestion,44,C_TEXT);
   drawLogo(12,70,16,C_TEXT);printAt(36,71,"ChatGPT",C_MINT);
+  if(activeChatSlot>=0&&savedChats[activeChatSlot].used){sprintf(position,"%d/%d",viewTurn+1,savedChats[activeChatSlot].turns);printAt(288,71,position,C_MUTED);}
   paragraph(answer,first,12,91,43,6);scrollbar(376,91,84,first,6,lines);
-  printAt(8,176,contextWasDropped?"Oudste context gewist · F1: vraag":"↑ ↓ lezen · F1: vervolgvraag",C_MUTED);
-  footer("Vraag","Nieuw","Test","","","Instel");show();k=waitKey();
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){prompt[0]=0;return;}
+  printAt(8,176,unsavedReply?"Nog niet opgeslagen · F3: bewaren":contextWasDropped?"Oudste API-context gewist":activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Oud bericht · F1 vervolgt laatste":"SHIFT: vraag · OPTN: chats",unsavedReply?C_RED:C_MUTED);
+  footer("Vraag","Nieuw",unsavedReply?"Bewaar":"Test","Chats",viewTurn>0?"Vorig":"",activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Volgend":"Instel");show();k=waitKey();
+  if(k==KEY_PRGM_F1){prompt[0]=0;return;}
+  if(k==KEY_PRGM_EXIT)return;
+  if(k==KEY_PRGM_SHIFT){message("Jouw vraag",lastQuestion);continue;}
   if(k==KEY_PRGM_UP&&first>0)first--;if(k==KEY_PRGM_DOWN&&first<max)first++;
-  if(k==KEY_PRGM_LEFT){first-=6;if(first<0)first=0;}
-  if(k==KEY_PRGM_RIGHT){first+=6;if(first>max)first=max;}
-  if(k==KEY_PRGM_F2&&confirm("Nieuw gesprek beginnen? De oude context wordt gewist.")){
-   WFrame r;if(checkedRpc(W_NEW,0,0,&r)){prompt[0]=answer[0]=lastQuestion[0]=0;return;}}
-  if(k==KEY_PRGM_F3)diagnose();if(k==KEY_PRGM_F6){settings();if(settingsEpoch!=epoch){prompt[0]=answer[0]=lastQuestion[0]=0;return;}}
+  if(k==KEY_PRGM_LEFT){first-=6;if(first<0)first=0;}if(k==KEY_PRGM_RIGHT){first+=6;if(first>max)first=max;}
+  if(k==KEY_PRGM_F2&&canLeaveReply()&&confirm("Nieuw gesprek beginnen?")){newLocalChat();return;}
+  if(k==KEY_PRGM_F3){if(unsavedReply)saveReply();else diagnose();}
+  if(k==KEY_PRGM_F4||k==KEY_PRGM_OPTN){int changed=chatSidebar();if(changed==2)return;if(changed)first=0;}
+  if(k==KEY_PRGM_F5&&viewTurn>0&&!unsavedReply){if(loadChatPair(activeChatSlot,viewTurn-1))first=0;}
+  if(k==KEY_PRGM_F6){
+   if(activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns&&!unsavedReply){if(loadChatPair(activeChatSlot,viewTurn+1))first=0;}
+   else {settings();if(settingsEpoch!=epoch){contextDirty=1;epoch=settingsEpoch;}}
+  }
  }
 }
+
+#include "chats.h"
 static void ask(void){
  WFrame r;uint8_t id[4];int start=RTC_GetTicks(),ok;uint8_t s,e;unsigned len;
  if(!prompt[0]){message("Geen vraag","Typ eerst een vraag.");return;}
+ loadLibrary();
+ if(unsavedReply){message("Bewaar het antwoord","Het vorige antwoord is nog niet opgeslagen. Open het gesprek en probeer F3 Bewaar, of verwerp het bewust via Nieuw.");return;}
+ if(activeChatSlot>=0&&savedChats[activeChatSlot].turns>=CHAT_TURNS){message("Gesprek vol","Dit gesprek bevat acht vragen en antwoorden. Begin een nieuw gesprek; de oude berichten blijven lokaal bewaard.");return;}
+ if(activeChatSlot<0&&freeSlot(savedChats)<0){message("Chats vol","Er zijn acht opgeslagen gesprekken. Verwijder eerst bewust een oud gesprek via OPTN. Er is nog geen API-vraag gestart.");return;}
+ if(!restoreChat())return;
  if(!uploadText(0,prompt))return;
  if(!checkedRpc(W_ALLOC,0,0,&r)||r.len!=5)return;memcpy(id,r.data+1,4);
  if(!checkedRpc(W_ASK,id,4,&r))return;
@@ -369,7 +415,7 @@ static void ask(void){
   if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Controleer de Atom met F3.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
-  if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){strcpy(lastQuestion,prompt);readAnswer(dropped);}return;}
+  if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){strcpy(lastQuestion,prompt);prompt[0]=0;unsavedReply=1;saveReply();readAnswer(dropped);}return;}
   if(s==S_ERROR){message("Aanvraag mislukt",e<sizeof(errNames)/sizeof(errNames[0])?errNames[e]:"Onbekende fout");return;}
   if(s==S_CANCELLED){message("Geannuleerd","Er wordt geen antwoord opgehaald.");return;}
   clear("ChatGPT");rounded(8,37,368,26,C_RAISED);clipped(16,43,prompt,44,C_TEXT);
@@ -381,23 +427,27 @@ static void ask(void){
  }
 }
 int main(void){
- unsigned char mode[6]={0,5,0,0,0,0};int k;WFrame r;
+ int k;unsigned epoch;
  vram=(unsigned short*)GetVRAMAddress();oldSetup=GetSetupSetting(0x14);SetQuitHandler(cleanup);
- if(Serial_IsOpen()==1){message("UART bezet","Sluit een andere seriele toepassing eerst af.");return 0;}
- if(Serial_Open(mode)!=0){message("UART-fout","De seriele poort kan niet worden geopend.");return 0;}
- serialOpen=1;Serial_ClearRX();Serial_ClearTX();Bdisp_EnableColor(1);
- while(!quitting){
-  k=editor(prompt,sizeof(prompt),"ChatGPT - Vraag",0,1,0,1);
-  if(k==KEY_PRGM_F1)ask();
-  else if(k==KEY_PRGM_F2){if(confirm("Nieuw gesprek beginnen?")){if(checkedRpc(W_NEW,0,0,&r))prompt[0]=answer[0]=lastQuestion[0]=0;}}
-  else if(k==KEY_PRGM_F3)diagnose();else if(k==KEY_PRGM_F6){unsigned epoch=settingsEpoch;settings();if(epoch!=settingsEpoch)answer[0]=lastQuestion[0]=0;}
-  else if(k==KEY_PRGM_EXIT){if(answer[0])readAnswer(0);else if(confirm("ChatGPT sluiten en terug naar MENU?"))quitting=1;}
+ Bdisp_EnableColor(1);EnableStatusArea(3);loadLibrary();
+ for(;;){
+  while(!quitting){
+   k=editor(prompt,sizeof(prompt),"ChatGPT - Vraag",0,1,0,1);
+   if(k==KEY_PRGM_F1)ask();
+   else if(k==KEY_PRGM_F2){if(canLeaveReply()&&confirm("Nieuw gesprek beginnen?"))newLocalChat();}
+   else if(k==KEY_PRGM_F3)diagnose();
+   else if(k==UI_CHATS){int changed=chatSidebar();if(changed==1)readAnswer(0);}
+   else if(k==KEY_PRGM_F6){epoch=settingsEpoch;settings();if(epoch!=settingsEpoch)contextDirty=1;}
+   else if(k==KEY_PRGM_EXIT){
+    if(answer[0])readAnswer(0);else if(confirm("ChatGPT sluiten en terug naar MENU?"))quitting=1;
+   }
+  }
+  if(!unsavedReply)break;
+  resumeAfterMenu();if(saveReply()||canLeaveReply()){quitting=1;break;}
  }
- /* Best-effort cancellation. PollTX reports free space, not queued bytes.
-  * At 9600 baud, 150ms covers our short frame plus one pending max frame. */
- {WFrame cancel={0};uint8_t bytes[WIRE_ENCODED];size_t n;
-  cancel.type=W_CANCEL;cancel.seq=++seq;n=w_encode(&cancel,bytes);
-  Serial_Write(bytes,(int)n);OS_InnerWait_ms(150);
+ if(serialOpen){
+  uint8_t bytes[WIRE_ENCODED];WFrame cancel={0};size_t n;
+  cancel.type=W_CANCEL;cancel.seq=++seq;n=w_encode(&cancel,bytes);Serial_Write(bytes,(int)n);OS_InnerWait_ms(150);
  }
  cleanup();DisplayMainMenu();return 0;
 }

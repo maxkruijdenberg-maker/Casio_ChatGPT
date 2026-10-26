@@ -1,4 +1,4 @@
-"""Rebuild V2 logo masks and 92x64 menu icons from the pinned SVG source."""
+"""Rebuild V3 logo masks and 92x64 menu icons from the pinned SVG source."""
 from pathlib import Path
 from io import BytesIO
 import sys
@@ -16,13 +16,11 @@ for size in (16,24,40):
  packed=[sum((data[i+j] if i+j<len(data) else 0)<<(7-j) for j in range(8)) for i in range(0,len(data),8)]
  rows += [f'static const uint8_t logo{size}[]={{',','.join('0x%02x'%v for v in packed),'};']
 rows+=['#endif'];(root/'casio/logo.h').write_text('\n'.join(rows)+'\n')
-font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',11)
-for selected,name in [(False,'unselected'),(True,'selected')]:
- im=Image.new('RGB',(92,64),'#171717');d=ImageDraw.Draw(im)
- if selected:
-  d.rounded_rectangle((0,0,91,63),radius=6,outline='#74e7bf',width=2)
-  d.rectangle((2,48,89,61),fill='#74e7bf')
- im.paste(logo(40),(26,4),logo(40))
- d.text((46,53),'ChatGPT',font=font,anchor='mm',fill='#171717' if selected else '#ececec')
+# No rasterized label: the OS draws its own single gray/black app name.
+black_svg=(root/'assets/openai.svg').read_bytes()
+for name in ('unselected','selected'):
+ im=Image.new('RGB',(92,64),'white')
+ mark=Image.open(BytesIO(cairosvg.svg2png(bytestring=black_svg,output_width=176,output_height=176))).convert('RGBA').resize((44,44),Image.Resampling.LANCZOS)
+ im.paste(mark,(24,4),mark)
  im.save(root/f'casio/{name}.bmp')
-print('V2 logo masks and menu icons generated.')
+print('V3 logo masks and white, label-free menu icons generated.')

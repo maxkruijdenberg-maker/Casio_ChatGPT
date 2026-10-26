@@ -1,4 +1,4 @@
-/* ChatGPT V2.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V3.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio, not in this sketch or USB logs. */
 #include <Arduino.h>
@@ -9,9 +9,11 @@
 #include <ArduinoJson.h>
 #include <time.h>
 #include <atomic>
+#include <esp_random.h>
 #include "upload.h"
 #include "config_validation.h"
 #include "api_response.h"
+#include "context.h"
 #include "wire.h"
 #include "ledger.h"
 #include "trust.h"
@@ -22,21 +24,21 @@ Preferences prefs;
 SemaphoreHandle_t gate;
 static String cfg[4],question,answer;
 static Upload upload={};
-static String oldQ[2],oldA[2];
-static uint8_t historyCount=0,state=S_IDLE,errorCode=0;
-static bool contextDropped=false,wifiDirty=true;
+static ChatContext<String> context;
+static uint8_t state=S_IDLE,errorCode=0;
+static bool wifiDirty=true;
 static std::atomic_bool cancelled{false};
 static RequestLedger ledger={};
 static int saveId(const char *name,uint32_t id){return prefs.putUInt(name,id)==4;}
 static WParser parser={};
 static WFrame cachedIn={},cachedOut={};
 static bool cached=false;
-static uint32_t lastByte=0;
+static uint32_t lastByte=0,bootId=0;
 struct Lock { Lock(){xSemaphoreTake(gate,portMAX_DELAY);} ~Lock(){xSemaphoreGive(gate);} };
 static bool busy(){return state>=S_WIFI&&state<=S_API;}
 static void phase(uint8_t s,uint8_t e=0){Lock l;state=s;errorCode=e;}
 static void fail(uint8_t e){phase(cancelled?S_CANCELLED:S_ERROR,e);}
-static void clearHistory(){for(int i=0;i<2;i++){oldQ[i]="";oldA[i]="";}historyCount=0;contextDropped=false;}
+static void clearHistory(){context.clear();}
 class LimitedBody: public Stream {
  public: String body;bool overflow=false;
  LimitedBody(){body.reserve(BODY_MAX);}
@@ -83,9 +85,9 @@ static void performApi() {
   JsonArray msgs=req["messages"].to<JsonArray>();
   JsonObject system=msgs.add<JsonObject>();system["role"]="system";
   system["content"]="Antwoord standaard in het Nederlands. Gebruik platte tekst en lineaire formules, zonder LaTeX of tabellen. Wees beknopt: maximaal ongeveer 1800 tekens. Dit scherm is klein.";
-  for(int i=0;i<historyCount;i++){
-   JsonObject u=msgs.add<JsonObject>();u["role"]="user";u["content"]=oldQ[i];
-   JsonObject a=msgs.add<JsonObject>();a["role"]="assistant";a["content"]=oldA[i];
+  for(int i=0;i<context.count;i++){
+   JsonObject u=msgs.add<JsonObject>();u["role"]="user";u["content"]=context.q[i];
+   JsonObject a=msgs.add<JsonObject>();a["role"]="assistant";a["content"]=context.a[i];
   }
   JsonObject user=msgs.add<JsonObject>();user["role"]="user";user["content"]=q;
   String body;serializeJson(req,body);if(req.overflowed()||!body.length()){resultError=E_MEMORY;break;}
@@ -115,14 +117,8 @@ static void performApi() {
   }
   {Lock l;
    if(cancelled)break;
-   size_t retained=q.length()+a.length();
-   for(int i=0;i<historyCount;i++)retained+=oldQ[i].length()+oldA[i].length();
-   while(historyCount&&(historyCount>=2||retained>HISTORY_MAX)){
-    retained-=oldQ[0].length()+oldA[0].length();oldQ[0]=oldQ[1];oldA[0]=oldA[1];
-    oldQ[1]="";oldA[1]="";historyCount--;contextDropped=true;
-   }
-   if(retained<=HISTORY_MAX){oldQ[historyCount]=q;oldA[historyCount]=a;historyCount++;}
-   answer=a;success=true;state=S_READY;errorCode=0;
+   if(!context.append(q,a)){clearHistory();context.dropped=true;}
+   answer=std::move(a);success=true;state=S_READY;errorCode=0;
   }
  }while(false);
  if(!success){Lock l;
@@ -154,6 +150,8 @@ static void handle(const WFrame& in) {
  case W_BEGIN:
   if(in.len!=3){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
+  if(in.data[0]>=5&&!context.restoring){out.data[0]=E_REQUEST;break;}
+  if(in.data[0]==0&&context.restoring){out.data[0]=E_UPLOAD;break;}
   out.data[0]=upload_begin(&upload,in.data[0],w_get16(in.data+1));break;
  case W_APPEND:
   if(busy()){out.data[0]=E_BUSY;break;}
@@ -165,16 +163,22 @@ static void handle(const WFrame& in) {
   if(!setting_valid(upload.target,upload.bytes,upload.used)){out.data[0]=E_CONFIG;upload_clear(&upload);break;}
   if(upload.target==0){
    question=upload.bytes;if(question.length()!=upload.used)out.data[0]=E_MEMORY;
+  }else if(upload.target>=5){
+   if(!context.restoring||!upload.used){out.data[0]=E_UPLOAD;upload_clear(&upload);break;}
+   String restored=upload.bytes;
+   if(restored.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
+   out.data[0]=upload.target==5?context.restoreQuestion(restored):context.restoreAnswer(restored);
   }else {
    int idx=upload.target-1;const char *names[]={"ssid","pass","key","model"};
    String next=upload.bytes;if(next.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
    bool saved=upload.used?prefs.putString(names[idx],next)==upload.used:(!prefs.isKey(names[idx])||prefs.remove(names[idx]));
    if(!saved){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
-   cfg[idx]=std::move(next);if(idx<2)wifiDirty=true;clearHistory();
+   cfg[idx]=std::move(next);if(idx<2)wifiDirty=true;clearHistory();context.restoring=false;context.pending="";
   }
   upload_clear(&upload);break;
  case W_ASK:
   if(in.len!=4){out.data[0]=E_REQUEST;break;}
+  if(context.restoring){out.data[0]=E_UPLOAD;break;}
   if(w_get32(in.data)!=ledger.last&&(!cfg[0].length()||!cfg[2].length()||!cfg[3].length())){out.data[0]=E_CONFIG;break;}
   if(!question.length()&&w_get32(in.data)!=ledger.last){out.data[0]=E_REQUEST;break;}
   {int g=g_admit(&ledger,w_get32(in.data),busy(),saveId);
@@ -185,7 +189,7 @@ static void handle(const WFrame& in) {
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=10;out.data[1]=state;out.data[2]=errorCode;w_put16(out.data+3,answer.length());
   w_put32(out.data+6,ledger.last);
-  out.data[5]=historyCount|(contextDropped?0x80:0);break;
+  out.data[5]=context.count|(context.dropped?0x80:0);break;
  case W_READ:
   if(in.len!=2){out.data[0]=E_REQUEST;break;}
   if(state!=S_READY){out.data[0]=E_BUSY;break;}
@@ -194,11 +198,11 @@ static void handle(const WFrame& in) {
   break;
  case W_CANCEL:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  upload_clear(&upload);if(busy())cancelled=true;else ledger.allocated=0;break;
+  upload_clear(&upload);if(busy())cancelled=true;else {ledger.allocated=0;if(context.restoring)clearHistory();context.restoring=false;context.pending="";}break;
  case W_NEW:
   if(in.len){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
-  upload_clear(&upload);ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  upload_clear(&upload);context.restoring=false;context.pending="";ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  case W_INFO:
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=5;for(int i=0;i<4;i++)out.data[i+1]=cfg[i].length()>0;break;
@@ -211,7 +215,15 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=4;out.data[1]=2;out.data[2]=0;out.data[3]=1;break;
+  out.len=8;out.data[1]=3;out.data[2]=0;out.data[3]=7;w_put32(out.data+4,bootId);break;
+ case W_CONTEXT:
+  if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
+  if(busy()){out.data[0]=E_BUSY;break;}
+  if(in.data[0]==0){
+   upload_clear(&upload);context.beginRestore();ledger.allocated=0;question="";answer="";state=S_IDLE;errorCode=0;
+  }else {
+   out.data[0]=context.finishRestore();if(out.data[0])break;upload_clear(&upload);
+  }break;
  case W_WIPE:
   if(in.len!=4||memcmp(in.data,"WIPE",4)){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
@@ -222,7 +234,7 @@ static void handle(const WFrame& in) {
     cfg[i]="";
    }}
   if(!cfg[3].length())cfg[3]="gpt-4.1-mini";
-  upload_clear(&upload);wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  default:out.data[0]=E_REQUEST;
  }
  }
@@ -231,7 +243,7 @@ static void handle(const WFrame& in) {
 }
 void setup(){
  /* USB logging deliberately disabled. GPIO26 stays UART idle-high while active. */
- pinMode(TX_PIN,INPUT);gate=xSemaphoreCreateMutex();if(!gate)return;
+ bootId=esp_random();pinMode(TX_PIN,INPUT);gate=xSemaphoreCreateMutex();if(!gate)return;
  prefs.begin("casiochat",false);cfg[0]=prefs.getString("ssid","");cfg[1]=prefs.getString("pass","");
  cfg[2]=prefs.getString("key","");cfg[3]=prefs.getString("model","gpt-4.1-mini");
  ledger.next=prefs.getUInt("next",0);ledger.last=prefs.getUInt("last",0);

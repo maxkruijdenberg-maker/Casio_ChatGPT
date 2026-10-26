@@ -6,8 +6,35 @@
 #include <assert.h>
 #include "../atom/ChatGPTAtom/upload.h"
 static unsigned short framebuffer[384*216];
+static int statusMode,stripeFirst=-1,stripeLast=-1;
+typedef struct {unsigned char*data;size_t size,pos;} TestFile;
+static TestFile testFiles[32];
+static int pathIndex(const unsigned short *wide){
+ char name[80];size_t i=0;while(wide[i]&&i<79){name[i]=(char)wide[i];i++;}name[i]=0;
+ const char *root="\\\\fls0\\CGPT3\\";assert(!strncmp(name,root,strlen(root)));
+ char *base=strrchr(name,'\\');assert(base);base++;
+ assert(base[0]=='C'&&base[1]>='0'&&base[1]<='7'&&(base[2]=='A'||base[2]=='B'));
+ return (base[0]=='N'?16:0)+(base[1]-'0')*2+(base[2]=='B');
+}
+int Bfile_CreateEntry_OS(const unsigned short*p,int mode,size_t*size){
+ if(mode==CREATEMODE_FOLDER)return 0;int i=pathIndex(p);if(testFiles[i].data)return -13;
+ testFiles[i].data=calloc(1,*size);testFiles[i].size=*size;testFiles[i].pos=0;return testFiles[i].data?0:-1;
+}
+int Bfile_DeleteEntry(const unsigned short*p){int i=pathIndex(p);free(testFiles[i].data);memset(&testFiles[i],0,sizeof(testFiles[i]));return 0;}
+int Bfile_OpenFile_OS(const unsigned short*p,int mode,int zero){(void)mode;(void)zero;int i=pathIndex(p);if(!testFiles[i].data)return -1;testFiles[i].pos=0;return i+1;}
+int Bfile_CloseFile_OS(int h){(void)h;return 0;}
+int Bfile_ReadFile_OS(int h,void*out,int size,int pos){
+ TestFile*f=&testFiles[h-1];size_t at=pos<0?f->pos:(size_t)pos,n=size;if(at>f->size)return -1;
+ if(n>f->size-at)n=f->size-at;memcpy(out,f->data+at,n);f->pos=at+n;return (int)n;
+}
+int Bfile_SeekFile_OS(int h,int pos){TestFile*f=&testFiles[h-1];if(pos<0||(size_t)pos>f->size)return -1;f->pos=pos;return 0;}
+int Bfile_WriteFile_OS(int h,const void*data,int size){TestFile*f=&testFiles[h-1];if((size_t)size>f->size-f->pos)return -1;memcpy(f->data+f->pos,data,size);f->pos+=size;return size;}
+void EnableStatusArea(int mode){statusMode=mode;}
+void Bdisp_PutDisp_DD_stripe(int first,int last){stripeFirst=first;stripeLast=last;}
+
 static unsigned char rx[8192];static size_t rxAt,rxEnd;
 static int connected=1,busyUntil,requestCount[32],privateReads;
+static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
 static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
@@ -31,7 +58,8 @@ int Serial_Write(const unsigned char*p,int n){
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
- case W_DEVICE:r.len=4;r.data[1]=2;r.data[2]=0;r.data[3]=1;break;
+ case W_DEVICE:r.len=8;r.data[1]=3;r.data[2]=0;r.data[3]=7;w_put32(r.data+4,fakeBoot);break;
+ case W_CONTEXT:case W_NEW:case W_CANCEL:break;
  case W_GET_CONFIG:{
   if(f.data[0]!=1&&f.data[0]!=4){privateReads++;r.data[0]=E_REQUEST;break;}
   const char *value=f.data[0]==1?storedSSID:storedModel;size_t at=w_get16(f.data+1),len=strlen(value),amount=len-at;
@@ -79,19 +107,47 @@ int main(int argc,char **argv){
  connected=1;strcpy(storedModel,"my-custom-model");
  const int modelEdit[]={37,0,37,0,37,0,79,0,79,0,79,0,47};SCRIPT(modelEdit);settings();
  assert(!strcmp(storedModel,"my-custom-model")&&privateReads==0);
- assert(field[0]==0&&atomMajor==2);
+ assert(field[0]==0&&atomMajor==3);
  /* Last page cannot scroll into blank rows. */
  strcpy(answer,"one\ntwo\nthree\nfour\nfive\nsix\nseven");strcpy(lastQuestion,"Test");
  const int scroll[]={27,0,27,0,37,0,47};SCRIPT(scroll);readAnswer(0);
+ clear("Schermtest");show();assert(statusMode==3&&stripeFirst==0&&stripeLast==215);
+ connected=1;loadLibrary();
+ /* Local records are reopened and their context is restored without POST. */
+ assert(lib_append(&disk,0,&savedChats[0],"Vorige vraag","Antwoord één",&savedChats[0]));
+ assert(lib_append(&disk,0,&savedChats[0],"Volgende vraag","Antwoord twee",&savedChats[0]));
+ activeChatSlot=0;contextDirty=1;strcpy(prompt,"Nieuwe vraag");int paid=requestCount[W_ASK];SCRIPT(done);
+ assert(restoreChat()&&requestCount[W_ASK]==paid&&!strcmp(prompt,"Nieuwe vraag")&&field[0]==0);
+ assert(requestCount[W_CONTEXT]==2);
+ assert(restoreChat()&&requestCount[W_CONTEXT]==2); /* Same boot: no re-upload. */
+ fakeBoot++;assert(restoreChat()&&requestCount[W_CONTEXT]==4&&requestCount[W_ASK]==paid);
+ assert(loadChatPair(0,0)&&!strcmp(lastQuestion,"Vorige vraag"));
+ assert(loadChatPair(0,1)&&!strcmp(answer,"Antwoord twee"));
+ /* Opening and reading saved threads is offline and sends no RPC. */
+ connected=0;prompt[0]=0;int beforeOpen=requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO];
+ const int chooseChat[]={37,0,31};SCRIPT(chooseChat);assert(chatSidebar()==1&&activeChatSlot==0&&viewTurn==1);
+ const int prev[]={39,0,47};SCRIPT(prev);readAnswer(0);assert(viewTurn==0&&!strcmp(lastQuestion,"Vorige vraag"));
+ const int next[]={29,0,47};SCRIPT(next);readAnswer(0);assert(viewTurn==1&&!strcmp(answer,"Antwoord twee"));
+ assert(beforeOpen==requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO]);
+ const int questionView[]={78,0,47,0,47};SCRIPT(questionView);readAnswer(0);
+ SCRIPT(leave);screenTest();assert(framebuffer[0]==C_MINT&&framebuffer[384*216-1]==C_MINT);
+ const int deleteChat[]={37,0,69,0,79,0,47};SCRIPT(deleteChat);chatSidebar();assert(!savedChats[0].used&&!lib_entry(&disk,'C',0).used);
+ connected=1;
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
+  assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
+  assert(lib_append(&disk,1,&savedChats[1],"Leg breuken eenvoudig uit.","Een breuk is een deel van een geheel.",&savedChats[1]));
+  activeChatSlot=0;viewTurn=0;
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={78,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
   strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
+  prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
+  SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing and answer paging.");
+ storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test.");
  return 0;
 }
