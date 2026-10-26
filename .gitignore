@@ -1,0 +1,5 @@
+/build/
+/casio/build/
+*.o
+*.elf
+__pycache__/
