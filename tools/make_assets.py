@@ -1,4 +1,4 @@
-"""Rebuild V7 logo masks and 92x64 menu icons from the pinned SVG source."""
+"""Rebuild V8 logo masks and 92x64 menu icons from the pinned SVG source."""
 from pathlib import Path
 from io import BytesIO
 import sys
@@ -23,7 +23,10 @@ black_svg=(root/'assets/openai.svg').read_bytes()
 # Never rasterize a second name or try to choose its own text size.
 for name in ('unselected','selected'):
  im=Image.new('RGB',(92,64),(82,198,247) if name=='selected' else 'white')
+ # Standard tile composition: white rectangular logo panel, blue surrounding
+ # selection including the native label area. No blue behind the black mark.
+ ImageDraw.Draw(im).rectangle((4,2,87,39),fill='white')
  mark=Image.open(BytesIO(cairosvg.svg2png(bytestring=black_svg,output_width=128,output_height=128))).convert('RGBA').resize((32,32),Image.Resampling.LANCZOS)
  im.paste(mark,(30,4),mark)
  im.save(root/f'casio/{name}.bmp')
-print('V7 menu tiles: full blue selection, white normal tile, 32px logo above native label area.')
+print('V8 menu tiles: white logo panel, blue selection surround, 32px logo above native label area.')

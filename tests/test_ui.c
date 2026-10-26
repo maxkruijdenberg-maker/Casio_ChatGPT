@@ -1,5 +1,6 @@
 /* Host-only device stubs exercise the real editor, not OpenAI functionality. */
 #include <stdlib.h>
+#include <setjmp.h>
 #define main casio_program_main
 #include "../casio/main.c"
 #undef main
@@ -12,7 +13,9 @@ static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
 static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
 static int menuVisible=0,menuReturnEnabled=0,serialCloses=0;
-static int copiesAtMenu=0;
+static int copiesAtMenu=0,rawMenuQueued=0,drainedEvents=0;
+static int staleEvents=0;
+static jmp_buf lifecycleDone;
 static void (*quitCallback)(void);
 static void menuReturned(void);
 typedef struct {unsigned char*data;size_t size,pos;} TestFile;
@@ -57,23 +60,28 @@ void Bdisp_PutDisp_DD(void){
 void DrawFrame(int color){lcdFrame=(unsigned short)color;}
 void Bdisp_EnableColor(int n){colorMode=n;}
 void Bkey_ClrAllFlags(void){keysCleared++;}
-int Keyboard_PutKeycode(int x,int y,int code){assert(x==-1&&y==-1&&!nativeQueued);nativeQueued=code;return 0;}
+int Keyboard_PutKeycode(int x,int y,int code){
+ assert(!nativeQueued&&!rawMenuQueued);
+ if(x==4&&y==9&&code==0){assert(!staleEvents&&menuReturnEnabled);rawMenuQueued=1;}
+ else {assert(x==-1&&y==-1&&code==KEY_CTRL_EXIT);nativeQueued=code;}
+ return 0;
+}
 int GetKey(int*key){
- /* An injected MENU can be returned as a key instead of changing apps. Do not
-  * give the implementation a simulated menu transition for an injected key. */
- assert(nativeQueued==KEY_CTRL_EXIT||nativeQueued==KEY_CTRL_MENU);
- *key=nativeQueued;nativeQueued=0;
- if(*key==KEY_CTRL_EXIT){initKeys++;if(lifecycleTesting){assert(!serialOpen);menuVisible=0;}}
+ if(rawMenuQueued){
+  rawMenuQueued=0;assert(menuReturnEnabled&&!staleEvents);menuReturned();
+  *key=KEY_CTRL_EXE;return 0;
+ }
+ assert(nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;
+ if(lifecycleTesting){assert(!serialOpen);menuVisible=0;}
  return 0;
 }
 void EnableGetkeyToMainFunctionReturn(void){menuReturnEnabled=1;}
-/* Matrix-only polling does NOT consume the translated native key queue. This
- * deliberately catches the V4 handoff even though it passed the older stub. */
 int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code){
- (void)c;(void)r;(void)mode;(void)timeout;(void)menu;(void)code;
- assert(!"matrix polling cannot dispatch a queued MENU event");return 0;
+ assert(mode==KEYWAIT_HALTOFF_TIMEROFF&&timeout==0&&menu==1);
+ if(staleEvents){*c=4;*r=9;*code=KEY_CTRL_MENU;staleEvents--;drainedEvents++;return KEYREP_KEYEVENT;}
+ *c=*r=0;*code=0;return KEYREP_NOEVENT;
 }
-int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}return keys[keyAt++];}
+int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
 int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
 void OS_InnerWait_ms(int ms){timeTicks+=ms;}
@@ -112,7 +120,7 @@ int Serial_Write(const unsigned char*p,int n){
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
 void SetQuitHandler(void(*h)(void)){quitCallback=h;}
-void DisplayMainMenu(void){assert(menuReturnEnabled&&!nativeQueued);menuReturned();}
+void DisplayMainMenu(void){assert(!"drawing MENU or returning main is not the native GetKey dispatcher");}
 static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
 static void dumpFrame(const char*path){
@@ -124,43 +132,35 @@ static const int lifeTwo[]={31,31,0,0,0,59,0,47,0,78,0,65,0,48,48,0,0,0};
 static const int lifeThree[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
- assert(statusMode==0&&lcdFrame==0xffff);
- /* Model DisplayMainMenu returning immediately after drawing, without a new
-  * add-in launch. V6's old outer loop must fail this model, not pass by
-  * interpreting every return as the user opening the app again. */
+ assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu);
+ /* Model the blocking native GetKey dispatcher: no user-app code executes
+  * while MENU is active. Return only after a simulated re-selection. */
  menuVisible=1;copiesAtMenu=fullCopies;
- if(nativeMenus==1&&quitCallback)quitCallback();
- nativeMenus++;
+ if(nativeMenus!=1&&quitCallback)quitCallback();nativeMenus++;
+ if(nativeMenus==2)assert(!strcmp(prompt,"H"));
+ if(nativeMenus==3)longjmp(lifecycleDone,1);
+ assert(fullCopies==copiesAtMenu);
+ deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
+ for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
+ lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
+ /* OS launch events must not become commands in the re-opened editor. */
+ staleEvents=5;
+ if(nativeMenus==1){keys=lifeTwo;keyCount=sizeof(lifeTwo)/sizeof(lifeTwo[0]);}
+ else {keys=lifeThree;keyCount=sizeof(lifeThree)/sizeof(lifeThree[0]);}keyAt=0;
 }
 static void testLifecycle(void){
  lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView(view_default());cleanup();
- int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses;
- lifecycleTesting=1;nativeMenus=0;initKeys=0;
- const int *sessions[]={lifeOne,lifeTwo,lifeThree};
- const size_t counts[]={sizeof(lifeOne)/sizeof(lifeOne[0]),sizeof(lifeTwo)/sizeof(lifeTwo[0]),sizeof(lifeThree)/sizeof(lifeThree[0])};
- for(int session=0;session<3;session++){
-  /* Three separate OS launches, including old quit/key/cache state and a
-   * changed VRAM pointer and cropped DMA window left by the native menu. */
-  deviceFramebuffer=session%2?otherFramebuffer:framebuffer;
-  for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
-  lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
-  menuReturnEnabled=0;menuVisible=0;
-  script(sessions[session],counts[session]);
-  quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;
-  strcpy(field,"discard this stale value");
-  assert(casio_program_main()==0);
-  /* Return must hand control to the OS, never repaint the ChatGPT canvas. */
-  assert(nativeMenus==session+1&&menuVisible&&fullCopies==copiesAtMenu);
-  assert(statusMode==0&&lcdFrame==0xffff&&!serialOpen&&field[0]==0);
-  assert(storageReadHandle<0&&storageWriteHandle<0&&keyAt==keyCount);
-  if(session==1)assert(!strcmp(prompt,"H"));
- }
- assert(initKeys==3&&keysCleared>=6&&requestCount[W_ASK]==paid);
- assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels);
+ int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses,drains=drainedEvents;
+ lifecycleTesting=1;nativeMenus=0;initKeys=0;menuReturnEnabled=0;menuVisible=0;copiesAtMenu=0;
+ SCRIPT(lifeOne);staleEvents=5;
+ quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
+ if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main must remain available for native MENU re-entry");}
+ assert(nativeMenus==3&&initKeys==3&&requestCount[W_ASK]==paid);
+ assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
- applyView(view_default());
+ assert(statusMode==0&&field[0]==0);applyView(view_default());
 }
 
 int main(int argc,char **argv){
@@ -232,6 +232,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three separate OS launches: immediate native-menu return without app repaint, deferred UART cleanup with/without OS callback, held keys, stale session state, changed display state and a separate LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three sessions through the blocking native GetKey MENU dispatcher with matrix MENU injection, stale OS-event draining, held keys, deferred UART cleanup, changed display state and a separate LCD frame.");
  return 0;
 }

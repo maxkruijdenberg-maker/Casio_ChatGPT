@@ -172,3 +172,13 @@ volledig onder het kleinere logo staat en dezelfde native lettergrootte heeft
 als andere apps. Controleer behoud van donkere schermranden en chats.
 De hosttests reproduceren de automatische herstart van V6 en slagen met V7;
 de echte OS-menu- en naamweergave zijn hier niet uitgevoerd.
+
+## V8: sluit én heropen, zonder terugval naar MENU
+
+Controleer eerst 8.0, test F3, kies EXIT → Ja, open dezelfde app opnieuw.
+Herhaal vijfmaal en met RUN-MAT ertussen. Test Nee, fysiek MENU, lang genoeg
+vasthouden/loslaten van F1 en EXE en F3 na heropenen. Controleer behoud van
+chats en donkere schermranden. De native GetKey-dispatcher wordt hier alleen
+in hoststubs gemodelleerd; juist dit sluiten/heropenen vereist devicecontrole.
+Vergelijk het geselecteerde pictogram: wit rechthoekig paneel achter het logo,
+blauwe selectie eromheen/onder de naam, één leesbare native appnaam.

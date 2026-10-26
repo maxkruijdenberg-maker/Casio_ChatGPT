@@ -1,3 +1,5 @@
+> Nieuwste versie: [V8 installeren](UPGRADE-V8.md).
+
 # V7 — de app echt verlaten en een gescheiden menunaam
 
 **Alleen `ChatGPT.g3a` vervangen als je Atom V3 gebruikt.** De Atom hoeft niet

@@ -1,3 +1,5 @@
+> Nieuwste versie: [V8 installeren](UPGRADE-V8.md).
+
 > Nieuwste versie: [V7 installeren](UPGRADE-V7.md).
 
 # V6 — direct naar MENU en blauwe pictogramselectie

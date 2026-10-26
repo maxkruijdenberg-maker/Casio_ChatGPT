@@ -1,14 +1,15 @@
-# ChatGPT V7.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V8.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3 t/m V6 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V7.md](UPGRADE-V7.md).**
+**Al V3 t/m V7 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V8.md](UPGRADE-V8.md).**
 
 Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
 
-V7 verwijdert de herstartlus na de menu-aanroep en keert, zoals V1, vanuit
-main terug naar Casio. Elke nieuwe OS-start reset de sessiestatus. Het
-menulogo is verkleind en staat boven de ruimte voor de normale OS-appnaam;
-de geselecteerde bitmap is volledig lichtblauw. De werkende schermranden blijven.
-Bekijk [de V7-interface in hosttests](docs/design/V7-actual-screens.png).
+V8 gebruikt de native GetKey-menuafhandeling met een matrix-MENU-gebeurtenis
+en wist bewaarde OS-toetsgebeurtenissen aan de sessiegrenzen. De app keert niet
+meer vanuit main terug zoals V7, dat op jouw apparaat niet opnieuw opende.
+Het pictogram heeft een witte rechthoek achter het logo en blauw eromheen bij
+selectie. De werkende donkere schermranden blijven behouden.
+Bekijk [de V8-interface in hosttests](docs/design/V8-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -16,13 +17,14 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V7:** negen softwaretestgroepen slagen en de SH4-add-in is gebouwd.
-De controller wordt als drie aparte OS-starts getest. De menufunctie keert
-in de test direct terug: daarna moet main terugkeren zonder de app opnieuw
-te tekenen. Dezelfde test faalt met de oude V6-main; het resultaat staat in
-docs/logs/v7-menu-regression.log. Dit is een hosttest, geen uitvoering van
-het echte Casio-OS. Bevestig afsluiten en pictogramnaam nog op jouw apparaat.
-De Atom-broncode en firmware blijven ongewijzigd V3.
+**Status V8:** negen softwaretestgroepen slagen en de SH4-add-in is gebouwd.
+De lifecycle-hosttest doorloopt drie sessies via de native GetKey-dispatcher,
+met een matrix-MENU-event, oude OS-toetsevents, vastgehouden toetsen en
+veranderd VRAM/DMA. Deze stubs testen het applicatieprotocol, niet het echte
+Casio-OS. Jouw melding dat V7 wel sloot maar niet opnieuw opende, laat zien
+dat main terug laten keren onvoldoende was. De V8 OS-menuovergang en herstart
+moeten nog op jouw Casio worden bevestigd. De Atom blijft ongewijzigd V3.
+Zie UPGRADE-V8.md en docs/V8-NATIVE-MENU.md.
 
 ## Windows: installeren
 

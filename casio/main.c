@@ -70,6 +70,13 @@ static void waitForKeyRelease(void){
  while(quiet<3){if(PRGM_GetKey()==KEY_PRGM_NONE)quiet++;else quiet=0;OS_InnerWait_ms(10);}
  lastKey=0;heldTick=repeatTick=RTC_GetTicks();
 }
+/* Raw PRGM polling does not consume the OS event FIFO. Drain it only at
+ * session boundaries, with native MENU processing disabled for these stale
+ * events. Keys are already physically released, so this is bounded work. */
+static void drainNativeKeys(void){
+ int column,row,n;unsigned short code;
+ for(n=0;n<32;n++)if(GetKeyWait_OS(&column,&row,KEYWAIT_HALTOFF_TIMEROFF,0,1,&code)!=KEYREP_KEYEVENT)break;
+}
 static int keyEvent(void){
  int k=PRGM_GetKey(),now=RTC_GetTicks();
  if(k==KEY_PRGM_MENU){quitting=1;return k;}
@@ -123,7 +130,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V7",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V8",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -379,7 +386,7 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"7.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"8.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
@@ -390,7 +397,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V7.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V7 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
+  if(selected==5){message("Versie","Casio ChatGPT V8.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V8 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -483,8 +490,7 @@ static void ask(void){
   if(elapsed(start,150000)){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
-/* Reset every launch, including warm OS launches which retain static RAM.
- * Reopening is owned by the OS, not by an internal loop around this session. */
+/* Fresh state after a cold launch or a return from native GetKey/MENU. */
 static void beginSession(void){
  if(serialOpen)closeSerial();storageClose();
  oldSetup=GetSetupSetting(0x14);
@@ -494,7 +500,7 @@ static void beginSession(void){
  linkKnown=linkOnline=linkSeen=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
- SetQuitHandler(cleanup);waitForKeyRelease();
+ SetQuitHandler(cleanup);waitForKeyRelease();drainNativeKeys();
  /* libfxcg/Utilities documents that color mode may need one OS GetKey pass.
   * Consume a synthetic EXIT here, never dispatch it into our own close dialog. */
  {int discarded;Bdisp_EnableColor(1);Keyboard_PutKeycode(-1,-1,KEY_CTRL_EXIT);do {GetKey(&discarded);}while(discarded!=KEY_CTRL_EXIT);}
@@ -527,21 +533,27 @@ static void endSession(void){
  storageClose();erase(field,sizeof(field));waitForKeyRelease();
 }
 static void nativeMainMenu(void){
- /* Call the native menu directly instead of injecting a translated key and
-  * assuming GetKey consumed it as a request to leave this add-in. Explicitly
-  * enable main-function return, which can be disabled in the inherited OS state.
-  * The call can return after drawing MENU: that is not evidence of re-entry.
-  * After cleanup, main must return to the OS without drawing another app frame. */
- Bkey_ClrAllFlags();EnableGetkeyToMainFunctionReturn();
+ int key;
+ /* Use the normal GetKey MENU dispatcher, with a MATRIX event (column 4,
+  * row 9). A translated KEY_CTRL_MENU queued with (-1,-1) may simply return
+  * as data; DisplayMainMenu plus return from main left this device unable to
+  * reopen. Clear app-era events before injecting the actual menu matrix key.
+  * GetKey owns MENU until the add-in is selected again; no app frames are
+  * drawn in this interval. Do not return from main and lose that continuation. */
+ Bkey_ClrAllFlags();drainNativeKeys();EnableGetkeyToMainFunctionReturn();
  EnableStatusArea(0);DrawFrame(0xffff);
- DisplayMainMenu();
+ do {
+  Keyboard_PutKeycode(4,9,0);
+  GetKey(&key);
+  if(key==0||key==KEY_CTRL_MENU)OS_InnerWait_ms(10);
+ }while(key==0||key==KEY_CTRL_MENU);
  cleanup();
 }
 
 int main(void){
- beginSession();runSession();endSession();
- nativeMainMenu();
- /* Match V1's return to the OS. Do not restart the app when DisplayMainMenu
-  * returns; only a new OS launch may call beginSession again. */
- return 0;
+ for(;;){
+  beginSession();runSession();endSession();
+  nativeMainMenu();
+  /* Continue only after the native key dispatcher returns from MENU. */
+ }
 }

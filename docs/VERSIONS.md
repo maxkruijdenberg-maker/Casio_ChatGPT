@@ -140,3 +140,17 @@ Selected icon is fully light blue, rather than blue outline on white. Shrink
 menu logo from 44px to 32px, keep it in the upper area and leave the bottom
 for OS-drawn app name at native font size. No bitmap label. Preserve DrawFrame
 and Atom V3 unchanged. See UPGRADE-V7.md.
+
+## V8.0: native MENU dispatch and white logo panel
+
+User confirmed V7 exits but re-opening shows loading then MENU. CRT startup
+was present; returning main was insufficient. Use GetKey with a real matrix
+MENU (4,9,0), explicit menu enable, and bounded nonblocking stale OS-event
+draining at session boundaries. Remove direct DisplayMainMenu. Remain in the
+app's main continuation, and reset sessions only after native GetKey returns.
+UART deferred cleanup, dark outer frame and Atom V3 are retained.
+
+Selected icon: white rectangle behind black 32px logo, blue outside including
+the native label region. Same 92x64 dimensions; no baked label. Nine sanitized
+host groups pass and SH4 add-in is built. Native dispatcher execution is
+unverified on hardware; see docs/V8-NATIVE-MENU.md and UPGRADE-V8.md.
