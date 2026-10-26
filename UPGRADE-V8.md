@@ -1,3 +1,5 @@
+> Nieuwste versie: [V9 installeren](UPGRADE-V9.md).
+
 # V8 — sluiten én opnieuw openen, wit paneel in het pictogram
 
 **Met Atom V3 hoef je alleen ChatGPT.g3a te vervangen.** Geen Atom-upload of

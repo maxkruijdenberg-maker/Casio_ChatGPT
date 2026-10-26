@@ -1,15 +1,15 @@
-# ChatGPT V8.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V9.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3 t/m V7 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V8.md](UPGRADE-V8.md).**
+**Al V3 t/m V8 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V9.md](UPGRADE-V9.md).**
 
 Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
 
-V8 gebruikt de native GetKey-menuafhandeling met een matrix-MENU-gebeurtenis
-en wist bewaarde OS-toetsgebeurtenissen aan de sessiegrenzen. De app keert niet
-meer vanuit main terug zoals V7, dat op jouw apparaat niet opnieuw opende.
-Het pictogram heeft een witte rechthoek achter het logo en blauw eromheen bij
-selectie. De werkende donkere schermranden blijven behouden.
-Bekijk [de V8-interface in hosttests](docs/design/V8-actual-screens.png).
+V9 gebruikt de native menu-aanpak van gint: de interne SaveAndOpenMainMenu
+wordt via een begrensd codepatroon gevonden; als die niet herkenbaar is volgt
+de OS-timer/GetKeyWait-route. Geen voorgequeueude MENU gevolgd door GetKey,
+geen directe DisplayMainMenu, geen terugkeer uit main. Het pictogram heeft
+een lager afgerond wit paneel volgens de fx-CG50-template en de gevraagde J.
+Bekijk [de V9-interface in hosttests](docs/design/V9-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -17,14 +17,13 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V8:** negen softwaretestgroepen slagen en de SH4-add-in is gebouwd.
-De lifecycle-hosttest doorloopt drie sessies via de native GetKey-dispatcher,
-met een matrix-MENU-event, oude OS-toetsevents, vastgehouden toetsen en
-veranderd VRAM/DMA. Deze stubs testen het applicatieprotocol, niet het echte
-Casio-OS. Jouw melding dat V7 wel sloot maar niet opnieuw opende, laat zien
-dat main terug laten keren onvoldoende was. De V8 OS-menuovergang en herstart
-moeten nog op jouw Casio worden bevestigd. De Atom blijft ongewijzigd V3.
-Zie UPGRADE-V8.md en docs/V8-NATIVE-MENU.md.
+**Status V9:** tien softwaretestgroepen slagen; de SH4-add-in is gebouwd,
+inclusief de aanvullende native ClearKeyBuffer-syscall. De gebruiker meldt
+OS **03.81.0202** en dat ook fysiek MENU op het witte-randscherm van V8 niet
+werkt. De nieuwe route is gebaseerd op de bestaande gint-implementatie;
+bron, codeherkenning, tests en beperkingen staan in docs/V9-NATIVE-MENU.md.
+De echte OS-code van deze calculator is hier niet uitgevoerd. Bevestig sluiten
+en heropenen fysiek; groene hosttests bewijzen dat niet. De Atom blijft V3.
 
 ## Windows: installeren
 
@@ -232,4 +231,4 @@ Atom, modeltoegang/tegoed, echte antwoorden, annulering en opnieuw openen.
 Er worden geen gesimuleerde antwoorden als productfunctionaliteit gebruikt.
 Slaapstand en de latere XIAO ESP32-C6/PCB vallen buiten deze versie.
 
-In de voorbereide cloudmachine kun je met `bash tools/build-cloud.sh` beide programma's opnieuw bouwen. Gebruik de bestaande checkout; een Git-worktree is niet nodig. De toolchains staan buiten de checkout in `/workspace/casio-tools`. Deze Linux-helper vereist die voorbereide toolchains; gebruik op Windows de bovenstaande IDE en SDK-stappen.
+In de voorbereide cloudmachine bouw je alleen de Casio-app met `bash tools/build-casio.sh` (inclusief `casio/native_syscalls.S`). Met `bash tools/build-cloud.sh` bouw je beide programma's opnieuw. Gebruik de bestaande checkout; een Git-worktree is niet nodig. De toolchains staan buiten de checkout in `/workspace/casio-tools`. Deze Linux-helper vereist die voorbereide toolchains; gebruik op Windows de bovenstaande IDE en SDK-stappen.

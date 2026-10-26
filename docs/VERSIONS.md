@@ -154,3 +154,19 @@ Selected icon: white rectangle behind black 32px logo, blue outside including
 the native label region. Same 92x64 dimensions; no baked label. Nine sanitized
 host groups pass and SH4 add-in is built. Native dispatcher execution is
 unverified on hardware; see docs/V8-NATIVE-MENU.md and UPGRADE-V8.md.
+
+## V9.0: native menu resolver and proven timer fallback structure
+
+User OS 03.81.0202: V8 stays on a white-rimmed confirmation even on physical
+MENU. Investigated gint's native osmenu.c and its documented main-return
+re-entry limitation. Use its SaveAndOpenMainMenu discovery from syscall
+0x1E58 (bounded, aligned, signed-branch checked, no OS writes), or its timer +
+GetKeyWait_OS(0,1,0) structure. Add the real ClearKeyBuffer syscall 0x12C7.
+The timer injects during the key-wait and frees itself; failure paths restore
+the app and keep UART. Version dialog reports native target found / OS timer.
+
+Icon panel follows Lephe template geometry (5,5,82,38), rounded white with
+black logo lowered and requested J badge. Native name and dark screen frame
+retained. Ten sanitized host test groups pass, including resolver and six
+menu sessions; actual SH4 add-in built. The actual 03.81.0202 OS has not been
+executed here. See docs/V9-NATIVE-MENU.md and UPGRADE-V9.md. Atom stays V3.

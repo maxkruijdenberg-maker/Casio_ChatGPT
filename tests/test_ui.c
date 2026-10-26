@@ -1,6 +1,7 @@
 /* Host-only device stubs exercise the real editor, not OpenAI functionality. */
 #include <stdlib.h>
 #include <setjmp.h>
+#define CHATGPT_HOST_TEST 1
 #define main casio_program_main
 #include "../casio/main.c"
 #undef main
@@ -14,7 +15,10 @@ static int dma[4]={24,300,24,191},failCreate=0;
 static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
 static int menuVisible=0,menuReturnEnabled=0,serialCloses=0;
 static int copiesAtMenu=0,rawMenuQueued=0,drainedEvents=0;
-static int staleEvents=0;
+static int staleEvents=0,nativeResolverReady=1,nativeDirectCalls=0,nativeTimerCalls=0;
+static int inNativeWait=0,timerArmed=0,timerInstalled=0;
+static int failTimerInstall=0,failTimerStart=0,interruptNativeWait=0,timerStops=0,timerDeletes=0;
+static void (*timerCallback)(void);
 static jmp_buf lifecycleDone;
 static void (*quitCallback)(void);
 static void menuReturned(void);
@@ -62,24 +66,49 @@ void Bdisp_EnableColor(int n){colorMode=n;}
 void Bkey_ClrAllFlags(void){keysCleared++;}
 int Keyboard_PutKeycode(int x,int y,int code){
  assert(!nativeQueued&&!rawMenuQueued);
- if(x==4&&y==9&&code==0){assert(!staleEvents&&menuReturnEnabled);rawMenuQueued=1;}
+ if(x==4&&y==9&&code==0){assert(!staleEvents&&inNativeWait);rawMenuQueued=1;}
  else {assert(x==-1&&y==-1&&code==KEY_CTRL_EXIT);nativeQueued=code;}
  return 0;
 }
 int GetKey(int*key){
- if(rawMenuQueued){
-  rawMenuQueued=0;assert(menuReturnEnabled&&!staleEvents);menuReturned();
-  *key=KEY_CTRL_EXE;return 0;
- }
- assert(nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;
+ assert(!rawMenuQueued&&nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;
  if(lifecycleTesting){assert(!serialOpen);menuVisible=0;}
  return 0;
 }
+void Native_ClearKeyBuffer(void){assert(!rawMenuQueued);drainedEvents+=staleEvents;staleEvents=0;nativeQueued=0;}
 void EnableGetkeyToMainFunctionReturn(void){menuReturnEnabled=1;}
+static int menuROMRead32(void *unused,uint32_t a,uint32_t *v){
+ (void)unused;if(a==0x8002007c){*v=nativeResolverReady?0x80040000:0;return 1;}
+ if(a==0x80040000+0x1e58*4){*v=0x80030000;return 1;}return 0;
+}
+static int menuROMRead16(void *unused,uint32_t a,uint16_t *v){
+ (void)unused;assert(a>=0x80030000&&a<0x80030000+300&&!(a&1));
+ static const uint16_t pattern[]={0xd207,0xe703,0xb064,0x2270,0xaff8,0x0009};
+ unsigned i=(a-0x80030000)/2;*v=i>=8&&i<14?pattern[i-8]:0;return 1;
+}
+static void menuInvoke(uint32_t address){
+ assert(address==0x800300e0&&nativeResolverReady&&!timerInstalled&&!staleEvents);
+ nativeDirectCalls++;menuReturned();
+}
+int Timer_Install(int id,void (*handler)(void),int delay){
+ assert(id==0&&delay==20&&!timerInstalled);
+ if(failTimerInstall)return -1;timerInstalled=42;timerCallback=handler;return 42;
+}
+int Timer_Start(int id){assert(id==timerInstalled);if(failTimerStart)return -1;timerArmed=1;return 0;}
+int Timer_Stop(int id){assert(id==timerInstalled);timerArmed=0;timerStops++;return 0;}
+int Timer_Deinstall(int id){assert(id==timerInstalled&&!timerArmed);timerInstalled=0;timerCallback=0;timerDeletes++;return 0;}
 int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code){
- assert(mode==KEYWAIT_HALTOFF_TIMEROFF&&timeout==0&&menu==1);
- if(staleEvents){*c=4;*r=9;*code=KEY_CTRL_MENU;staleEvents--;drainedEvents++;return KEYREP_KEYEVENT;}
- *c=*r=0;*code=0;return KEYREP_NOEVENT;
+ if(mode==KEYWAIT_HALTOFF_TIMEROFF){
+  assert(timeout==0&&menu==1);
+  if(staleEvents){*c=4;*r=9;*code=KEY_CTRL_MENU;staleEvents--;drainedEvents++;return KEYREP_KEYEVENT;}
+  *c=*r=0;*code=0;return KEYREP_NOEVENT;
+ }
+ assert(mode==KEYWAIT_HALTON_TIMEROFF&&timeout==1&&menu==0&&timerArmed&&timerCallback);
+ if(interruptNativeWait)return KEYREP_NOEVENT;
+ inNativeWait=1;timerCallback();
+ assert(rawMenuQueued&&!timerInstalled&&!timerArmed&&menuTimer==-1);
+ rawMenuQueued=0;inNativeWait=0;nativeTimerCalls++;menuReturned();
+ *c=2;*r=1;*code=KEY_CTRL_EXE;return KEYREP_KEYEVENT;
 }
 int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
 int RTC_GetTicks(void){return timeTicks;}
@@ -133,8 +162,8 @@ static const int lifeThree[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,69,69,0,48,48,0,
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
  assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu);
- /* Model the blocking native GetKey dispatcher: no user-app code executes
-  * while MENU is active. Return only after a simulated re-selection. */
+ /* OS SaveAndOpenMainMenu (or its timer fallback) suspends the app.
+  * Return only after a simulated re-selection; count no app draws in MENU. */
  menuVisible=1;copiesAtMenu=fullCopies;
  if(nativeMenus!=1&&quitCallback)quitCallback();nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
@@ -148,19 +177,37 @@ static void menuReturned(void){
  if(nativeMenus==1){keys=lifeTwo;keyCount=sizeof(lifeTwo)/sizeof(lifeTwo[0]);}
  else {keys=lifeThree;keyCount=sizeof(lifeThree)/sizeof(lifeThree[0]);}keyAt=0;
 }
-static void testLifecycle(void){
+static void testLifecycle(int direct){
  lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView(view_default());cleanup();
  int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses,drains=drainedEvents;
+ nativeResolverReady=direct;
+ int directBefore=nativeDirectCalls,timerBefore=nativeTimerCalls;
  lifecycleTesting=1;nativeMenus=0;initKeys=0;menuReturnEnabled=0;menuVisible=0;copiesAtMenu=0;
  SCRIPT(lifeOne);staleEvents=5;
  quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
  if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main must remain available for native MENU re-entry");}
  assert(nativeMenus==3&&initKeys==3&&requestCount[W_ASK]==paid);
+ assert(nativeDirectCalls==directBefore+(direct?3:0)&&nativeTimerCalls==timerBefore+(direct?0:3));
+ assert(!timerInstalled&&!timerArmed&&menuTimer==-1);
  assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
  assert(statusMode==0&&field[0]==0);applyView(view_default());
+}
+
+static void testMenuFailures(void){
+ nativeResolverReady=0;serialOpen=1;quitting=1;vram=framebuffer;
+ clear("MENU-test");show();int closes=serialCloses,stops=timerStops,deletes=timerDeletes;
+ failTimerInstall=1;assert(!nativeMainMenu());failTimerInstall=0;
+ assert(serialOpen&&serialCloses==closes&&!timerInstalled&&lcdFrame==C_BG);
+ failTimerStart=1;assert(!nativeMainMenu());failTimerStart=0;
+ assert(serialOpen&&serialCloses==closes&&!timerInstalled&&timerStops==stops+1&&timerDeletes==deletes+1);
+ interruptNativeWait=1;assert(!nativeMainMenu());interruptNativeWait=0;
+ assert(serialOpen&&serialCloses==closes&&!timerInstalled&&menuTimer==-1);
+ assert(timerStops==stops+2&&timerDeletes==deletes+2);
+ quitting=0;clear("ChatGPT");show();assert(lcdFrame==C_BG&&statusMode==3);cleanup();
+ nativeResolverReady=1;
 }
 
 int main(int argc,char **argv){
@@ -215,7 +262,8 @@ int main(int argc,char **argv){
  const int resetTune[]={59,0,79};SCRIPT(resetTune);screenSettings();assert(viewProfile.percent==100&&view_load(&disk).percent==100);
  failCreate=1;const int failedTune[]={38,0,79,0,47,0,47};SCRIPT(failedTune);screenSettings();failCreate=0;
  assert(viewProfile.percent==100&&view_load(&disk).percent==100);
- testLifecycle();
+ testLifecycle(1);testLifecycle(0);
+ testMenuFailures();
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -232,6 +280,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three sessions through the blocking native GetKey MENU dispatcher with matrix MENU injection, stale OS-event draining, held keys, deferred UART cleanup, changed display state and a separate LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, deferred UART cleanup, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }

@@ -11,6 +11,7 @@
 #include "storage_device.h"
 #include "library.h"
 #include "viewport.h"
+#include "native_menu_device.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -62,7 +63,8 @@ static void closeSerial(void){
  if(serialOpen){Serial_ClearTX();Serial_Close(1);serialOpen=0;}
  SetSetupSetting(0x14,oldSetup);
 }
-static void cleanup(void){closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
+static void stopMenuTimer(void);
+static void cleanup(void){stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
 /* The menu launch key and the key which opened a dialog must not become a
  * command in the newly opened screen. Require a stable all-keys-up edge. */
 static void waitForKeyRelease(void){
@@ -130,7 +132,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V8",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V9",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -386,7 +388,7 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"8.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"9.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
@@ -397,7 +399,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V8.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V8 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
+  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V9.0\nCompatibel met Atom-firmware V3.0.\nMenu-route: %s\n\nVervang alleen ChatGPT.g3a. Gesprekken en Atom-instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -500,7 +502,7 @@ static void beginSession(void){
  linkKnown=linkOnline=linkSeen=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
- SetQuitHandler(cleanup);waitForKeyRelease();drainNativeKeys();
+ SetQuitHandler(cleanup);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();
  /* libfxcg/Utilities documents that color mode may need one OS GetKey pass.
   * Consume a synthetic EXIT here, never dispatch it into our own close dialog. */
  {int discarded;Bdisp_EnableColor(1);Keyboard_PutKeycode(-1,-1,KEY_CTRL_EXIT);do {GetKey(&discarded);}while(discarded!=KEY_CTRL_EXIT);}
@@ -532,28 +534,47 @@ static void endSession(void){
   * SetQuitHandler releases it when the OS switches applications. */
  storageClose();erase(field,sizeof(field));waitForKeyRelease();
 }
-static void nativeMainMenu(void){
- int key;
- /* Use the normal GetKey MENU dispatcher, with a MATRIX event (column 4,
-  * row 9). A translated KEY_CTRL_MENU queued with (-1,-1) may simply return
-  * as data; DisplayMainMenu plus return from main left this device unable to
-  * reopen. Clear app-era events before injecting the actual menu matrix key.
-  * GetKey owns MENU until the add-in is selected again; no app frames are
-  * drawn in this interval. Do not return from main and lose that continuation. */
- Bkey_ClrAllFlags();drainNativeKeys();EnableGetkeyToMainFunctionReturn();
+/* The OS key-wait must be active when a fallback MENU event is injected.
+ * This ordering follows gint_osmenu_native; pre-queueing then calling GetKey
+ * (V8) leaves this CG50 on the old dialog, even with physical MENU. */
+static volatile int menuTimer=-1,menuTimerInjected=0;
+static void stopMenuTimer(void){
+ int timer=menuTimer;menuTimer=-1;
+ if(timer>0){Timer_Stop(timer);Timer_Deinstall(timer);}
+}
+static void menuTimerHandler(void){
+ menuTimerInjected=1;Keyboard_PutKeycode(4,9,0);stopMenuTimer();
+}
+static int nativeMainMenu(void){
+ uint32_t target;int column=0,row=0,result;unsigned short key=0;
+ Bkey_ClrAllFlags();drainNativeKeys();Native_ClearKeyBuffer();
+ target=nativeMenuTarget();
+ if(target){
+  EnableStatusArea(0);DrawFrame(0xffff);
+  menuInvoke(target); /* Saves app continuation; returns on actual re-selection. */
+  cleanup();return 1;
+ }
+ menuTimerInjected=0;
+ menuTimer=Timer_Install(0,menuTimerHandler,20);
+ if(menuTimer<=0){menuTimer=-1;return 0;}
  EnableStatusArea(0);DrawFrame(0xffff);
- do {
-  Keyboard_PutKeycode(4,9,0);
-  GetKey(&key);
-  if(key==0||key==KEY_CTRL_MENU)OS_InnerWait_ms(10);
- }while(key==0||key==KEY_CTRL_MENU);
- cleanup();
+ if(Timer_Start(menuTimer)<0){stopMenuTimer();return 0;}
+ result=GetKeyWait_OS(&column,&row,KEYWAIT_HALTON_TIMEROFF,1,0,&key);
+ (void)result;stopMenuTimer();
+ if(!menuTimerInjected)return 0;
+ cleanup();return 1;
 }
 
 int main(void){
  for(;;){
-  beginSession();runSession();endSession();
-  nativeMainMenu();
-  /* Continue only after the native key dispatcher returns from MENU. */
+  beginSession();
+  for(;;){
+   runSession();endSession();
+   if(nativeMainMenu())break;
+   /* Do not strand a white-rimmed closing dialog on an unsupported path. */
+   quitting=0;
+   message("MENU niet geopend","De OS-menuovergang kon niet worden gestart. Je sessie en Atom-verbinding blijven beschikbaar. Probeer EXIT opnieuw.");
+  }
+  /* Restart UI only after SaveAndOpenMainMenu/native key-wait returns. */
  }
 }

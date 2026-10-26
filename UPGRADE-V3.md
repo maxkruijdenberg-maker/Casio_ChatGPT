@@ -1,3 +1,5 @@
+> Nieuwste versie: [V9 installeren](UPGRADE-V9.md).
+
 > Nieuwste versie: [V8 installeren](UPGRADE-V8.md).
 
 > Nieuwste versie: [V7 installeren](UPGRADE-V7.md).

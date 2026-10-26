@@ -182,3 +182,14 @@ chats en donkere schermranden. De native GetKey-dispatcher wordt hier alleen
 in hoststubs gemodelleerd; juist dit sluiten/heropenen vereist devicecontrole.
 Vergelijk het geselecteerde pictogram: wit rechthoekig paneel achter het logo,
 blauwe selectie eromheen/onder de naam, één leesbare native appnaam.
+
+## V9: native SaveAndOpenMainMenu, OS 03.81.0202
+
+Follow UPGRADE-V9.md. Confirm 9.0 and read Version's menu route (native found
+or OS timer). Test EXIT → Yes → real interactive MENU → same app immediately,
+five times, then with RUN-MAT between. Also test physical MENU and No. Test
+F3 after re-entry and saved chats/screen settings. User confirmed V8's white
+rim is not a menu, and physical MENU there also failed; do not count that as
+success. The native helper is based on gint; actual OS execution is unverified.
+Check lowered rounded white panel, J at top-right and one native app name.
+The J badge is visual; the calculator still determines the actual menu index.
