@@ -62,8 +62,6 @@ Archive member included to satisfy reference by file (symbol)
                               /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o) (_Bfile_CloseFile_OS)
 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
                               /workspace/casio-build/casio-main.o (_SetQuitHandler)
-/workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_AllClr_VRAM.o)
-                              /workspace/casio-build/casio-main.o (_Bdisp_AllClr_VRAM)
 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
                               /workspace/casio-build/casio-main.o (_Bdisp_PutDisp_DD)
 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
@@ -581,383 +579,381 @@ ilram            0xe5200000         0x00001000         xrw
 Linker script and memory map
 
 
-.text           0x00300000     0x48a8
+.text           0x00300000     0x5630
  *(.pretext)
  .pretext       0x00300000       0x6c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(crt0.o)
                 0x00300000                initialize
  *(.text)
- .text          0x0030006c     0x1518 /workspace/casio-build/casio-main.o
- .text          0x00301584        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
- .text          0x00301584        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
- .text          0x00301584        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
- .text          0x00301584        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
- .text          0x00301584        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
- .text          0x00301584       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_SeekFile_OS.o)
-                0x00301584                _Bfile_SeekFile_OS
- .text          0x00301594       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_WriteFile_OS.o)
-                0x00301594                _Bfile_WriteFile_OS
- .text          0x003015a4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(strlen.o)
-                0x003015a4                _strlen
- .text          0x003015b4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetKey.o)
-                0x003015b4                _GetKey
- .text          0x003015c4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayMainMenu.o)
-                0x003015c4                _DisplayMainMenu
- .text          0x003015d4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_EnableColor.o)
-                0x003015d4                _Bdisp_EnableColor
- .text          0x003015e4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearTX.o)
-                0x003015e4                _Serial_ClearTX
- .text          0x003015f4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetSetupSetting.o)
-                0x003015f4                _GetSetupSetting
- .text          0x00301604       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_Elapsed_ms.o)
-                0x00301604                _RTC_Elapsed_ms
- .text          0x00301614       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Read.o)
-                0x00301614                _Serial_Read
- .text          0x00301624       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetSetupSetting.o)
-                0x00301624                _SetSetupSetting
- .text          0x00301634       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollRX.o)
-                0x00301634                _Serial_PollRX
- .text          0x00301644       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_GetTicks.o)
-                0x00301644                _RTC_GetTicks
- .text          0x00301654       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(EnableStatusArea.o)
-                0x00301654                _EnableStatusArea
- .text          0x00301664       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_RenameEntry.o)
-                0x00301664                _Bfile_RenameEntry
- .text          0x00301674       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PrintMiniMini.o)
-                0x00301674                _PrintMiniMini
- .text          0x00301684       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CreateEntry_OS.o)
-                0x00301684                _Bfile_CreateEntry_OS
- .text          0x00301694       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_IsOpen.o)
-                0x00301694                _Serial_IsOpen
- .text          0x003016a4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_TellFile_OS.o)
-                0x003016a4                _Bfile_TellFile_OS
- .text          0x003016b4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Close.o)
-                0x003016b4                _Serial_Close
- .text          0x003016c4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_realloc.o)
-                0x003016c4                _sys_realloc
- .text          0x003016d4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_StrToName_ncpy.o)
-                0x003016d4                _Bfile_StrToName_ncpy
- .text          0x003016e4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Open.o)
-                0x003016e4                _Serial_Open
- .text          0x003016f4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ReadSingle.o)
-                0x003016f4                _Serial_ReadSingle
- .text          0x00301704       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CloseFile_OS.o)
-                0x00301704                _Bfile_CloseFile_OS
- .text          0x00301714       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
-                0x00301714                _SetQuitHandler
- .text          0x00301724       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_AllClr_VRAM.o)
-                0x00301724                _Bdisp_AllClr_VRAM
- .text          0x00301734       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
-                0x00301734                _Bdisp_PutDisp_DD
- .text          0x00301744       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
-                0x00301744                _Serial_Write
- .text          0x00301754       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_malloc.o)
-                0x00301754                _sys_malloc
- .text          0x00301764       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusAreaFlags.o)
-                0x00301764                _DefineStatusAreaFlags
- .text          0x00301774       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_DeleteEntry.o)
-                0x00301774                _Bfile_DeleteEntry
- .text          0x00301784       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(OS_InnerWait_ms.o)
-                0x00301784                _OS_InnerWait_ms
- .text          0x00301794       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_free.o)
-                0x00301794                _sys_free
- .text          0x003017a4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearRX.o)
-                0x003017a4                _Serial_ClearRX
- .text          0x003017b4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollTX.o)
-                0x003017b4                _Serial_PollTX
- .text          0x003017c4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_OpenFile_OS.o)
-                0x003017c4                _Bfile_OpenFile_OS
- .text          0x003017d4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetVRAMAddress.o)
-                0x003017d4                _GetVRAMAddress
- .text          0x003017e4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayStatusArea.o)
-                0x003017e4                _DisplayStatusArea
- .text          0x003017f4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusMessage.o)
-                0x003017f4                _DefineStatusMessage
- .text          0x00301804       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_ReadFile_OS.o)
-                0x00301804                _Bfile_ReadFile_OS
- .text          0x00301814       0x56 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memset.o)
-                0x00301814                _memset
- .text          0x0030186a        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(crt0.o)
- *fill*         0x0030186a        0x6 
- .text          0x00301870       0xa0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memcpy.o)
-                0x00301870                _memcpy
- .text          0x00301910        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
- .text          0x00301910        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
- .text          0x00301910       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PRGM_GetKey_OS.o)
-                0x00301910                _PRGM_GetKey_OS
- .text          0x00301920       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memsetZero.o)
-                0x00301920                _memsetZero
- *fill*         0x00301930       0x10 
- .text          0x00301940       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_movmem_i4.o)
-                0x00301948                ___movmem_i4_even
-                0x00301948                ___movstr_i4_even
-                0x0030194e                ___movmem_i4_odd
-                0x0030194e                ___movstr_i4_odd
-                0x00301980                ___movmemSI12_i4
-                0x00301980                ___movstrSI12_i4
- .text          0x003019a0      0x424 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_table.o)
-                0x003019a0                ___udivsi3_i4i
-                0x00301a70                ___sdivsi3_i4i
- .text          0x00301dc4      0x130 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_sf.o)
-                0x00301dc4                ___mulsf3
- .text          0x00301ef4       0xd8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_sf.o)
-                0x00301ef4                ___divsf3
- .text          0x00301fcc       0x78 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_sf.o)
-                0x00301fcc                ___floatsisf
- .text          0x00302044       0x38 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_sf_to_df.o)
-                0x00302044                ___extendsfdf2
- .text          0x0030207c        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
- .text          0x0030207c      0x340 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_addsub_df.o)
-                0x00302318                ___adddf3
-                0x00302368                ___subdf3
- .text          0x003023bc      0x208 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_df.o)
-                0x003023bc                ___muldf3
- .text          0x003025c4       0x98 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_df.o)
-                0x003025c4                ___floatsidf
- .text          0x0030265c       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_make_df.o)
-                0x0030265c                ___make_dp
- .text          0x00302684        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
- .text          0x00302684       0x54 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clzsi2.o)
-                0x00302684                ___clzsi2
- .text          0x003026d8      0x104 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_sf.o)
-                0x003026d8                ___pack_f
- .text          0x003027dc       0x94 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_sf.o)
-                0x003027dc                ___unpack_f
- .text          0x00302870      0x24c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_df.o)
-                0x00302870                ___pack_d
- .text          0x00302abc       0xcc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_df.o)
-                0x00302abc                ___unpack_d
- .text          0x00302b88        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
+ .text          0x0030006c     0x23a8 /workspace/casio-build/casio-main.o
+ .text          0x00302414        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+ .text          0x00302414        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+ .text          0x00302414        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+ .text          0x00302414        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+ .text          0x00302414        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+ .text          0x00302414       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_SeekFile_OS.o)
+                0x00302414                _Bfile_SeekFile_OS
+ .text          0x00302424       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_WriteFile_OS.o)
+                0x00302424                _Bfile_WriteFile_OS
+ .text          0x00302434       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(strlen.o)
+                0x00302434                _strlen
+ .text          0x00302444       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetKey.o)
+                0x00302444                _GetKey
+ .text          0x00302454       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayMainMenu.o)
+                0x00302454                _DisplayMainMenu
+ .text          0x00302464       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_EnableColor.o)
+                0x00302464                _Bdisp_EnableColor
+ .text          0x00302474       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearTX.o)
+                0x00302474                _Serial_ClearTX
+ .text          0x00302484       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetSetupSetting.o)
+                0x00302484                _GetSetupSetting
+ .text          0x00302494       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_Elapsed_ms.o)
+                0x00302494                _RTC_Elapsed_ms
+ .text          0x003024a4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Read.o)
+                0x003024a4                _Serial_Read
+ .text          0x003024b4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetSetupSetting.o)
+                0x003024b4                _SetSetupSetting
+ .text          0x003024c4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollRX.o)
+                0x003024c4                _Serial_PollRX
+ .text          0x003024d4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_GetTicks.o)
+                0x003024d4                _RTC_GetTicks
+ .text          0x003024e4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(EnableStatusArea.o)
+                0x003024e4                _EnableStatusArea
+ .text          0x003024f4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_RenameEntry.o)
+                0x003024f4                _Bfile_RenameEntry
+ .text          0x00302504       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PrintMiniMini.o)
+                0x00302504                _PrintMiniMini
+ .text          0x00302514       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CreateEntry_OS.o)
+                0x00302514                _Bfile_CreateEntry_OS
+ .text          0x00302524       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_IsOpen.o)
+                0x00302524                _Serial_IsOpen
+ .text          0x00302534       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_TellFile_OS.o)
+                0x00302534                _Bfile_TellFile_OS
+ .text          0x00302544       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Close.o)
+                0x00302544                _Serial_Close
+ .text          0x00302554       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_realloc.o)
+                0x00302554                _sys_realloc
+ .text          0x00302564       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_StrToName_ncpy.o)
+                0x00302564                _Bfile_StrToName_ncpy
+ .text          0x00302574       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Open.o)
+                0x00302574                _Serial_Open
+ .text          0x00302584       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ReadSingle.o)
+                0x00302584                _Serial_ReadSingle
+ .text          0x00302594       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CloseFile_OS.o)
+                0x00302594                _Bfile_CloseFile_OS
+ .text          0x003025a4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
+                0x003025a4                _SetQuitHandler
+ .text          0x003025b4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
+                0x003025b4                _Bdisp_PutDisp_DD
+ .text          0x003025c4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
+                0x003025c4                _Serial_Write
+ .text          0x003025d4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_malloc.o)
+                0x003025d4                _sys_malloc
+ .text          0x003025e4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusAreaFlags.o)
+                0x003025e4                _DefineStatusAreaFlags
+ .text          0x003025f4       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_DeleteEntry.o)
+                0x003025f4                _Bfile_DeleteEntry
+ .text          0x00302604       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(OS_InnerWait_ms.o)
+                0x00302604                _OS_InnerWait_ms
+ .text          0x00302614       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_free.o)
+                0x00302614                _sys_free
+ .text          0x00302624       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearRX.o)
+                0x00302624                _Serial_ClearRX
+ .text          0x00302634       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollTX.o)
+                0x00302634                _Serial_PollTX
+ .text          0x00302644       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_OpenFile_OS.o)
+                0x00302644                _Bfile_OpenFile_OS
+ .text          0x00302654       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetVRAMAddress.o)
+                0x00302654                _GetVRAMAddress
+ .text          0x00302664       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayStatusArea.o)
+                0x00302664                _DisplayStatusArea
+ .text          0x00302674       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusMessage.o)
+                0x00302674                _DefineStatusMessage
+ .text          0x00302684       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_ReadFile_OS.o)
+                0x00302684                _Bfile_ReadFile_OS
+ .text          0x00302694       0x56 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memset.o)
+                0x00302694                _memset
+ .text          0x003026ea        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(crt0.o)
+ *fill*         0x003026ea        0x6 
+ .text          0x003026f0       0xa0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memcpy.o)
+                0x003026f0                _memcpy
+ .text          0x00302790        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
+ .text          0x00302790        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
+ .text          0x00302790       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PRGM_GetKey_OS.o)
+                0x00302790                _PRGM_GetKey_OS
+ .text          0x003027a0       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memsetZero.o)
+                0x003027a0                _memsetZero
+ *fill*         0x003027b0       0x10 
+ .text          0x003027c0       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_movmem_i4.o)
+                0x003027c8                ___movmem_i4_even
+                0x003027c8                ___movstr_i4_even
+                0x003027ce                ___movmem_i4_odd
+                0x003027ce                ___movstr_i4_odd
+                0x00302800                ___movmemSI12_i4
+                0x00302800                ___movstrSI12_i4
+ .text          0x00302820      0x424 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_table.o)
+                0x00302820                ___udivsi3_i4i
+                0x003028f0                ___sdivsi3_i4i
+ .text          0x00302c44      0x130 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_sf.o)
+                0x00302c44                ___mulsf3
+ .text          0x00302d74       0xd8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_sf.o)
+                0x00302d74                ___divsf3
+ .text          0x00302e4c       0x78 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_sf.o)
+                0x00302e4c                ___floatsisf
+ .text          0x00302ec4       0x38 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_sf_to_df.o)
+                0x00302ec4                ___extendsfdf2
+ .text          0x00302efc        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
+ .text          0x00302efc      0x340 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_addsub_df.o)
+                0x00303198                ___adddf3
+                0x003031e8                ___subdf3
+ .text          0x0030323c      0x208 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_df.o)
+                0x0030323c                ___muldf3
+ .text          0x00303444       0x98 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_df.o)
+                0x00303444                ___floatsidf
+ .text          0x003034dc       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_make_df.o)
+                0x003034dc                ___make_dp
+ .text          0x00303504        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
+ .text          0x00303504       0x54 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clzsi2.o)
+                0x00303504                ___clzsi2
+ .text          0x00303558      0x104 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_sf.o)
+                0x00303558                ___pack_f
+ .text          0x0030365c       0x94 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_sf.o)
+                0x0030365c                ___unpack_f
+ .text          0x003036f0      0x24c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_df.o)
+                0x003036f0                ___pack_d
+ .text          0x0030393c       0xcc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_df.o)
+                0x0030393c                ___unpack_d
+ .text          0x00303a08        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
  *(.text.*)
- .text.startup  0x00302b88      0x688 /workspace/casio-build/casio-main.o
-                0x00302b88                _main
+ .text.startup  0x00303a08      0x590 /workspace/casio-build/casio-main.o
+                0x00303a08                _main
  .text._printf_char
-                0x00303210       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00303f98       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
  .text._printf_string
-                0x0030322c       0x42 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
- *fill*         0x0030326e        0x2 
+                0x00303fb4       0x42 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+ *fill*         0x00303ff6        0x2 
  .text._printf_ptr
-                0x00303270       0x64 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x00303270                __printf_ptr
+                0x00303ff8       0x64 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00303ff8                __printf_ptr
  .text._printf_weird
-                0x003032d4       0x26 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x003032d4                __printf_weird
+                0x0030405c       0x26 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x0030405c                __printf_weird
  .text._writer_buffer
-                0x003032fa        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x003032fa                __writer_buffer
- *fill*         0x00303306        0x2 
+                0x00304082        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304082                __writer_buffer
+ *fill*         0x0030408e        0x2 
  .text._writer_stream
-                0x00303308       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x00303308                __writer_stream
+                0x00304090       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304090                __writer_stream
  .text._v_printf
-                0x00303318      0x208 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x003040a0      0x208 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
  .text._printf_decimal
-                0x00303520       0xd4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x003042a8       0xd4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
  .text._printf_udecimal
-                0x003035f4       0xa0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x0030437c       0xa0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
  .text.vfprintf
-                0x00303694       0x18 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x00303694                _vfprintf
- .text.fprintf  0x003036ac       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x003036ac                _fprintf
- .text.printf   0x003036c8       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x003036c8                _printf
+                0x0030441c       0x18 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x0030441c                _vfprintf
+ .text.fprintf  0x00304434       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304434                _fprintf
+ .text.printf   0x00304450       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304450                _printf
  .text.vsprintf
-                0x003036ec       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x003036ec                _vsprintf
- .text.sprintf  0x00303710       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
-                0x00303710                _sprintf
+                0x00304474       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304474                _vsprintf
+ .text.sprintf  0x00304498       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x00304498                _sprintf
  .text.serial_ensureopen
-                0x0030372c       0x3c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
- .text.feof     0x00303768       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303768                _feof
- .text.fopen    0x00303778      0x11c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303778                _fopen
- .text.fdopen   0x00303894        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303894                _fdopen
- .text.fclose   0x00303898       0x2c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303898                _fclose
- .text.fwrite   0x003038c4      0x150 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x003038c4                _fwrite
+                0x003044b4       0x3c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+ .text.feof     0x003044f0       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003044f0                _feof
+ .text.fopen    0x00304500      0x11c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304500                _fopen
+ .text.fdopen   0x0030461c        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x0030461c                _fdopen
+ .text.fclose   0x00304620       0x2c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304620                _fclose
+ .text.fwrite   0x0030464c      0x150 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x0030464c                _fwrite
  .text.fread_serial
-                0x00303a14       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303a14                _fread_serial
- .text.fread    0x00303a98       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303a98                _fread
- .text.fputc    0x00303af0       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303af0                _fputc
- .text.putchar  0x00303b24       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303b24                _putchar
- .text.fputs    0x00303b34       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303b34                _fputs
- .text.puts     0x00303b68       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303b68                _puts
- .text.fgets    0x00303b90       0x74 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303b90                _fgets
- .text.fgetc    0x00303c04       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303c04                _fgetc
- .text.ungetc   0x00303c2c       0x22 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303c2c                _ungetc
- *fill*         0x00303c4e        0x2 
- .text.ftell    0x00303c50        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303c50                _ftell
- .text.fseek    0x00303c5c       0x6c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303c5c                _fseek
- .text.ferror   0x00303cc8        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303cc8                _ferror
- .text.perror   0x00303cd0       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303cd0                _perror
- .text.remove   0x00303d28       0x74 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303d28                _remove
- .text.rename   0x00303d9c       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303d9c                _rename
- .text.mkdir    0x00303e20       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x00303e20                _mkdir
- .text.free     0x00303e88        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303e88                _free
- .text.malloc   0x00303e94        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303e94                _malloc
- .text.realloc  0x00303ea0        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303ea0                _realloc
- .text.calloc   0x00303eac        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303eac                _calloc
- .text.exit     0x00303eb8       0x80 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303eb8                _exit
- .text.abort    0x00303f38       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303f38                _abort
- .text.strtol   0x00303fa0      0x174 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00303fa0                _strtol
- .text.strtod   0x00304114      0x13c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00304114                _strtod
- .text.abs      0x00304250        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x00304250                _abs
- .text.isalpha  0x0030425c        0xe /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x0030425c                _isalpha
- *fill*         0x0030426a        0x2 
- .text.isalnum  0x0030426c       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x0030426c                _isalnum
- .text.isascii  0x00304290        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x00304290                _isascii
- .text.isblank  0x00304298        0xe /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x00304298                _isblank
- .text.iscntrl  0x003042a6        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042a6                _iscntrl
- .text.isdigit  0x003042ae        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042ae                _isdigit
- .text.isgraph  0x003042b8        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042b8                _isgraph
- .text.islower  0x003042c2        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042c2                _islower
- .text.isprint  0x003042cc        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042cc                _isprint
- *fill*         0x003042d6        0x2 
- .text.ispunct  0x003042d8       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042d8                _ispunct
- .text.isspace  0x003042fc       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x003042fc                _isspace
- .text.isupper  0x00304310        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x00304310                _isupper
+                0x0030479c       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x0030479c                _fread_serial
+ .text.fread    0x00304820       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304820                _fread
+ .text.fputc    0x00304878       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304878                _fputc
+ .text.putchar  0x003048ac       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003048ac                _putchar
+ .text.fputs    0x003048bc       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003048bc                _fputs
+ .text.puts     0x003048f0       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003048f0                _puts
+ .text.fgets    0x00304918       0x74 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304918                _fgets
+ .text.fgetc    0x0030498c       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x0030498c                _fgetc
+ .text.ungetc   0x003049b4       0x22 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003049b4                _ungetc
+ *fill*         0x003049d6        0x2 
+ .text.ftell    0x003049d8        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003049d8                _ftell
+ .text.fseek    0x003049e4       0x6c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x003049e4                _fseek
+ .text.ferror   0x00304a50        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304a50                _ferror
+ .text.perror   0x00304a58       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304a58                _perror
+ .text.remove   0x00304ab0       0x74 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304ab0                _remove
+ .text.rename   0x00304b24       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304b24                _rename
+ .text.mkdir    0x00304ba8       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00304ba8                _mkdir
+ .text.free     0x00304c10        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304c10                _free
+ .text.malloc   0x00304c1c        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304c1c                _malloc
+ .text.realloc  0x00304c28        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304c28                _realloc
+ .text.calloc   0x00304c34        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304c34                _calloc
+ .text.exit     0x00304c40       0x80 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304c40                _exit
+ .text.abort    0x00304cc0       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304cc0                _abort
+ .text.strtol   0x00304d28      0x174 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304d28                _strtol
+ .text.strtod   0x00304e9c      0x13c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304e9c                _strtod
+ .text.abs      0x00304fd8        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00304fd8                _abs
+ .text.isalpha  0x00304fe4        0xe /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00304fe4                _isalpha
+ *fill*         0x00304ff2        0x2 
+ .text.isalnum  0x00304ff4       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00304ff4                _isalnum
+ .text.isascii  0x00305018        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305018                _isascii
+ .text.isblank  0x00305020        0xe /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305020                _isblank
+ .text.iscntrl  0x0030502e        0x8 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x0030502e                _iscntrl
+ .text.isdigit  0x00305036        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305036                _isdigit
+ .text.isgraph  0x00305040        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305040                _isgraph
+ .text.islower  0x0030504a        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x0030504a                _islower
+ .text.isprint  0x00305054        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305054                _isprint
+ *fill*         0x0030505e        0x2 
+ .text.ispunct  0x00305060       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305060                _ispunct
+ .text.isspace  0x00305084       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305084                _isspace
+ .text.isupper  0x00305098        0xa /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x00305098                _isupper
  .text.isxdigit
-                0x0030431a       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x0030431a                _isxdigit
- .text.toupper  0x00304336       0x12 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x00304336                _toupper
- .text.tolower  0x00304348       0x12 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
-                0x00304348                _tolower
- .text.memccpy  0x0030435a       0x2e /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x0030435a                _memccpy
- .text.memchr   0x00304388       0x22 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304388                _memchr
- .text.memcmp   0x003043aa       0x1e /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003043aa                _memcmp
- .text.memmove  0x003043c8       0x36 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003043c8                _memmove
- .text.strchr   0x003043fe       0x1a /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003043fe                _strchr
- .text.strcmp   0x00304418       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304418                _strcmp
+                0x003050a2       0x1c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x003050a2                _isxdigit
+ .text.toupper  0x003050be       0x12 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x003050be                _toupper
+ .text.tolower  0x003050d0       0x12 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+                0x003050d0                _tolower
+ .text.memccpy  0x003050e2       0x2e /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003050e2                _memccpy
+ .text.memchr   0x00305110       0x22 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305110                _memchr
+ .text.memcmp   0x00305132       0x1e /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305132                _memcmp
+ .text.memmove  0x00305150       0x36 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305150                _memmove
+ .text.strchr   0x00305186       0x1a /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305186                _strchr
+ .text.strcmp   0x003051a0       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003051a0                _strcmp
  .text.strcasecmp
-                0x0030442c       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x0030442c                _strcasecmp
- .text.strcoll  0x00304484        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304484                _strcoll
- .text.strcpy   0x00304490       0x16 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304490                _strcpy
- *fill*         0x003044a6        0x2 
- .text.strcat   0x003044a8       0x2c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003044a8                _strcat
- .text.strdup   0x003044d4       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003044d4                _strdup
- .text.strncmp  0x00304508       0x26 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304508                _strncmp
- *fill*         0x0030452e        0x2 
+                0x003051b4       0x58 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003051b4                _strcasecmp
+ .text.strcoll  0x0030520c        0xc /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x0030520c                _strcoll
+ .text.strcpy   0x00305218       0x16 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305218                _strcpy
+ *fill*         0x0030522e        0x2 
+ .text.strcat   0x00305230       0x2c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305230                _strcat
+ .text.strdup   0x0030525c       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x0030525c                _strdup
+ .text.strncmp  0x00305290       0x26 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305290                _strncmp
+ *fill*         0x003052b6        0x2 
  .text.strncasecmp
-                0x00304530       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304530                _strncasecmp
- .text.strncpy  0x00304598       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304598                _strncpy
- .text.strncat  0x003045d8       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003045d8                _strncat
- .text.strpbrk  0x00304618       0x48 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304618                _strpbrk
- .text.strcspn  0x00304660       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304660                _strcspn
- .text.strrchr  0x00304688       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304688                _strrchr
- .text.strspn   0x003046c8       0x3c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003046c8                _strspn
- .text.strstr   0x00304704       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304704                _strstr
+                0x003052b8       0x68 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003052b8                _strncasecmp
+ .text.strncpy  0x00305320       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305320                _strncpy
+ .text.strncat  0x00305360       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305360                _strncat
+ .text.strpbrk  0x003053a0       0x48 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003053a0                _strpbrk
+ .text.strcspn  0x003053e8       0x28 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003053e8                _strcspn
+ .text.strrchr  0x00305410       0x40 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305410                _strrchr
+ .text.strspn   0x00305450       0x3c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x00305450                _strspn
+ .text.strstr   0x0030548c       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x0030548c                _strstr
  .text.strcasestr
-                0x00304764       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304764                _strcasestr
- .text.strtok   0x003047c4       0x5c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x003047c4                _strtok
- .text.strxfrm  0x00304820       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x00304820                _strxfrm
+                0x003054ec       0x60 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003054ec                _strcasestr
+ .text.strtok   0x0030554c       0x5c /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x0030554c                _strtok
+ .text.strxfrm  0x003055a8       0x24 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x003055a8                _strxfrm
  .text.PRGM_GetKey
-                0x00304844       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
-                0x00304844                _PRGM_GetKey
+                0x003055cc       0x34 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
+                0x003055cc                _PRGM_GetKey
  .text.sys_calloc
-                0x00304878       0x30 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
-                0x00304878                _sys_calloc
+                0x00305600       0x30 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
+                0x00305600                _sys_calloc
 
-.ilram          0xe5200000        0x0 load address 0x003048a8
-                0x003066a8                        _ilramld = LOADADDR (.data)
+.ilram          0xe5200000        0x0 load address 0x00305630
+                0x003078c4                        _ilramld = LOADADDR (.data)
                 0xe5200000                        _silram = .
  *(.ilram)
  *(.ilram.*)
                 0xe5200000                        _eilram = .
 
-.rodata         0x003048a8     0x1dff
+.rodata         0x00305630     0x2293
  *(.rodata)
- .rodata        0x003048a8      0xf5c /workspace/casio-build/casio-main.o
- .rodata        0x00305804        0x6 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
- *fill*         0x0030580a        0x2 
- .rodata        0x0030580c       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
-                0x0030580c                ___thenan_sf
- .rodata        0x0030581c       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
-                0x0030581c                ___thenan_df
- .rodata        0x00305830      0x100 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
-                0x00305830                ___clz_tab
+ .rodata        0x00305630     0x10c4 /workspace/casio-build/casio-main.o
+ .rodata        0x003066f4        0x6 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+ *fill*         0x003066fa        0x2 
+ .rodata        0x003066fc       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
+                0x003066fc                ___thenan_sf
+ .rodata        0x0030670c       0x14 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
+                0x0030670c                ___thenan_df
+ .rodata        0x00306720      0x100 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
+                0x00306720                ___clz_tab
  *(.rodata.*)
  .rodata.str1.4
-                0x00305930      0xc39 /workspace/casio-build/casio-main.o
- *fill*         0x00306569        0x3 
+                0x00306820      0xf67 /workspace/casio-build/casio-main.o
+ *fill*         0x00307787        0x1 
  .rodata._printf_ptr.str1.4
-                0x0030656c       0x11 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
- *fill*         0x0030657d        0x3 
+                0x00307788       0x11 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+ *fill*         0x00307799        0x3 
  .rodata.CSWTCH.53
-                0x00306580       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+                0x0030779c       0x84 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
  .rodata.perror.str1.4
-                0x00306604       0x20 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x00307820       0x20 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
  .rodata.exit.str1.4
-                0x00306624       0x43 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
- *fill*         0x00306667        0x1 
+                0x00307840       0x43 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+ *fill*         0x00307883        0x1 
  .rodata.abort.str1.4
-                0x00306668       0x3f /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x00307884       0x3f /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
 
-.data           0x08100004       0x20 load address 0x003066a8
-                0x003066a8                        _datald = LOADADDR (.data)
+.data           0x08100004       0x20 load address 0x003078c4
+                0x003078c4                        _datald = LOADADDR (.data)
                 0x08100004                        _sdata = .
  *(.data)
  .data          0x08100004        0x0 /workspace/casio-build/casio-main.o
@@ -992,7 +988,6 @@ Linker script and memory map
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ReadSingle.o)
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CloseFile_OS.o)
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
- .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_AllClr_VRAM.o)
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
  .data          0x08100004        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_malloc.o)
@@ -1041,93 +1036,92 @@ Linker script and memory map
                 0x08100014                __impl_stdout
                 0x08100024                        _edata = .
 
-.bss            0x08100024     0x286c load address 0x003066c8
+.bss            0x08100024     0x2cfc load address 0x003078e4
                 0x08100024                        _bbss = .
  *(.bss)
- .bss           0x08100024     0x2851 /workspace/casio-build/casio-main.o
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_SeekFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_WriteFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(strlen.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetKey.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayMainMenu.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_EnableColor.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearTX.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetSetupSetting.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_Elapsed_ms.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Read.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetSetupSetting.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollRX.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_GetTicks.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(EnableStatusArea.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_RenameEntry.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PrintMiniMini.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CreateEntry_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_IsOpen.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_TellFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Close.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_realloc.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_StrToName_ncpy.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Open.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ReadSingle.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CloseFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_AllClr_VRAM.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_malloc.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusAreaFlags.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_DeleteEntry.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(OS_InnerWait_ms.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_free.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearRX.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollTX.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_OpenFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetVRAMAddress.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayStatusArea.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusMessage.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_ReadFile_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memset.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(crt0.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memcpy.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PRGM_GetKey_OS.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memsetZero.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_movmem_i4.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_table.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_sf_to_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_addsub_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_make_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clzsi2.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_sf.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_df.o)
- .bss           0x08102875        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
+ .bss           0x08100024     0x2ce1 /workspace/casio-build/casio-main.o
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(printf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(ctype.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_SeekFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_WriteFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(strlen.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetKey.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayMainMenu.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_EnableColor.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearTX.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetSetupSetting.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_Elapsed_ms.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Read.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetSetupSetting.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollRX.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(RTC_GetTicks.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(EnableStatusArea.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_RenameEntry.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PrintMiniMini.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CreateEntry_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_IsOpen.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_TellFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Close.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_realloc.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_StrToName_ncpy.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Open.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ReadSingle.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_CloseFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(SetQuitHandler.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bdisp_PutDisp_DD.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_Write.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_malloc.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusAreaFlags.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_DeleteEntry.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(OS_InnerWait_ms.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(sys_free.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_ClearRX.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Serial_PollTX.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_OpenFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(GetVRAMAddress.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DisplayStatusArea.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(DefineStatusMessage.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(Bfile_ReadFile_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memset.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(crt0.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memcpy.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(keyboard.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(calloc.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(PRGM_GetKey_OS.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a(memsetZero.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_movmem_i4.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_table.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_div_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_sf_to_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_addsub_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_mul_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_si_to_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_make_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_thenan_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clzsi2.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_sf.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_pack_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_unpack_df.o)
+ .bss           0x08102d05        0x0 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/gcc/sh3eb-elf/10.1.0/libgcc.a(_clz.o)
  *(.bss*)
- *fill*         0x08102875        0x3 
+ *fill*         0x08102d05        0x3 
  .bss._impl_stdin
-                0x08102878       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
-                0x08102878                __impl_stdin
- .bss.errno     0x08102888        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
-                0x08102888                _errno
+                0x08102d08       0x10 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdio.o)
+                0x08102d08                __impl_stdin
+ .bss.errno     0x08102d18        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(stdlib.o)
+                0x08102d18                _errno
  .bss._strtoks_
-                0x0810288c        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
-                0x0810288c                __strtoks_
+                0x08102d1c        0x4 /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a(string.o)
+                0x08102d1c                __strtoks_
  *(COMMON)
-                0x08102890                        _ebss = .
+                0x08102d20                        _ebss = .
 LOAD /workspace/casio-build/casio-main.o
 LOAD /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libc.a
 LOAD /workspace/casio-tools/prizmsdk/PrizmSDK-win-0.6/lib/libfxcg.a

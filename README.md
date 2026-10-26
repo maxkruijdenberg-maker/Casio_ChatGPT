@@ -1,4 +1,11 @@
-# ChatGPT voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V2.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+
+**Al V1 geïnstalleerd? Begin bij [UPGRADE-V2.md](UPGRADE-V2.md).**
+
+V2 bevat de donkere ChatGPT-interface, het knooplogo in de app en het menu,
+een beter instellingenmenu en verbeteringen aan geheugenbeheer, uploads en
+foutafhandeling. Bekijk [beelden uit de echte UI-code](docs/design/V2-actual-screens.png)
+(hostrendering op 384×216, geen foto's van fysieke hardware).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -6,9 +13,10 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status:** beide programma's zijn in Linux gecompileerd. De gedeelde transport-
+**Status V2:** beide programma's zijn in Linux gecompileerd. De gedeelde transport-
 en tekstfuncties, aanvraagregistratie en echte editorcode zijn softwarematig
-getest. Er is nog geen test op een Casio/Atom of met een echte API-sleutel gedaan.
+getest. V1-UART is door de gebruiker op eigen hardware bevestigd. De wijzigingen in
+V2 zijn nog niet op een Casio/Atom of met een echte API-sleutel getest.
 De Windows-hulpmiddelen zijn geschreven en statisch gecontroleerd, niet op
 Windows uitgevoerd. Deze oplevering is een fysiek te valideren breadboardversie.
 
@@ -21,8 +29,8 @@ Windows uitgevoerd. Deze oplevering is een fysiek te valideren breadboardversie.
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 5. Installeer in Boardbeheer **esp32 by Espressif Systems 3.3.0**.
 6. Installeer in Bibliotheekbeheer **ArduinoJson by Benoit Blanchon 7.4.2**.
-7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. De bestanden `wire.h`, `ledger.h`,
-   `hardware.h` en `trust.h` moeten in dezelfde map blijven staan.
+7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V2 bevat extra
+   gedeelde headers; alleen het `.ino`-bestand overnemen is niet voldoende.
 8. Selecteer board **M5Atom** (originele ESP32, geen M5AtomS3), de bijbehorende
    COM-poort en uploadsnelheid 115200. Compileer en upload. De firmware gebruikt
    geen M5Stack-displaybibliotheek of USB-configuratieprogramma.
@@ -97,11 +105,16 @@ API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
-Instellingen toont alleen of een waarde is ingesteld. De sleutel en het
+V2 toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
+toont Instellingen alleen of een waarde is ingesteld. De sleutel en het
 hotspotwachtwoord worden afgeschermd ingevoerd en niet teruggelezen. Kies de
 instelling opnieuw om deze te vervangen. Een leeg opgeslagen veld wist die
 waarde. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
-De enige taalkeuze in deze versie is Nederlands.
+De enige taalkeuze in deze versie is Nederlands. Bij een onbereikbare Atom
+verschijnt geen foutpopup vóór het instellingenmenu: de waarden staan als
+Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
+open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
+niet-opgeslagen wijziging weg. MENU sluit ook het geheime invoerveld.
 
 ## Limieten en opslag
 
@@ -179,7 +192,10 @@ en UndefinedBehaviorSanitizer. Resultaten staan in `docs/logs/tests.log`.
 Transport en UTF-8: 19748 asserts; aanvraagregistratie: 10000 cycli met herhaling,
 reset en opslagfalen; editor: SHIFT-lock, hoofdletters, exacte sleutelletterkast,
 maskering, cijferstand en UTF-8-bewerking. De editor-test gebruikt expliciete
-hostapparaatstubs; dat is geen fysieke toetsentest en geen API-test.
+hostapparaatstubs; dat is geen fysieke toetsentest en geen API-test. V2 test
+ook de echte upload-state-machine, woordomloop, offline instellingen,
+teruglezen van het bestaande model en de gedeelde OpenAI-responseparser
+(inclusief weigering, limieten, afbreking en ingebedde NUL).
 
 De twee bouwlogs en het Casio-linkoverzicht staan in `docs/logs`. De
 Arduino-build gebruikt lokaal geïnstalleerde officiële packages omdat de

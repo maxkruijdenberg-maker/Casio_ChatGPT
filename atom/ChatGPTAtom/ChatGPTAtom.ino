@@ -1,4 +1,4 @@
-/* ChatGPT Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V2.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio, not in this sketch or USB logs. */
 #include <Arduino.h>
@@ -8,6 +8,10 @@
 #include <Preferences.h>
 #include <ArduinoJson.h>
 #include <time.h>
+#include <atomic>
+#include "upload.h"
+#include "config_validation.h"
+#include "api_response.h"
 #include "wire.h"
 #include "ledger.h"
 #include "trust.h"
@@ -16,14 +20,14 @@ static const size_t QUESTION_MAX=1024, ANSWER_MAX=8192, HISTORY_MAX=12288, BODY_
 HardwareSerial Calc(1);
 Preferences prefs;
 SemaphoreHandle_t gate;
-static String cfg[5],upload,question,answer;
+static String cfg[4],question,answer;
+static Upload upload={};
 static String oldQ[2],oldA[2];
-static uint8_t historyCount=0,uploadTarget=0,state=S_IDLE,errorCode=0;
-static bool contextDropped=false;
-static volatile bool cancelled=false;
+static uint8_t historyCount=0,state=S_IDLE,errorCode=0;
+static bool contextDropped=false,wifiDirty=true;
+static std::atomic_bool cancelled{false};
 static RequestLedger ledger={};
 static int saveId(const char *name,uint32_t id){return prefs.putUInt(name,id)==4;}
-static uint16_t expectedUpload=0;
 static WParser parser={};
 static WFrame cachedIn={},cachedOut={};
 static bool cached=false;
@@ -49,18 +53,19 @@ static uint8_t httpError(int code){
  if(code==HTTPC_ERROR_CONNECTION_LOST)return E_INTERNET;
  if(code<=0)return E_TLS;return E_HTTP;
 }
-static void runApi(void*) {
- String ssid,pass,key,model,q;
- {Lock l;ssid=cfg[0];pass=cfg[1];key=cfg[2];model=cfg[3];q=question;}
+static void performApi() {
+ String ssid,pass,key,model,q;bool resetWiFi;
+ {Lock l;ssid=cfg[0];pass=cfg[1];key=cfg[2];model=cfg[3];q=question;resetWiFi=wifiDirty;wifiDirty=false;}
  uint8_t resultError=0; bool success=false;
  do {
   if(!ssid.length()||!key.length()||!model.length()){resultError=E_CONFIG;break;}
-  WiFi.mode(WIFI_STA);WiFi.begin(ssid.c_str(),pass.c_str());
+  WiFi.mode(WIFI_STA);
+  if(resetWiFi||WiFi.status()!=WL_CONNECTED||WiFi.SSID()!=ssid){WiFi.disconnect(false,false);WiFi.begin(ssid.c_str(),pass.c_str());}
   uint32_t started=millis();
   while(WiFi.status()!=WL_CONNECTED&&!cancelled&&millis()-started<20000)delay(30);
   if(cancelled)break;
-  if(WiFi.status()!=WL_CONNECTED){resultError=E_WIFI;break;}
-  phase(S_TIME);configTime(0,0,"pool.ntp.org","time.google.com");started=millis();
+  if(WiFi.status()!=WL_CONNECTED){wl_status_t ws=WiFi.status();resultError=ws==WL_NO_SSID_AVAIL?E_WIFI_NOT_FOUND:ws==WL_CONNECT_FAILED?E_WIFI_AUTH:E_WIFI;break;}
+  phase(S_TIME);if(time(nullptr)<1767225600)configTime(0,0,"pool.ntp.org","time.google.com");started=millis();
   while(time(nullptr)<1767225600&&!cancelled&&millis()-started<15000)delay(30);
   if(cancelled)break;
   if(time(nullptr)<1767225600){resultError=E_TIME;break;}
@@ -100,14 +105,13 @@ static void runApi(void*) {
   JsonDocument response;
   DeserializationError parsed=deserializeJson(response,incoming.body);incoming.body="";
   if(parsed||response.overflowed()){resultError=parsed==DeserializationError::NoMemory?E_MEMORY:E_JSON;break;}
-  const char *text=response["choices"][0]["message"]["content"];
-  const char *finish=response["choices"][0]["finish_reason"]|"";
-  if(!text||!*text){resultError=E_JSON;break;}
-  if(strlen(text)>ANSWER_MAX){resultError=E_BIG;break;}
-  String a=text;if(a.length()!=strlen(text)){resultError=E_MEMORY;break;}
-  if(!strcmp(finish,"length")){
+  CompletionView view={};resultError=completion_view(response.as<JsonVariantConst>(),ANSWER_MAX,&view);
+  if(resultError)break;
+  String a;if(!a.concat(view.text,view.size)){resultError=E_MEMORY;break;}
+  if(view.truncated){
    const char *note="\n[Antwoord afgebroken door tokenlimiet.]";
-   if(a.length()+strlen(note)>ANSWER_MAX){resultError=E_BIG;break;}a+=note;
+   if(a.length()+strlen(note)>ANSWER_MAX){resultError=E_BIG;break;}
+   if(!a.concat(note)){resultError=E_MEMORY;break;}
   }
   {Lock l;
    if(cancelled)break;
@@ -125,8 +129,11 @@ static void runApi(void*) {
   if(cancelled){state=S_CANCELLED;errorCode=0;}
   else {state=S_ERROR;errorCode=resultError?resultError:E_REQUEST;}
  }
- key="";pass="";vTaskDelete(nullptr);
+ /* Returning destroys all String/JSON/HTTP objects. vTaskDelete alone would
+  * skip destructors of function-scope Strings and leak memory every question. */
 }
+static void runApi(void*){performApi();vTaskDelete(nullptr);}
+
 static bool sameFrame(const WFrame&a,const WFrame&b){return a.type==b.type&&a.seq==b.seq&&a.len==b.len&&!memcmp(a.data,b.data,a.len);}
 static void sendFrame(const WFrame& f){uint8_t out[WIRE_ENCODED];size_t n=w_encode(&f,out);Calc.write(out,n);}
 static void handle(const WFrame& in) {
@@ -145,34 +152,30 @@ static void handle(const WFrame& in) {
    if(g!=G_NEW){out.data[0]=g==G_BUSY?E_BUSY:E_MEMORY;break;}}
   out.len=5;w_put32(out.data+1,ledger.active);break;
  case W_BEGIN:
-  if(in.len!=3||in.data[0]>4){out.data[0]=E_REQUEST;break;}
+  if(in.len!=3){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
-  uploadTarget=in.data[0];expectedUpload=w_get16(in.data+1);upload="";
-  {size_t cap=uploadTarget==0?QUESTION_MAX:uploadTarget==1?32:uploadTarget==2?63:uploadTarget==3?256:80;
-   if(expectedUpload>cap||!upload.reserve(expectedUpload)){out.data[0]=E_BIG;expectedUpload=0;}}
-  break;
+  out.data[0]=upload_begin(&upload,in.data[0],w_get16(in.data+1));break;
  case W_APPEND:
   if(busy()){out.data[0]=E_BUSY;break;}
-  if(in.len<3||w_get16(in.data)!=upload.length()||in.len-2>expectedUpload-upload.length()){
-   out.data[0]=E_UPLOAD;break;
-  }
-  if(memchr(in.data+2,0,in.len-2)||!upload.concat((const char*)in.data+2,in.len-2))out.data[0]=E_UPLOAD;
-  break;
+  if(in.len<3){out.data[0]=E_UPLOAD;break;}
+  out.data[0]=upload_append(&upload,w_get16(in.data),in.data+2,in.len-2);break;
  case W_APPLY:
   if(in.len||busy()){out.data[0]=busy()?E_BUSY:E_REQUEST;break;}
-  if(upload.length()!=expectedUpload){out.data[0]=E_UPLOAD;break;}
-  if(uploadTarget==0){question=upload;}
-  else {
-   int idx=uploadTarget-1;
-   if(idx==3){bool good=upload.length()>0;for(size_t i=0;i<upload.length();i++)if(!isalnum((unsigned char)upload[i])&&upload[i]!='-'&&upload[i]!='_'&&upload[i]!='.')good=false;
-    if(!good){out.data[0]=E_MODEL;break;}}
-   const char *names[]={"ssid","pass","key","model"};
-   if(prefs.putString(names[idx],upload)!=upload.length()){out.data[0]=E_MEMORY;break;}
-   cfg[idx]=upload;clearHistory();
+  if(!upload_complete(&upload)){out.data[0]=E_UPLOAD;break;}
+  if(!setting_valid(upload.target,upload.bytes,upload.used)){out.data[0]=E_CONFIG;upload_clear(&upload);break;}
+  if(upload.target==0){
+   question=upload.bytes;if(question.length()!=upload.used)out.data[0]=E_MEMORY;
+  }else {
+   int idx=upload.target-1;const char *names[]={"ssid","pass","key","model"};
+   String next=upload.bytes;if(next.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
+   bool saved=upload.used?prefs.putString(names[idx],next)==upload.used:(!prefs.isKey(names[idx])||prefs.remove(names[idx]));
+   if(!saved){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
+   cfg[idx]=std::move(next);if(idx<2)wifiDirty=true;clearHistory();
   }
-  upload="";expectedUpload=0;break;
+  upload_clear(&upload);break;
  case W_ASK:
   if(in.len!=4){out.data[0]=E_REQUEST;break;}
+  if(w_get32(in.data)!=ledger.last&&(!cfg[0].length()||!cfg[2].length()||!cfg[3].length())){out.data[0]=E_CONFIG;break;}
   if(!question.length()&&w_get32(in.data)!=ledger.last){out.data[0]=E_REQUEST;break;}
   {int g=g_admit(&ledger,w_get32(in.data),busy(),saveId);
    if(g==G_REPLAY){out.len=2;out.data[1]=state;break;}
@@ -191,20 +194,35 @@ static void handle(const WFrame& in) {
   break;
  case W_CANCEL:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  if(busy())cancelled=true;break;
+  upload_clear(&upload);if(busy())cancelled=true;else ledger.allocated=0;break;
  case W_NEW:
   if(in.len){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
-  clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  upload_clear(&upload);ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  case W_INFO:
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=5;for(int i=0;i<4;i++)out.data[i+1]=cfg[i].length()>0;break;
+ case W_GET_CONFIG:
+  if(in.len!=3||(in.data[0]!=1&&in.data[0]!=4)){out.data[0]=E_REQUEST;break;}
+  {const String &value=cfg[in.data[0]-1];size_t at=w_get16(in.data+1);
+   if(at>value.length()){out.data[0]=E_REQUEST;break;}
+   size_t n=min((size_t)WIRE_MAX-2,value.length()-at);out.len=n+2;
+   out.data[1]=(uint8_t)value.length();memcpy(out.data+2,value.c_str()+at,n);}
+  break;
+ case W_DEVICE:
+  if(in.len){out.data[0]=E_REQUEST;break;}
+  out.len=4;out.data[1]=2;out.data[2]=0;out.data[3]=1;break;
  case W_WIPE:
   if(in.len!=4||memcmp(in.data,"WIPE",4)){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
   /* Keep request ledger so erasing settings cannot make old POSTs replayable. */
-  {const char *names[]={"ssid","pass","key","model"};for(int i=0;i<4;i++){prefs.remove(names[i]);cfg[i]="";}}
-  cfg[3]="gpt-4.1-mini";clearHistory();question="";answer="";state=S_IDLE;break;
+  {const char *names[]={"ssid","pass","key","model"};
+   for(int i=0;i<4;i++){
+    if(prefs.isKey(names[i])&&!prefs.remove(names[i])){out.data[0]=E_MEMORY;break;}
+    cfg[i]="";
+   }}
+  if(!cfg[3].length())cfg[3]="gpt-4.1-mini";
+  upload_clear(&upload);wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  default:out.data[0]=E_REQUEST;
  }
  }

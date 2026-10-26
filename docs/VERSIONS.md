@@ -23,7 +23,7 @@
 - mkg3a git 502381ee402d8435126be3ac651ad9b42db26d33 (GitLab taricorp/mkg3a).
   Gebouwd met BMP-ondersteuning; eigen iconen 92x64 pixels.
   https://gitlab.com/taricorp/mkg3a
-- DejaVu Sans Mono 13px-raster, 176 expliciete glyphs; generator inbegrepen.
+- DejaVu Sans Mono 13px-raster, 177 expliciete glyphs (V2); generator inbegrepen.
   Zie FONT-LICENSE.txt. Geen automatische aanname over Casio-codepagina's.
 - OpenAI API-specificatie opgehaald van de officiële repository tijdens bouw:
   https://github.com/openai/openai-openapi/blob/master/openapi.yaml
@@ -42,3 +42,18 @@ Arduino-bronbestanden zijn meegeleverd zodat je de firmware opnieuw kunt bouwen.
 
 `dist/sha256.json` bevat hashes van de geleverde binaire bestanden. Een hash
 bevestigt bestandsgelijkheid; hij bewijst geen fysieke werking.
+
+## V2.0 changes
+
+Runtime toolchain versions are unchanged. Firmware and add-in report V2.0;
+wire framing remains protocol v1 with additive W_GET_CONFIG/W_DEVICE commands.
+The shared Unicode helper is in atom/ChatGPTAtom/utf8.h. The font now contains
+177 glyphs (middle dot added); tools/make_font.py no longer overwrites the
+menu icons. tools/make_assets.py builds those from assets/openai.svg using
+CairoSVG and Pillow on the build machine. Their versions are recorded in
+`docs/logs/v2-assets.txt`; neither is needed to flash prebuilt files.
+
+The C++ host API tests use the same ArduinoJson 7.4.2 headers as the firmware.
+GCC emits a may-be-uninitialized warning for an upstream ArduinoJson iterator
+in the sanitized host build; tests finish successfully without sanitizer
+errors. The ESP32 target build also completes successfully.

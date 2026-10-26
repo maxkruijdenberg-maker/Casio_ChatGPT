@@ -71,3 +71,25 @@ API-sleutel of hotspotwachtwoord in foto's, screenshots of logbestanden.
 Slaapstand en ontwaken zijn op verzoek weggelaten. Doe geen ruststroommeting
 voor het eindproduct op basis van dit USB-gevoede ontwikkelbord. De latere
 XIAO ESP32-C6 vereist een aparte firmwareport en hardwarevalidatie.
+
+## Aanvullingen voor V2
+
+- Voer eerst UPGRADE-V2.md uit. Controleer bij Instellingen → Versie dat zowel
+  app als Atom versie 2.0 aangeven. Protocol v1 bij F3 is nog steeds correct.
+- Controleer leesbaarheid van de donkere interface op je echte scherm en
+  de normale/geselecteerde menu-iconen. De voorbeeldafbeeldingen zijn alleen
+  hostrendering. Alleen het eigen app-icoon verandert, niet het systeemmenu.
+- Atom los/onbereikbaar: Instellingen moet Onbekend tonen zonder voorafgaande
+  foutpopup. Sluit de Atom opnieuw aan en gebruik F3 in Instellingen.
+- Controleer dat hotspotnaam en eigen model worden teruggelezen. Een
+  gewijzigde modelnaam moet bij opnieuw bewerken behouden zijn; wachtwoord
+  en sleutel mogen nooit worden teruggelezen.
+- Onderbreek bij een proefinvoer de verbinding tijdens opslaan. Na de
+  foutmelding moet de invoer in het veld blijven voor een nieuwe poging.
+  Gebruik hiervoor een onschuldig proefveld, geen echte sleutel op een foto.
+- Test lange antwoorden met woorden en accenten, paginascrollen tot het eind,
+  een lange foutmelding, F1 vervolgvraag en F2 Nieuw gesprek.
+- Stel meerdere korte vragen na elkaar om geheugenstabiliteit in de praktijk
+  te controleren. Deze duurtest is hier nog niet op de Atom uitgevoerd.
+- Controleer na firmware-update dat bestaande instellingen behouden zijn.
+  De NVS-indeling is gelijk gebleven, maar behoud is hier niet fysiek getest.
