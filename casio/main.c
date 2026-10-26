@@ -123,7 +123,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V5",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V6",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -379,7 +379,7 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"5.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"6.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
@@ -390,7 +390,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V5.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V5 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
+  if(selected==5){message("Versie","Casio ChatGPT V6.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V6 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -521,20 +521,21 @@ static void runSession(void){
  }
 }
 static void endSession(void){
- if(serialOpen){
-  uint8_t bytes[WIRE_ENCODED];WFrame cancel={0};size_t n;
-  cancel.type=W_CANCEL;cancel.seq=++seq;n=w_encode(&cancel,bytes);Serial_Write(bytes,(int)n);OS_InnerWait_ms(150);
- }
- cleanup();waitForKeyRelease();
+ /* Keep UART alive until native MENU takes over. In particular, do not send
+  * W_CANCEL or closeSerial here: a failed menu handoff must not drop the link.
+  * SetQuitHandler releases it when the OS switches applications. */
+ storageClose();erase(field,sizeof(field));waitForKeyRelease();
 }
 static void nativeMainMenu(void){
- int key;
- /* GetKeyWait_OS polls the key matrix; it does not reliably consume the
-  * translated Keyboard_PutKeycode queue. The full GetKey dispatcher does.
-  * It enters native MENU and stays there until this add-in is selected again.
-  * Consume its eventual return key before beginning a fresh app session. */
- Bkey_ClrAllFlags();Keyboard_PutKeycode(-1,-1,KEY_CTRL_MENU);
- GetKey(&key);
+ /* Call the native menu directly instead of injecting a translated key and
+  * assuming GetKey consumed it as a request to leave this add-in. Explicitly
+  * enable main-function return, which can be disabled in the inherited OS state.
+  * cleanup is also the OS quit handler; the call after return is an idempotent
+  * fallback when the same add-in is resumed without an app-switch callback. */
+ Bkey_ClrAllFlags();EnableGetkeyToMainFunctionReturn();
+ EnableStatusArea(0);DrawFrame(0xffff);
+ DisplayMainMenu();
+ cleanup();
 }
 
 int main(void){

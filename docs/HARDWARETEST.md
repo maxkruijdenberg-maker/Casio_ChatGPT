@@ -148,3 +148,14 @@ DrawFrame ingekleurd. Controleer herstel naar wit in standaardapps. Loop
 naar en van ChatGPT in MENU; de geselecteerde bitmap moet het hele blok
 markeren, met één appnaam. De OS-tekst/focuskleur blijft systeemgedrag.
 Deze hardwarecontroles zijn hier nog niet uitgevoerd.
+
+## V6: directe menu-aanroep, UART-volgorde en blauwe selectie
+
+Volg UPGRADE-V6.md. Test eerst F3 met een aangesloten Atom, dan EXIT → Ja.
+Controleer MENU door RUN-MAT te openen; alleen een UART-statusverandering
+geldt niet als succes. Controleer opnieuw openen en F3 vijfmaal. Test ook
+Nee en fysiek MENU. V6 sluit UART niet vóór de directe DisplayMainMenu-aanroep;
+de OS-appwisselcallback en de fallback bij terugkeer ruimen op. De werkelijke
+OS-callbacktiming is hier niet uitgevoerd. Controleer behoud van de donkere
+schermrand en vergelijk het rechte lichtblauwe/witte geselecteerde pictogram
+met de standaardapps, inclusief naam/focus die het OS zelf tekent.

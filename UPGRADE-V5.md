@@ -1,3 +1,5 @@
+> Nieuwste versie: [V6 installeren](UPGRADE-V6.md).
+
 # V5 — terug naar MENU, schermranden en pictogramselectie
 
 **Met Atom V3 hoef je alleen `ChatGPT.g3a` te vervangen.** Geen nieuwe

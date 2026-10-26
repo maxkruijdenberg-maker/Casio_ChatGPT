@@ -106,3 +106,19 @@ bitmap contains baked-in label text. The OS controls its text/focus colors.
 Atom source/binaries remain identical to v3.0.0. Nine sanitized test groups
 pass and the SH4 add-in is built. Native menu behavior, border rendering and
 selection style require physical confirmation. See UPGRADE-V5.md.
+
+## V6.0: direct native menu and deferred UART cleanup
+
+V5 still did not leave the app on the user's device; its host dispatcher stub
+was not evidence of an OS menu transition. V6 removes injected MENU entirely
+and calls EnableGetkeyToMainFunctionReturn and DisplayMainMenu directly.
+UART stays open until the OS app-switch callback (or cleanup after native
+menu return). No pre-menu W_CANCEL or Serial_Close. The USB-powered Atom is
+not physically switched off. Lifecycle fixtures now exercise real RPC-opened
+UART sessions and assert cleanup ordering, callback and callbackless paths.
+
+The V5 working DrawFrame behavior remains. Selected icon: white interior,
+rectangular light-blue border, no black shadow/rounding/gradient. See
+docs/V6-REFERENCES.md for the fx-CG50 menu screenshot used for comparison.
+Nine sanitized host test groups pass; SH4 binary built. Physical native-menu
+behavior and exact OS selection appearance remain unverified. Atom stays V3.

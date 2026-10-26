@@ -1,3 +1,5 @@
+> Nieuwste versie: [V6 installeren](UPGRADE-V6.md).
+
 > Nieuwste versie: [V5 installeren](UPGRADE-V5.md).
 
 # Van V1 naar ChatGPT V2 — Windows

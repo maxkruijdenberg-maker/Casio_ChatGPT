@@ -12,6 +12,7 @@ static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initK
 static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
 static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
+static int menuVisible=0,menuReturnEnabled=0,serialCloses=0;
 static jmp_buf lifecycleDone;
 static void (*quitCallback)(void);
 static void menuReturned(void);
@@ -59,12 +60,14 @@ void Bdisp_EnableColor(int n){colorMode=n;}
 void Bkey_ClrAllFlags(void){keysCleared++;}
 int Keyboard_PutKeycode(int x,int y,int code){assert(x==-1&&y==-1&&!nativeQueued);nativeQueued=code;return 0;}
 int GetKey(int*key){
+ /* An injected MENU can be returned as a key instead of changing apps. Do not
+  * give the implementation a simulated menu transition for an injected key. */
  assert(nativeQueued==KEY_CTRL_EXIT||nativeQueued==KEY_CTRL_MENU);
- int queued=nativeQueued;nativeQueued=0;
- if(queued==KEY_CTRL_MENU){menuReturned();*key=KEY_CTRL_EXE;}
- else {*key=queued;initKeys++;}
+ *key=nativeQueued;nativeQueued=0;
+ if(*key==KEY_CTRL_EXIT){initKeys++;if(lifecycleTesting){assert(!serialOpen);menuVisible=0;}}
  return 0;
 }
+void EnableGetkeyToMainFunctionReturn(void){menuReturnEnabled=1;}
 /* Matrix-only polling does NOT consume the translated native key queue. This
  * deliberately catches the V4 handoff even though it passed the older stub. */
 int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code){
@@ -76,7 +79,7 @@ int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
 void OS_InnerWait_ms(int ms){timeTicks+=ms;}
 int Serial_ClearTX(void){return 0;}int Serial_ClearRX(void){rxAt=rxEnd=0;return 0;}
-int Serial_Close(int n){(void)n;return 0;}int Serial_IsOpen(void){return 0;}
+int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(menuVisible);serialCloses++;return 0;}int Serial_IsOpen(void){return 0;}
 int Serial_Open(unsigned char *p){(void)p;return 0;}
 int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return (int)(rxEnd-rxAt);}
 int Serial_ReadSingle(unsigned char*p){if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];return 0;}
@@ -110,19 +113,22 @@ int Serial_Write(const unsigned char*p,int n){
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
 void SetQuitHandler(void(*h)(void)){quitCallback=h;}
-void DisplayMainMenu(void){}
+void DisplayMainMenu(void){assert(menuReturnEnabled&&!nativeQueued);menuReturned();}
 static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
 static void dumpFrame(const char*path){
  FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n384 216\n255\n");
  for(int i=0;i<384*216;i++){unsigned short v=vram[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
 }
-static const int lifeOne[]={31,31,0,0,0,47,47,0,0,0,79,79,0,0,0};
-static const int lifeTwo[]={31,31,0,0,0,78,0,65,0,48,48,0,0,0};
-static const int lifeThree[]={31,31,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
+static const int lifeOne[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,79,79,0,0,0};
+static const int lifeTwo[]={31,31,0,0,0,59,0,47,0,78,0,65,0,48,48,0,0,0};
+static const int lifeThree[]={31,31,0,0,0,59,0,47,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
- assert(lifecycleTesting&&quitting&&serialOpen==0&&storageReadHandle<0&&storageWriteHandle<0);
- assert(statusMode==0&&lcdFrame==0xffff);if(quitCallback)quitCallback();nativeMenus++;
+ assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
+ assert(statusMode==0&&lcdFrame==0xffff);
+ /* Only now is MENU visible. One return omits the OS callback to exercise
+  * the post-menu cleanup fallback as well as actual app-switch callbacks. */
+ menuVisible=1;if(nativeMenus!=1&&quitCallback)quitCallback();nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
  if(nativeMenus==3)longjmp(lifecycleDone,1);
  /* Emulate native menus changing both the VRAM pointer and the DMA window. */
@@ -136,10 +142,13 @@ static void testLifecycle(void){
  lcdFrame=0xffff;clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView(view_default());
- int paid=requestCount[W_ASK];lifecycleTesting=1;nativeMenus=0;initKeys=0;
+ cleanup(); /* End the preceding independent editor fixtures first. */
+ int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses;
+ lifecycleTesting=1;nativeMenus=0;initKeys=0;menuReturnEnabled=0;menuVisible=0;
  SCRIPT(lifeOne);quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
  if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main returned after showing the native menu");}
  assert(nativeMenus==3&&initKeys==3&&keysCleared>=6&&requestCount[W_ASK]==paid);
+ assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
  assert(statusMode==0&&field[0]==0);applyView(view_default());
 }
@@ -212,6 +221,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three controller close/reopen cycles using the full native key dispatcher, held keys, changed display state and a separate LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three controller close/reopen cycles using direct native MENU with UART kept open until menu entry, quit-callback and return cleanup, held keys, changed display state and a separate LCD frame.");
  return 0;
 }

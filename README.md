@@ -1,13 +1,13 @@
-# ChatGPT V5.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V6.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V3/V4 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V5.md](UPGRADE-V5.md).**
+**Al V3/V4/V5 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V6.md](UPGRADE-V6.md).**
 
 Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
 
-V5 verandert de native menuoverdracht na EXIT → Ja, kleurt ook de aparte
-Casio-schermrand en voegt een volledig geselecteerd pictogramblok toe.
-Schaal/positie en lokale chatgeschiedenis blijven behouden.
-Bekijk [de V5-interface in hosttests](docs/design/V5-actual-screens.png).
+V6 roept het Casio-menu direct aan en sluit de UART niet meer vóór de
+menuoverdracht. Het geselecteerde pictogram heeft een rechthoekige lichtblauwe
+rand en witte achtergrond. De werkende donkere schermrand van V5 blijft.
+Bekijk [de V6-interface in hosttests](docs/design/V6-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -15,14 +15,15 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V5:** de Casio-add-in is opnieuw in Linux gebouwd. De meegeleverde
-Atom-firmware is ongewijzigd V3. Negen softwaretestgroepen slagen, waaronder
-de controllerroute voor sluiten/heropenen, de volledige framebuffer en een
-apart gemodelleerde schermrand. V4 bleef volgens de hardwaremelding van de
-gebruiker hangen na afsluiten; de oude teststub stelde de OS-menuoverdracht te
-ruim voor. V5 gebruikt GetKey in plaats van GetKeyWait_OS voor de geïnjecteerde
-MENU-toets. De nieuwe route, schermrand en selectie moeten nog op een fysieke
-Casio worden bevestigd. Zie UPGRADE-V5.md.
+**Status V6:** de Casio-add-in is opnieuw gebouwd met de SH4-toolchain.
+Negen softwaretestgroepen slagen. De lifecycle-test opent nu echt de
+UART via de diagnose in elke gesimuleerde sessie en controleert dat deze
+open blijft tot de native menu-entry. OS-afsluitcallback en opruimen na
+terugkeer worden apart getest. Dit zijn hoststubs; zij voeren het Casio-OS
+niet uit. V5 bleef volgens jouw apparaatmelding in de app; die melding
+weegt zwaarder dan de eerdere groene tests. De V6-route moet nog op een
+fysieke Casio worden bevestigd. Atom-broncode en firmware blijven V3.
+Zie UPGRADE-V6.md en docs/V6-REFERENCES.md.
 
 ## Windows: installeren
 
