@@ -76,3 +76,17 @@ W_DEVICE also reports a non-secret boot identifier. The add-in checks it
 before sending a new question and reloads recent stored context if the Atom
 has restarted. The host UI tests cover both unchanged and changed boot IDs.
 The eight-group test run is recorded in docs/logs/tests.log.
+
+## V4.0 Casio-only fixes
+
+Atom source and firmware files are unchanged from v3.0.0. Casio reports 4.0;
+Atom correctly reports 3.0. The native SDK GetKey/GetKeyWait path handles color
+initialization and menu switching. Each entry/resume has an explicit session
+reset and held-key release barrier. Full frames use Bdisp_DefineDMARange
+(0,383,0,215) and Bdisp_PutDisp_DD instead of Bdisp_PutDisp_DD_stripe.
+
+The renderer supports bounded 80–120% zoom and ±24px pan. Display preferences
+use D0A.dat/D0B.dat in CGPT3; chat records are unchanged. The viewport geometry,
+preference storage and full app lifecycle are covered by sanitized host tests,
+including an LCD model and changed VRAM pointers. Physical OS/LCD confirmation
+is still required. See UPGRADE-V4.md and docs/logs/tests.log.

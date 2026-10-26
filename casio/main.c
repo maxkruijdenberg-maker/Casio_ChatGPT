@@ -10,6 +10,7 @@
 #include <fxcg/system.h>
 #include "storage_device.h"
 #include "library.h"
+#include "viewport.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -41,6 +42,9 @@ static int canLeaveReply(void);
 static int loadChatPair(int slot,int turn);
 
 static unsigned short *vram;
+static ViewProfile viewProfile={100,0,0};
+static ViewMap viewMap;
+static int viewReady=0;
 static const char *const errNames[]={
  "Geen fout","Vul eerst Instellingen in","Wifi niet verbonden: controleer hotspot",
  "Internet of DNS niet bereikbaar","Tijdsynchronisatie mislukt","TLS/HTTPS-verbinding mislukt",
@@ -59,6 +63,13 @@ static void closeSerial(void){
  SetSetupSetting(0x14,oldSetup);
 }
 static void cleanup(void){closeSerial();storageClose();EnableStatusArea(0);erase(field,sizeof(field));}
+/* The menu launch key and the key which opened a dialog must not become a
+ * command in the newly opened screen. Require a stable all-keys-up edge. */
+static void waitForKeyRelease(void){
+ int quiet=0;
+ while(quiet<3){if(PRGM_GetKey()==KEY_PRGM_NONE)quiet++;else quiet=0;OS_InnerWait_ms(10);}
+ lastKey=0;heldTick=repeatTick=RTC_GetTicks();
+}
 static int keyEvent(void){
  int k=PRGM_GetKey(),now=RTC_GetTicks();
  if(k==KEY_PRGM_MENU){quitting=1;return k;}
@@ -73,9 +84,14 @@ static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_In
 enum {C_BG=0x10a2,C_PANEL=0x2104,C_RAISED=0x2965,C_TEXT=0xef7d,
  C_MUTED=0xa514,C_LINE=0x39c7,C_MINT=0x7737,C_RED=0xfc10};
 static int linkKnown=0,linkOnline=0,linkSeen=0;
-static void rect(int x,int y,int w,int h,unsigned short color){
+static void applyView(ViewProfile p){viewProfile=view_valid(p)?p:view_default();view_build(&viewMap,viewProfile);viewReady=1;}
+static void physicalRect(int x,int y,int w,int h,unsigned short color){
  int xx,yy;for(yy=y;yy<y+h;yy++)for(xx=x;xx<x+w;xx++)
   if(xx>=0&&xx<384&&yy>=0&&yy<216)vram[yy*384+xx]=color;
+}
+static void rect(int x,int y,int w,int h,unsigned short color){
+ ViewRect r;if(!viewReady)applyView(view_default());
+ if(view_rect(&viewMap,x,y,w,h,&r))physicalRect(r.x,r.y,r.w,r.h,color);
 }
 static void rounded(int x,int y,int w,int h,unsigned short color){
  int row,inset;for(row=0;row<h;row++){
@@ -91,7 +107,7 @@ static int glyphIndex(uint32_t cp){size_t i;for(i=0;i<FONT_COUNT;i++)if(font_gly
 static void glyph(int x,int y,uint32_t cp,unsigned short color){
  int i=glyphIndex(cp),dx,dy;if(i<0)i=glyphIndex(0xfffd);
  if(color==0)color=C_TEXT;if(color==0x0280)color=C_MINT;
- for(dy=0;dy<14;dy++)for(dx=0;dx<8;dx++)if(x+dx>=0&&x+dx<384&&y+dy>=0&&y+dy<216&&font_glyphs[i].rows[dy]&(1<<(7-dx)))vram[(y+dy)*384+x+dx]=color;
+ for(dy=0;dy<14;dy++)for(dx=0;dx<8;dx++)if(x+dx>=0&&x+dx<384&&y+dy>=0&&y+dy<216&&font_glyphs[i].rows[dy]&(1<<(7-dx)))rect(x+dx,y+dy,1,1,color);
 }
 static void printAt(int x,int y,const char *s,unsigned short color){uint32_t cp;size_t pos=0,len=strlen(s),n;
  while(pos<len&&x<=376){n=u_decode(s+pos,len-pos,&cp);glyph(x,y,cp,color);pos+=n;x+=8;}
@@ -105,9 +121,9 @@ static void clipped(int x,int y,const char*s,int width,unsigned short color){
 }
 static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
- rect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
+ physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V3",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V4",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -115,7 +131,15 @@ static void clear(const char *title){
   printAt(316,7,status,C_MUTED);
  }
 }
-static void show(void){EnableStatusArea(3);Bdisp_PutDisp_DD_stripe(0,215);}
+static void configureDisplay(void){
+ Bdisp_EnableColor(1);EnableStatusArea(3);
+ Bdisp_DefineDMARange(0,383,0,215);
+}
+static void show(void){
+ /* Do not inherit a cropped OS transfer window from a dialog or main menu.
+  * The normal full-display syscall handles the device's framebuffer transfer. */
+ configureDisplay();Bdisp_PutDisp_DD();
+}
 static void footer(const char *a,const char*b,const char*c,const char*d,const char*e,const char*f){
  const char *p[6];int i;p[0]=a;p[1]=b;p[2]=c;p[3]=d;p[4]=e;p[5]=f;
  rect(0,192,384,24,C_PANEL);rect(0,192,384,1,C_LINE);
@@ -167,7 +191,7 @@ static void message(const char *title,const char *body){
   if(k==KEY_PRGM_DOWN&&first<max)first++;if(k==KEY_PRGM_UP&&first>0)first--;
  }
 }
-static int confirm(const char *question){clear("Bevestigen");textPage(question,0,0);footer("Ja","Nee","","","","");show();
+static int confirm(const char *question){waitForKeyRelease();clear("Bevestigen");textPage(question,0,0);footer("Ja","Nee","","","","");show();
  while(!quitting){int k=waitKey();if(k==KEY_PRGM_F1)return 1;if(k==KEY_PRGM_F2||k==KEY_PRGM_EXIT)return 0;}return 0;
 }
 static int ensureSerial(void){
@@ -228,7 +252,7 @@ static uint32_t pickCharacter(int asciiOnly){
   if(sel<first)first=(sel/12)*12;if(sel>=first+96)first=(sel/12-7)*12;
   for(i=first;i<count&&i<first+96;i++){
    int x=8+((i-first)%12)*30,y=51+((i-first)/12)*15;glyph(x,y,choices[i],i==sel?0x0280:0);
-   if(i==sel){int x2;for(x2=x;x2<x+16;x2++)vram[(y+14)*384+x2]=C_MINT;}
+   if(i==sel){int x2;for(x2=x;x2<x+16;x2++)rect(x2,y+14,1,1,C_MINT);}
   }
   printAt(8,175,"Pijlen kiezen · EXE invoegen",C_MUTED);footer("Kies","","","","","");show();k=waitKey();
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return choices[sel];if(k==KEY_PRGM_EXIT)return 0;
@@ -303,10 +327,40 @@ static int refreshSettings(uint8_t flags[4]){
  return linkOnline;
 }
 static void screenTest(void){
- int k;rect(0,0,384,216,C_BG);rect(0,0,384,2,C_MINT);rect(0,214,384,2,C_MINT);rect(0,0,2,216,C_MINT);rect(382,0,2,216,C_MINT);
+ int k;physicalRect(0,0,384,216,C_BG);rect(0,0,384,2,C_MINT);rect(0,214,384,2,C_MINT);rect(0,0,2,216,C_MINT);rect(382,0,2,216,C_MINT);
  printAt(5,4,"TL",C_TEXT);printAt(361,4,"TR",C_TEXT);printAt(5,198,"BL",C_TEXT);printAt(361,198,"BR",C_TEXT);
  printAt(108,76,"Schermtest 384x216",C_TEXT);printAt(60,106,"Zijn alle vier hoeken zichtbaar?",C_MUTED);printAt(140,144,"EXIT: terug",C_MUTED);show();
  while(!quitting){k=waitKey();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return;}
+}
+static void screenSettings(void){
+ ViewProfile original=viewProfile,draft=viewProfile;int selected=0,k,i;char text[64];
+ while(!quitting){
+  clear("Scherm");rect(0,0,384,1,C_MINT);rect(0,215,384,1,C_MINT);rect(0,0,1,216,C_MINT);rect(383,0,1,216,C_MINT);
+  printAt(80,37,"Live voorbeeld",C_MUTED);
+  for(i=0;i<3;i++){
+   int y=64+i*29;if(selected==i)rounded(64,y-2,256,22,C_RAISED);
+   if(i==0)sprintf(text,"Schaal       %d%%",draft.percent);
+   if(i==1)sprintf(text,"Horizontaal  %+d px",draft.x);
+   if(i==2)sprintf(text,"Verticaal    %+d px",draft.y);
+   printAt(76,y,text,selected==i?C_MINT:C_TEXT);
+  }
+  printAt(52,157,"↑↓ kiezen · ←→ aanpassen",C_MUTED);printAt(64,175,"EXIT: annuleren",C_MUTED);
+  footer("Opslaan","Test","100%","","","");show();k=waitKey();
+  if(k==KEY_PRGM_EXIT){applyView(original);return;}
+  if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
+  if(k==KEY_PRGM_F3){draft=view_default();applyView(draft);continue;}
+  if(k==KEY_PRGM_F2){screenTest();continue;}
+  if(k==KEY_PRGM_LEFT||k==KEY_PRGM_RIGHT){
+   int delta=k==KEY_PRGM_LEFT?-1:1;ViewProfile next=draft;
+   if(selected==0)next.percent+=delta;else if(selected==1)next.x+=delta;else next.y+=delta;
+   if(view_valid(next)){draft=next;applyView(draft);}
+  }
+  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN){
+   if(view_save(&disk,draft)){storageClose();return;}
+   storageClose();message("Niet opgeslagen","Je scherminstelling kon niet worden opgeslagen. Probeer opnieuw of annuleer met EXIT.");
+  }
+ }
+ applyView(original);
 }
 static void settings(void){
  int selected=0,k,i,known;uint8_t configured[4]={0};WFrame r;
@@ -322,18 +376,18 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"3.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"4.0 / Atom %s",atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
   printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
   footer("Wijzig","","Test","Scherm","","");show();k=waitKey();
   if(k==KEY_PRGM_EXIT)break;
   if(k==KEY_PRGM_F3){known=refreshSettings(configured);continue;}
-  if(k==KEY_PRGM_F4){screenTest();continue;}
+  if(k==KEY_PRGM_F4){screenSettings();continue;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){message("Versie","Casio ChatGPT V3.0\nOriginele Atom Lite / ESP32-PICO-D4.\n\nWerk zowel de Atom-firmware als ChatGPT.g3a bij. Slaapstand is uit deze versie weggelaten.");continue;}
+  if(selected==5){message("Versie","Casio ChatGPT V4.0\nCompatibel met Atom-firmware V3.0.\n\nVoor V4 hoef je alleen ChatGPT.g3a bij te werken. Gesprekken en Atom-instellingen blijven behouden.");continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
@@ -426,10 +480,27 @@ static void ask(void){
   if(elapsed(start,150000)){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
-int main(void){
+/* The native menu handler may return when this add-in is selected again. That
+ * path must start a fresh session, not return through the old closing path. */
+static void beginSession(void){
+ if(serialOpen)closeSerial();storageClose();
+ oldSetup=GetSetupSetting(0x14);
+ quitting=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
+ memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
+ libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
+ linkKnown=linkOnline=linkSeen=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
+ prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
+ erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
+ SetQuitHandler(cleanup);waitForKeyRelease();
+ /* libfxcg/Utilities documents that color mode may need one OS GetKey pass.
+  * Consume a synthetic EXIT here, never dispatch it into our own close dialog. */
+ {int discarded;Bdisp_EnableColor(1);Keyboard_PutKeycode(-1,-1,KEY_CTRL_EXIT);do {GetKey(&discarded);}while(discarded!=KEY_CTRL_EXIT);}
+ Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
+ applyView(view_load(&disk));storageClose();configureDisplay();vram=(unsigned short*)GetVRAMAddress();
+ loadLibrary();
+}
+static void runSession(void){
  int k;unsigned epoch;
- vram=(unsigned short*)GetVRAMAddress();oldSetup=GetSetupSetting(0x14);SetQuitHandler(cleanup);
- Bdisp_EnableColor(1);EnableStatusArea(3);loadLibrary();
  for(;;){
   while(!quitting){
    k=editor(prompt,sizeof(prompt),"ChatGPT - Vraag",0,1,0,1);
@@ -445,9 +516,26 @@ int main(void){
   if(!unsavedReply)break;
   resumeAfterMenu();if(saveReply()||canLeaveReply()){quitting=1;break;}
  }
+}
+static void endSession(void){
  if(serialOpen){
   uint8_t bytes[WIRE_ENCODED];WFrame cancel={0};size_t n;
   cancel.type=W_CANCEL;cancel.seq=++seq;n=w_encode(&cancel,bytes);Serial_Write(bytes,(int)n);OS_InnerWait_ms(150);
  }
- cleanup();DisplayMainMenu();return 0;
+ cleanup();waitForKeyRelease();
+}
+static void nativeMainMenu(void){
+ int column=0,row=0;unsigned short keycode=0;
+ /* Let the SDK process a real MENU event, and never fall out of main after
+  * requesting it. Nonblocking mode adds no extra key press on re-entry. */
+ Bkey_ClrAllFlags();Keyboard_PutKeycode(-1,-1,KEY_CTRL_MENU);
+ GetKeyWait_OS(&column,&row,KEYWAIT_HALTOFF_TIMEROFF,0,0,&keycode);
+}
+int main(void){
+ for(;;){
+  beginSession();runSession();endSession();
+  nativeMainMenu();
+  /* Re-selecting this add-in resumes here; beginSession clears old quit/key
+   * state and reapplies the full display mode before anything is drawn. */
+ }
 }

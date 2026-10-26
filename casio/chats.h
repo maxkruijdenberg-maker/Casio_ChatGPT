@@ -85,6 +85,6 @@ static int chatSidebar(void){
  }return 0;
 }
 static void resumeAfterMenu(void){
- quitting=0;while(PRGM_GetKey()==KEY_PRGM_MENU)OS_InnerWait_ms(10);lastKey=0;
+ quitting=0;waitForKeyRelease();
 }
 #endif

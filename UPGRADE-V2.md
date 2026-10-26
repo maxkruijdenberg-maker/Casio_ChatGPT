@@ -1,5 +1,6 @@
 # Van V1 naar ChatGPT V2 — Windows
 
+Voor de huidige Casio V4-update: zie **UPGRADE-V4.md**.
 Historische V2-handleiding. Voor de huidige V3: zie **UPGRADE-V3.md**.
 
 Werk **zowel de Atom als ChatGPT.g3a** bij. Alleen de afbeelding of de Casio-app

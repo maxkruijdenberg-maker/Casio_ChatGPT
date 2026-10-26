@@ -1,5 +1,6 @@
 # ChatGPT V3 — pictogram, volledig scherm en lokale chatgeschiedenis
 
+Voor de huidige Casio V4-update: zie **UPGRADE-V4.md**.
 Deze V3 bevat uitsluitend de ChatGPT-app met het aangepaste pictogram,
 volledige schermverversing en een zijbalk voor bewaarde gesprekken. Er is geen
 apart startmenu, toegangscode, verborgen sneltoets, notitie-app of gamemenu.

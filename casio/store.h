@@ -27,7 +27,7 @@ static uint32_t s_crc_step(uint32_t crc,const uint8_t*p,size_t n){
  size_t i;int b;for(i=0;i<n;i++){crc^=p[i];for(b=0;b<8;b++)crc=(crc>>1)^((crc&1)?0xedb88320u:0);}return crc;
 }
 static uint32_t s_crc(const void*p,size_t n){return s_crc_step(0xffffffffu,(const uint8_t*)p,n)^0xffffffffu;}
-static uint32_t s_max(int kind){(void)kind;return STORE_CHAT_MAX;}
+static uint32_t s_max(int kind){return kind=='D'?16:STORE_CHAT_MAX;}
 static void s_name(char*out,int kind,int slot,int bank){sprintf(out,"%c%d%c.dat",kind,slot,bank?'B':'A');}
 static StoreRef s_probe(const StoreOps *o,int kind,int slot,int bank){
  StoreRef r;uint8_t h[STORE_HEADER],chunk[256];uint32_t at=0,crc=0xffffffffu;size_t n;
@@ -51,7 +51,7 @@ static int s_read(const StoreOps*o,const StoreRef*r,uint32_t at,void*out,size_t 
 }
 static int s_save(const StoreOps*o,int kind,int slot,uint32_t length,StoreReader reader,void*ctx,StoreRef*out){
  StoreRef old=s_latest(o,kind,slot),next;uint8_t h[STORE_HEADER]={0},chunk[256];uint32_t at=0,crc=0xffffffffu;size_t n;char name[12];int bank=old.valid?!old.bank:0;
- if(slot<0||slot>=STORE_SLOTS||kind!='C'||length>s_max(kind)||(old.valid&&old.seq==UINT32_MAX))return 0;
+ if(slot<0||slot>=STORE_SLOTS||(kind!='C'&&kind!='D')||(kind=='D'&&slot!=0)||length>s_max(kind)||(old.valid&&old.seq==UINT32_MAX))return 0;
  s_name(name,kind,slot,bank);if(!o->begin(o->ctx,name,STORE_HEADER+length))return 0;
  /* An invalid initial header prevents a partial payload from being selected. */
  if(!o->write(o->ctx,name,0,h,sizeof(h))){o->finish(o->ctx,name);return 0;}

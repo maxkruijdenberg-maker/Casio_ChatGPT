@@ -1,23 +1,30 @@
 /* Host-only device stubs exercise the real editor, not OpenAI functionality. */
 #include <stdlib.h>
+#include <setjmp.h>
 #define main casio_program_main
 #include "../casio/main.c"
 #undef main
 #include <assert.h>
 #include "../atom/ChatGPTAtom/upload.h"
-static unsigned short framebuffer[384*216];
-static int statusMode,stripeFirst=-1,stripeLast=-1;
+static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216];
+static unsigned short *deviceFramebuffer=framebuffer;
+static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initKeys=0;
+static int dma[4]={24,300,24,191},failCreate=0;
+static int nativeQueued=0,lifecycleTesting=0,nativeMenus=0;
+static jmp_buf lifecycleDone;
+static void (*quitCallback)(void);
+static void menuReturned(void);
 typedef struct {unsigned char*data;size_t size,pos;} TestFile;
 static TestFile testFiles[32];
 static int pathIndex(const unsigned short *wide){
  char name[80];size_t i=0;while(wide[i]&&i<79){name[i]=(char)wide[i];i++;}name[i]=0;
  const char *root="\\\\fls0\\CGPT3\\";assert(!strncmp(name,root,strlen(root)));
  char *base=strrchr(name,'\\');assert(base);base++;
- assert(base[0]=='C'&&base[1]>='0'&&base[1]<='7'&&(base[2]=='A'||base[2]=='B'));
- return (base[0]=='N'?16:0)+(base[1]-'0')*2+(base[2]=='B');
+ assert((base[0]=='C'||base[0]=='D')&&base[1]>='0'&&base[1]<='7'&&(base[2]=='A'||base[2]=='B'));
+ return (base[0]=='D'?16:0)+(base[1]-'0')*2+(base[2]=='B');
 }
 int Bfile_CreateEntry_OS(const unsigned short*p,int mode,size_t*size){
- if(mode==CREATEMODE_FOLDER)return 0;int i=pathIndex(p);if(testFiles[i].data)return -13;
+ if(mode==CREATEMODE_FOLDER)return 0;if(failCreate)return -1;int i=pathIndex(p);if(testFiles[i].data)return -13;
  testFiles[i].data=calloc(1,*size);testFiles[i].size=*size;testFiles[i].pos=0;return testFiles[i].data?0:-1;
 }
 int Bfile_DeleteEntry(const unsigned short*p){int i=pathIndex(p);free(testFiles[i].data);memset(&testFiles[i],0,sizeof(testFiles[i]));return 0;}
@@ -30,7 +37,8 @@ int Bfile_ReadFile_OS(int h,void*out,int size,int pos){
 int Bfile_SeekFile_OS(int h,int pos){TestFile*f=&testFiles[h-1];if(pos<0||(size_t)pos>f->size)return -1;f->pos=pos;return 0;}
 int Bfile_WriteFile_OS(int h,const void*data,int size){TestFile*f=&testFiles[h-1];if((size_t)size>f->size-f->pos)return -1;memcpy(f->data+f->pos,data,size);f->pos+=size;return size;}
 void EnableStatusArea(int mode){statusMode=mode;}
-void Bdisp_PutDisp_DD_stripe(int first,int last){stripeFirst=first;stripeLast=last;}
+void Bdisp_PutDisp_DD_stripe(int first,int last){(void)first;(void)last;stripeCalls++;}
+void Bdisp_DefineDMARange(int x1,int x2,int y1,int y2){dma[0]=x1;dma[1]=x2;dma[2]=y1;dma[3]=y2;}
 
 static unsigned char rx[8192];static size_t rxAt,rxEnd;
 static int connected=1,busyUntil,requestCount[32],privateReads;
@@ -38,10 +46,21 @@ static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
 static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
-void *GetVRAMAddress(void){return framebuffer;}
+void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
-void Bdisp_PutDisp_DD(void){}
-void Bdisp_EnableColor(int n){(void)n;}
+void Bdisp_PutDisp_DD(void){
+ assert(colorMode==1&&statusMode==3);assert(dma[0]>=0&&dma[1]<384&&dma[2]>=0&&dma[3]<216);
+ for(int y=dma[2];y<=dma[3];y++)memcpy(lcd+y*384+dma[0],deviceFramebuffer+y*384+dma[0],(dma[1]-dma[0]+1)*sizeof(unsigned short));fullCopies++;
+ assert(!memcmp(lcd,deviceFramebuffer,sizeof(lcd)));
+}
+void Bdisp_EnableColor(int n){colorMode=n;}
+void Bkey_ClrAllFlags(void){keysCleared++;}
+int Keyboard_PutKeycode(int x,int y,int code){assert(x==-1&&y==-1&&!nativeQueued);nativeQueued=code;return 0;}
+int GetKey(int*key){assert(nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;return 0;}
+int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code){
+ assert(mode==KEYWAIT_HALTOFF_TIMEROFF&&timeout==0&&menu==0&&nativeQueued==KEY_CTRL_MENU);
+ nativeQueued=0;*c=*r=0;*code=0;menuReturned();return 0;
+}
 int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}return keys[keyAt++];}
 int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
@@ -80,13 +99,36 @@ int Serial_Write(const unsigned char*p,int n){
 }
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
-void SetQuitHandler(void(*h)(void)){(void)h;}
+void SetQuitHandler(void(*h)(void)){quitCallback=h;}
 void DisplayMainMenu(void){}
-static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=framebuffer;busyUntil=0;}
+static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
 static void dumpFrame(const char*path){
  FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n384 216\n255\n");
- for(int i=0;i<384*216;i++){unsigned short v=framebuffer[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
+ for(int i=0;i<384*216;i++){unsigned short v=vram[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
+}
+static const int lifeOne[]={31,31,0,0,0,47,47,0,0,0,79,79,0,0,0};
+static const int lifeTwo[]={31,31,0,0,0,78,0,65,0,48,48,0,0,0};
+static const int lifeThree[]={31,31,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
+static void menuReturned(void){
+ assert(lifecycleTesting&&quitting&&serialOpen==0&&storageReadHandle<0&&storageWriteHandle<0);
+ assert(statusMode==0);if(quitCallback)quitCallback();nativeMenus++;
+ if(nativeMenus==2)assert(!strcmp(prompt,"H"));
+ if(nativeMenus==3)longjmp(lifecycleDone,1);
+ /* Emulate native menus changing both the VRAM pointer and the DMA window. */
+ deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
+ for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
+ dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
+ if(nativeMenus==1){keys=lifeTwo;keyCount=sizeof(lifeTwo)/sizeof(lifeTwo[0]);}
+ else {keys=lifeThree;keyCount=sizeof(lifeThree)/sizeof(lifeThree[0]);}keyAt=0;
+}
+static void testLifecycle(void){
+ int paid=requestCount[W_ASK];lifecycleTesting=1;nativeMenus=0;initKeys=0;
+ SCRIPT(lifeOne);quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
+ if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main returned after showing the native menu");}
+ assert(nativeMenus==3&&initKeys==3&&keysCleared>=6&&requestCount[W_ASK]==paid);
+ lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
+ assert(statusMode==0&&field[0]==0);applyView(view_default());
 }
 int main(int argc,char **argv){
  char b[128]="";
@@ -111,7 +153,7 @@ int main(int argc,char **argv){
  /* Last page cannot scroll into blank rows. */
  strcpy(answer,"one\ntwo\nthree\nfour\nfive\nsix\nseven");strcpy(lastQuestion,"Test");
  const int scroll[]={27,0,27,0,37,0,47};SCRIPT(scroll);readAnswer(0);
- clear("Schermtest");show();assert(statusMode==3&&stripeFirst==0&&stripeLast==215);
+ clear("Schermtest");show();assert(statusMode==3&&dma[0]==0&&dma[1]==383&&dma[2]==0&&dma[3]==215&&fullCopies>0&&stripeCalls==0);
  connected=1;loadLibrary();
  /* Local records are reopened and their context is restored without POST. */
  assert(lib_append(&disk,0,&savedChats[0],"Vorige vraag","Antwoord één",&savedChats[0]));
@@ -131,8 +173,16 @@ int main(int argc,char **argv){
  assert(beforeOpen==requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO]);
  const int questionView[]={78,0,47,0,47};SCRIPT(questionView);readAnswer(0);
  SCRIPT(leave);screenTest();assert(framebuffer[0]==C_MINT&&framebuffer[384*216-1]==C_MINT);
- const int deleteChat[]={37,0,69,0,79,0,47};SCRIPT(deleteChat);chatSidebar();assert(!savedChats[0].used&&!lib_entry(&disk,'C',0).used);
+ const int deleteChat[]={37,0,69,0,0,0,79,0,47};SCRIPT(deleteChat);chatSidebar();assert(!savedChats[0].used&&!lib_entry(&disk,'C',0).used);
  connected=1;
+ /* Scale changes affect only this app, persist, can be cancelled and fail safely. */
+ const int tune[]={38,0,37,0,27,0,37,0,27,0,79};SCRIPT(tune);screenSettings();
+ ViewProfile stored=view_load(&disk);assert(stored.percent==99&&stored.x==1&&stored.y==1);
+ const int cancelTune[]={27,0,47};SCRIPT(cancelTune);screenSettings();assert(viewProfile.percent==99&&view_load(&disk).percent==99);
+ const int resetTune[]={59,0,79};SCRIPT(resetTune);screenSettings();assert(viewProfile.percent==100&&view_load(&disk).percent==100);
+ failCreate=1;const int failedTune[]={38,0,79,0,47,0,47};SCRIPT(failedTune);screenSettings();failCreate=0;
+ assert(viewProfile.percent==100&&view_load(&disk).percent==100);
+ testLifecycle();
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -144,10 +194,11 @@ int main(int argc,char **argv){
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
+  SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test.");
+ puts("PASS: actual Casio editor with host device stubs: SHIFT lock, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and three real controller close/reopen cycles with held keys and changed native display state.");
  return 0;
 }

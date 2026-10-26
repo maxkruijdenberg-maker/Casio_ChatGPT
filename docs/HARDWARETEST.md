@@ -121,3 +121,17 @@ XIAO ESP32-C6 vereist een aparte firmwareport en hardwarevalidatie.
 9. De hosttests simuleren onderbroken schrijfacties en corrupte banken. Doe
    geen ongecontroleerde stroomonderbreking als vervanging voor een backup.
    Werkelijke flashfouten en OS-opslaggedrag zijn hier nog niet getest.
+
+## V4: regressiecontrole op het apparaat
+
+Voer UPGRADE-V4.md uit. Controleer Casio 4.0 / Atom 3.0; voor deze update hoeft
+de Atom niet opnieuw geflasht te worden. Herhaal vijfmaal EXIT → Ja → opnieuw
+openen en vijfmaal MENU → opnieuw openen, inclusief kort vasthouden van EXE.
+Test EXIT → Nee. Er mag geen afsluitdialoog vanzelf terugkomen.
+
+F6 → F4 opent nu Scherminstellingen. F2 toont de hoekentest. Controleer eerst
+100%/0/0, daarna enkele andere waarden. F1 bewaart; EXIT annuleert; F3 herstelt
+standaard. Controleer behoud na heropenen en controleer dat gewone Casio-apps
+hun normale weergave houden. De nieuwe displaybestanden zijn alleen D0A.dat
+en D0B.dat; C-bestanden met chats mogen niet verdwijnen of wijzigen door
+alleen scherminstellingen aan te passen. V4 is hier niet fysiek getest.

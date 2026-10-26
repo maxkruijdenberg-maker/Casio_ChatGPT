@@ -1,11 +1,13 @@
-# ChatGPT V3.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V4.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Al V1 of V2 geïnstalleerd? Begin bij [UPGRADE-V3.md](UPGRADE-V3.md).**
+**Al V3 geïnstalleerd? Vervang alleen de Casio-app: [UPGRADE-V4.md](UPGRADE-V4.md).**
 
-V3 voegt een wit menupictogram met zwart logo, correctie van dubbele naamtekst,
-volledige schermverversing en een zijbalk met lokaal opgeslagen gesprekken toe.
-Bekijk [beelden uit de echte V3-interface](docs/design/V3-actual-screens.png).
-De app opent direct ChatGPT; deze versie bevat geen extra startmenu of andere apps.
+Van V1/V2? Installeer eerst ook de meegeleverde Atom V3-firmware.
+
+V4 repareert opnieuw openen na afsluiten en initialiseert de volledige
+schermoverdracht opnieuw. Via Instellingen → Scherm stel je nu zelf schaal
+en positie in. Het witte pictogram en de lokale chatgeschiedenis blijven.
+Bekijk [de echte V4-interface in hosttests](docs/design/V4-actual-screens.png).
 
 Deze versie bevat twee echte programma's: `dist/ChatGPT.g3a` voor de Casio en
 Arduino-firmware voor de ESP32-PICO-D4 in de Atom Lite. De Atom verstuurt HTTPS-
@@ -13,12 +15,11 @@ verzoeken naar de OpenAI API; het taalmodel draait bij OpenAI. Slaapstand is op
 verzoek volledig weggelaten. Er staan geen API-sleutels of hotspotwachtwoorden
 in dit project. Instellingen worden met de Casio-toetsen ingevoerd.
 
-**Status V3:** beide programma's zijn in Linux gecompileerd. De gedeelde transport-
-en tekstfuncties, aanvraagregistratie en echte editorcode zijn softwarematig
-getest. V1-UART is door de gebruiker op eigen hardware bevestigd. De wijzigingen in
-V3 zijn nog niet op een Casio/Atom of met een echte API-sleutel getest.
-De Windows-hulpmiddelen zijn geschreven en statisch gecontroleerd, niet op
-Windows uitgevoerd. Deze oplevering is een fysiek te valideren breadboardversie.
+**Status V4:** de Casio-add-in is opnieuw in Linux gebouwd. De meegeleverde
+Atom-firmware is ongewijzigd V3. Negen softwaretestgroepen slagen, waaronder
+sluiten/heropenen met gewijzigde native schermtoestand en een gesimuleerd LCD.
+V4 is nog niet fysiek op een Casio getest. Windows-hulpmiddelen zijn hier niet
+op Windows uitgevoerd. Zie UPGRADE-V4.md voor de korte installatie- en teststappen.
 
 ## Windows: installeren
 
@@ -116,7 +117,7 @@ Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
 niet-opgeslagen wijziging weg. MENU sluit ook het geheime invoerveld.
 
-## Lokale chatgeschiedenis in V3
+## Lokale chatgeschiedenis
 
 Open de zijbalk met **OPTN**, of bij een antwoord met **F4 Chats**. Acht
 lokale gesprekken met elk maximaal acht complete vraag/antwoordparen worden
@@ -124,6 +125,13 @@ in Casio-opslag bewaard. F5/F6 bladeren door eerdere paren; SHIFT toont de
 volledige vraag. Je kunt oude chats offline lezen en later vervolgen met
 begrensde context. Zie UPGRADE-V3.md voor limieten, backups en herstel.
 V2- en ChatGPT-websitegesprekken worden niet geïmporteerd.
+
+## Scherm instellen in V4
+
+F6 Instellingen → F4 Scherm. Pijlen omhoog/omlaag kiezen schaal of verschuiving;
+links/rechts past aan. Schaal: 80–120%, verschuiving: -24 tot +24 pixels.
+F1 slaat op, F2 toont de hoekentest, F3 herstelt 100% / 0 / 0, EXIT annuleert.
+Alleen de app wordt aangepast. Zie UPGRADE-V4.md voor herstel en grenzen.
 
 ## Limieten en opslag
 
