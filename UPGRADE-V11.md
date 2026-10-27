@@ -1,5 +1,21 @@
 # V11 installeren — telefooninstallatie en menuherstel
 
+## Menupatch v11.0.1 — alleen hoofdmenu
+
+De logo-afbeelding, geschilderde blauwe selectie en J-badge zijn vervangen
+door volledig witte afbeeldingen, in beide selectiestanden. De zichtbare naam
+is een spatie; de interne app-identiteit en bestandsnaam blijven behouden.
+De Casio kan zelf nog een focusmarkering of sneltoetsletter toevoegen. Dat
+is met deze aanpassing niet uitgeschakeld en niet fysiek gecontroleerd.
+
+Al V11 op beide apparaten? Vervang uitsluitend `dist\ChatGPT.g3a` in de
+hoofdmap van de Casio. Atom niet opnieuw uploaden; `CGPT3` laten staan.
+Het app-vakje neemt nog steeds een gewone menuplaats in. De interface na
+openen blijft identiek aan V11. Het bestand is nog vindbaar in USB-opslag.
+
+De onderstaande firmware-update is alleen nodig als je nog van V10 of ouder komt.
+
+
 V11 voegt installatie via de telefoon toe en wijzigt het opruimen bij het verlaten
 van ChatGPT vanwege de gemelde System ERROR bij andere pictogrammen:
 `ADDRESS(W) TARGET=00000001 PC=8C09CA4` (zoals doorgegeven).

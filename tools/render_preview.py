@@ -16,7 +16,7 @@ with tempfile.TemporaryDirectory() as temp:
   im=Image.open(Path(temp)/(name+'.ppm'));im.save(out/('V11-'+name+'.png'))
   d.text((x,y),label,font=font,fill='#212121');board.paste(im.resize((576,324),Image.Resampling.NEAREST),(x,y+28))
  Image.open(Path(temp)/'phone.ppm').save(out/'V11-phone.png')
-d.text((24,1198),'Menu: witte basis · lager afgerond wit vlak; J-badge; blauwe selectie · naamtekst door Casio',font=font,fill='#212121')
+d.text((24,1198),'Menu: beide app-afbeeldingen wit; lege naam · OS kan eigen selectie/letter toevoegen',font=font,fill='#212121')
 for name,label,x in [('unselected','Normaal',24),('selected','Geselecteerd',360)]:
  im=Image.open(root/f'casio/{name}.bmp');board.paste(im.resize((276,192),Image.Resampling.NEAREST),(x,1230));d.text((x,1430),label,font=font,fill='#212121')
 board.save(out/'V11-actual-screens.png');print(out/'V11-actual-screens.png')

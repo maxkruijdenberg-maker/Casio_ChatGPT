@@ -202,3 +202,10 @@ New V10 behavior still needs hardware confirmation; see UPGRADE-V10.md.
   sluiten. Aanpassing naar aanleiding van ADDRESS(W) TARGET=00000001 PC=8C09CA4.
 - Bestaande iconen, menu-resolver, bediening, chats en schermgeometrie behouden.
 - Elf softwaretestgroepen; hardwareherstel en telefoonnetwerk nog fysiek testen.
+
+
+## V11.0.1 — menuafbeeldingen
+
+Beide menutegels wit; zichtbare basis- en taalnamen bevatten alleen een spatie.
+Interne identiteit @CHATGPT behouden. Uitvoerbare Casio-code en alle Atom-binaries
+identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen.

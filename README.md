@@ -1,5 +1,11 @@
 # ChatGPT V11.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
+**V11-menupatch (v11.0.1):** beide menuafbeeldingen zijn volledig wit en de
+zichtbare appnaam is een spatie. Alleen het Casio-menutegeltje is aangepast;
+ChatGPT zelf en de Atom blijven V11. De OS-selectierand of OS-sneltoetsletter
+kan nog zichtbaar zijn; volledige onzichtbaarheid is niet op hardware bevestigd.
+Zie [UPGRADE-V11.md](UPGRADE-V11.md).
+
 **Bijwerken naar V11: werk zowel de Casio-app als de Atom bij. Zie [UPGRADE-V11.md](UPGRADE-V11.md).**
 
 Nieuw: F6 Instellingen → F2 Telefoon opent een tijdelijk, met een willekeurig
