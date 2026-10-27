@@ -1,0 +1,5 @@
+Casio SH4 build completed successfully with tools/build-casio.sh
+G3A bytes: 75668
+SHA256: 5e6000f18fc9abe69e3256b35e107ef97d7cb29c57276ac7a9047e59483fe779
+OS keyboard polling replaced by read-only SH7305 KEYSC data reads.
+Atom V11 source and firmware reused unchanged.

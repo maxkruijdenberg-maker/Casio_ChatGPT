@@ -227,3 +227,14 @@ status en instellingen moeten automatisch herstellen. Controleer na Atom-
 herstart dat geen betaalde vraag opnieuw wordt verzonden. Hosttests modelleren
 nu Serial_IsOpen werkelijk; V11-mocks retourneerden altijd 0 en misten de
 OS-open/lokaal-gesloten regressie. Fysieke responstijden zijn niet gemeten.
+
+
+## V13 — elke toets en twintig menuheropeningen
+
+Zie UPGRADE-V13.md. Test eerst alle toetsen (ALPHA/SHIFT, letters, getallen,
+pijlen, DEL, F1-F6, EXIT en MENU); controleer Atom-status en of Atom zelf
+herstart. Herhaal twintigmaal EXIT/Ja/openen, inclusief na de derde keer, en
+herhaal via MENU. Test ook RUN-MAT, SYSTEM en LINK: UART blijft nu OS-open
+waar mogelijk. Herstart de Casio als LINK de poort niet vrij kan krijgen en
+rapporteer dat gedrag; geen eigen quitcallback als omweg installeren.
+Hosttests controleren 50 keyposities en 40 gesimuleerde sessies, geen echte OS-uitvoering.

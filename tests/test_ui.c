@@ -53,7 +53,7 @@ static unsigned char rx[8192];static size_t rxAt,rxEnd;
 static int osSerialOpen=0,serialOpens=0,openFailures=0,writeFailures=0;
 static unsigned char failedWrite[WIRE_ENCODED];static int failedWriteLength=0,expectSameWrite=0;
 static int connected=1,busyUntil,requestCount[32],privateReads,replyDelay=0,replyReadyAt=0;
-static int connectAt=-1;
+static int keyAdvanceMs=0,connectAt=-1;
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
@@ -76,7 +76,7 @@ int Keyboard_PutKeycode(int x,int y,int code){
 }
 int GetKey(int*key){
  assert(!rawMenuQueued&&nativeQueued==KEY_CTRL_EXIT);*key=nativeQueued;nativeQueued=0;initKeys++;
- if(lifecycleTesting){assert(!serialOpen);menuVisible=0;}
+ if(lifecycleTesting){menuVisible=0;}
  return 0;
 }
 void Native_ClearKeyBuffer(void){assert(!rawMenuQueued);drainedEvents+=staleEvents;staleEvents=0;nativeQueued=0;}
@@ -114,7 +114,11 @@ int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code)
  rawMenuQueued=0;inNativeWait=0;nativeTimerCalls++;menuReturned();
  *c=2;*r=1;*code=KEY_CTRL_EXE;return KEYREP_KEYEVENT;
 }
-int PRGM_GetKey(void){if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
+static int scriptedKeyNext(void){timeTicks+=keyAdvanceMs;if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script at t=%d, link=%d misses=%d\n",timeTicks,linkOnline,linkMisses);abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
+int PRGM_GetKey(void){assert(!"OS keyboard syscall must never run during application polling");return 0;}
+static void keyboardReadWords(uint16_t words[6]){
+ memset(words,0,12);int key=scriptedKeyNext();if(key){int row=key/10-1,col=key%10;assert(row>=0&&row<7&&col<10);words[col/2]=(uint16_t)(1u<<(row+8*(col%2)));}
+}
 int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
 void OS_InnerWait_ms(int ms){timeTicks+=ms;}
@@ -128,7 +132,7 @@ int Serial_Write(const unsigned char*p,int n){
  if(expectSameWrite&&failedWriteLength){assert(n==failedWriteLength&&!memcmp(p,failedWrite,n));expectSameWrite=0;failedWriteLength=0;}
  WParser parser={0};WFrame f,r={0};int got=0;for(int i=0;i<n;i++)if(w_feed(&parser,p[i],&f)==1)got=1;
  assert(got&&f.type<32);requestCount[f.type]++;
- if(!connected){if(!autoProbeActive)busyUntil=timeTicks+800;return 0;}
+ if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
@@ -169,21 +173,21 @@ static const int lifeOne[]={31,31,0,0,0,0,47,47,0,0,0,79,79,0,0,0};
 static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0};
 static const int lifeThree[]={31,31,0,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
 static void menuReturned(void){
- assert(lifecycleTesting&&quitting&&serialOpen==0&&storageReadHandle<0&&storageWriteHandle<0);
+ assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
  assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu&&linkOnline);
  assert(!memcmp(deviceFramebuffer,startupSnapshot,sizeof(startupSnapshot)));
  /* OS SaveAndOpenMainMenu (or its timer fallback) suspends the app.
   * Return only after a simulated re-selection; count no app draws in MENU. */
  menuVisible=1;copiesAtMenu=fullCopies;
  /* Switch through unrelated native icons before returning. OS must never
-  * retain an add-in cleanup pointer or open UART/file resource. */
- assert(!quitCallback&&!serialOpen&&menuTimer==-1);
+  * retain an add-in callback or file resource. UART is an OS-owned driver. */
+ assert(!quitCallback&&serialOpen&&osSerialOpen&&menuTimer==-1);
  for(int otherApp=0;otherApp<8;otherApp++){assert(!quitCallback);assert(storageReadHandle<0&&storageWriteHandle<0);}
  nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
- if(nativeMenus==3)longjmp(lifecycleDone,1);
+ if(nativeMenus==20)longjmp(lifecycleDone,1);
  assert(fullCopies==copiesAtMenu);
- if(nativeMenus==1)osSerialOpen=1; /* OS leaves port open before re-selection. */
+ if(nativeMenus==2)osSerialOpen=0; /* OS leaves port open before re-selection. */
  deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
  for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
  lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
@@ -206,11 +210,11 @@ static void testLifecycle(int direct){
  SCRIPT(lifeOne);staleEvents=5;
  quitting=1;lastKey=KEY_PRGM_EXIT;libraryReady=1;contextDirty=0;strcpy(field,"discard this stale value");
  if(!setjmp(lifecycleDone)){casio_program_main();assert(!"main must remain available for native MENU re-entry");}
- assert(nativeMenus==3&&initKeys==3&&requestCount[W_ASK]==paid);
- assert(requestCount[W_HELLO]==hellos+3);
- assert(nativeDirectCalls==directBefore+(direct?3:0)&&nativeTimerCalls==timerBefore+(direct?0:3));
+ assert(nativeMenus==20&&initKeys==20&&requestCount[W_ASK]==paid);
+ assert(requestCount[W_HELLO]==hellos+20);
+ assert(nativeDirectCalls==directBefore+(direct?20:0)&&nativeTimerCalls==timerBefore+(direct?0:20));
  assert(!timerInstalled&&!timerArmed&&menuTimer==-1);
- assert(serialCloses==closes+4&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
+ assert(serialCloses==closes&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
  assert(statusMode==0&&field[0]==0);applyView(view_default());
 }
@@ -221,9 +225,9 @@ static void testMenuFailures(void){
  failTimerInstall=1;assert(!nativeMainMenu());failTimerInstall=0;
  assert(serialOpen&&serialCloses==closes&&!timerInstalled&&lcdFrame==C_BG);
  failTimerStart=1;assert(!nativeMainMenu());failTimerStart=0;
- assert(serialOpen&&serialCloses==closes+1&&!timerInstalled&&timerStops==stops+1&&timerDeletes==deletes+1);
+ assert(serialOpen&&serialCloses==closes&&!timerInstalled&&timerStops==stops+1&&timerDeletes==deletes+1);
  interruptNativeWait=1;assert(!nativeMainMenu());interruptNativeWait=0;
- assert(serialOpen&&serialCloses==closes+2&&!timerInstalled&&menuTimer==-1);
+ assert(serialOpen&&serialCloses==closes&&!timerInstalled&&menuTimer==-1);
  assert(timerStops==stops+2&&timerDeletes==deletes+2);
  quitting=0;clear("ChatGPT");show();assert(lcdFrame==C_BG&&statusMode==3);cleanup();
  nativeResolverReady=1;
@@ -231,7 +235,7 @@ static void testMenuFailures(void){
 
 static void testAutoConnect(void){
  int counts[32];char text[128]="";WFrame r;memcpy(counts,requestCount,sizeof(counts));
- cleanup();connected=1;replyDelay=150;Serial_ClearRX();autoProbeStarted=0;quitting=0;linkKnown=linkOnline=0;
+ cleanup();connected=1;replyDelay=150;Serial_ClearRX();autoProbeStarted=0;quitting=0;linkKnown=linkOnline=linkMisses=0;
  int start=timeTicks;assert(autoConnectTick()&&autoProbeActive&&!linkOnline);
  const int typing[]={77,0,66,0,66,0,79};SCRIPT(typing);editor(text,sizeof(text),"Test",0,1,0,1);
  assert(!strcmp(text,"Bb")&&timeTicks-start<150&&autoProbeActive);
@@ -240,9 +244,9 @@ static void testAutoConnect(void){
  timeTicks+=10000;assert(autoConnectTick()&&autoProbeActive);replyDelay=0;
  assert(rpc(W_INFO,0,0,&r,0)==1&&r.type==(W_INFO|0x80)&&!autoProbeActive);
  connected=0;linkOnline=0;autoProbeStarted=0;busyUntil=0;Serial_ClearRX();
- assert(autoConnectTick()&&autoProbeActive);timeTicks+=601;
+ assert(autoConnectTick()&&autoProbeActive);timeTicks+=1201;
  assert(autoConnectTick()&&!linkOnline&&!autoProbeActive);
- connected=1;timeTicks+=750;assert(autoConnectTick()&&autoProbeActive);
+ connected=1;timeTicks+=1000;assert(autoConnectTick()&&autoProbeActive);
  assert(autoConnectTick()&&linkOnline&&!autoProbeActive);
  for(int i=0;i<32;i++)if(i!=W_HELLO&&i!=W_INFO)assert(requestCount[i]==counts[i]);
  cleanup();replyDelay=0;autoProbeStarted=0;
@@ -258,25 +262,39 @@ static void testUARTRecovery(void){
  const int quiet[32]={0};SCRIPT(quiet);writeFailures=1;openFailures=1;expectSameWrite=1;
  assert(rpc(W_INFO,0,0,&r,0)==1&&writeFailures==0&&osSerialOpen&&!expectSameWrite&&!openFailures);
  /* Failed opens retry in the background in <1s, without typing a Test command. */
- cleanup();autoProbeStarted=0;openFailures=1;linkOnline=0;linkKnown=0;
+ cleanup();autoProbeStarted=0;openFailures=1;linkOnline=0;linkKnown=0;linkMisses=0;
  int started=timeTicks;assert(autoConnectTick()&&!autoProbeActive&&!serialOpen);
- timeTicks+=749;assert(!autoConnectTick());timeTicks++;
- assert(autoConnectTick()&&autoProbeActive);assert(autoConnectTick()&&linkOnline&&timeTicks-started<1000);
- /* A silently non-responsive UART is closed on timeout and reopened next probe. */
+ timeTicks+=999;assert(!autoConnectTick());timeTicks++;
+ assert(autoConnectTick()&&autoProbeActive);assert(autoConnectTick()&&linkOnline&&timeTicks-started<=1000);
+ /* A single lost heartbeat must leave a healthy UART open and not mark offline. */
  connected=0;autoProbeStarted=0;Serial_ClearRX();assert(autoConnectTick()&&autoProbeActive);
- closed=serialCloses;timeTicks+=501;assert(autoConnectTick()&&!linkOnline&&!osSerialOpen&&serialCloses==closed+1);
- connected=1;timeTicks+=249;assert(autoConnectTick()&&autoProbeActive&&osSerialOpen);
- assert(autoConnectTick()&&linkOnline);
- /* Read-only offline metadata is bounded to two attempts / 600ms. */
- const int quietOffline[256]={0};SCRIPT(quietOffline);connected=0;
- int before=timeTicks,infos=requestCount[W_INFO];assert(rpc(W_INFO,0,0,&r,0)==-1);
- assert(timeTicks-before==600&&requestCount[W_INFO]==infos+2&&!osSerialOpen);
- /* Settings recovers without Test when Atom becomes available while it is open. */
- int waitThenExit[260]={0};waitThenExit[259]=47;SCRIPT(waitThenExit);
- connectAt=timeTicks+1200;autoProbeStarted=0;infos=requestCount[W_INFO];settings();
- assert(connected&&connectAt==-1&&linkOnline&&requestCount[W_INFO]>=infos+2);
+ closed=serialCloses;timeTicks+=1201;assert(autoConnectTick()&&linkOnline&&osSerialOpen&&linkMisses==1&&serialCloses==closed);
+ /* Confirmed loss requires three missed checks, then exactly one driver reset. */
+ for(int miss=2;miss<=3;miss++){
+  assert(autoConnectTick()&&autoProbeActive);timeTicks+=1201;assert(autoConnectTick()&&linkMisses==miss);
+ }
+ assert(!linkOnline&&!osSerialOpen&&serialCloses==closed+1);
+ connected=1;assert(autoConnectTick()&&autoProbeActive&&osSerialOpen);assert(autoConnectTick()&&linkOnline&&!linkMisses);
+ /* Slow metadata (800ms each) must not close a working port or flash Offline. */
+ int quietSlow[2048]={0};SCRIPT(quietSlow);replyDelay=800;closed=serialCloses;
+ uint8_t flags[4]={0};assert(refreshSettings(flags)&&linkOnline&&!linkMisses&&serialCloses==closed);
+ for(int i=0;i<4;i++)assert(flags[i]);replyDelay=0;
+ /* Settings recovers automatically if the Atom becomes available mid-screen. */
+ int waitThenExit[400]={0};waitThenExit[399]=47;SCRIPT(waitThenExit);connected=0;
+ connectAt=timeTicks+1800;autoProbeStarted=0;int infos=requestCount[W_INFO];settings();
+ assert(connected&&connectAt==-1&&linkOnline&&requestCount[W_INFO]>=infos+1);
  for(int i=0;i<32;i++)if(i!=W_HELLO&&i!=W_INFO&&i!=W_DEVICE&&i!=W_GET_CONFIG)assert(requestCount[i]==counts[i]);
  cleanup();autoProbeStarted=0;
+}
+static void testTypingConnection(void){
+ cleanup();quitting=0;connected=1;linkKnown=linkOnline=linkMisses=0;autoProbeStarted=0;replyDelay=200;
+ int closed=serialCloses,paid=requestCount[W_ASK];
+ int typing[64],n=0;typing[n++]=77;typing[n++]=0;
+ for(int i=0;i<30;i++){typing[n++]=76;typing[n++]=0;}typing[n++]=79;
+ SCRIPT(typing);keyAdvanceMs=25;char text[128]="";
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79);
+ assert(strlen(text)==30&&linkOnline&&!linkMisses&&serialCloses==closed&&requestCount[W_ASK]==paid);
+ keyAdvanceMs=0;replyDelay=0;const int back[]={47};SCRIPT(back);diagnose();cleanup();autoProbeStarted=0;
 }
 static void testMathInput(void){
  char text[256]="";
@@ -310,7 +328,7 @@ int main(int argc,char **argv){
  const int mixed[]={77,0,76,0,66,0,77,0,72,0,79};b[0]=0;SCRIPT(mixed);editor(b,sizeof(b),"Test",0,1,0,1);assert(!strcmp(b,"Ab1"));
  const int edit[]={38,0,44,0,79};strcpy(b,"Aéπ");SCRIPT(edit);editor(b,sizeof(b),"Test",0,0,0,1);assert(!strcmp(b,"Aπ"));
  /* Offline settings must open without a misleading configuration popup. */
- const int leave[]={47};connected=0;SCRIPT(leave);settings();assert(!linkOnline&&requestCount[W_INFO]>0);
+ const int leave[]={47};connected=0;SCRIPT(leave);settings();assert(requestCount[W_INFO]>0);
  connected=1;strcpy(storedModel,"my-custom-model");
  const int modelEdit[]={37,0,37,0,37,0,79,0,79,0,79,0,47};SCRIPT(modelEdit);settings();
  assert(!strcmp(storedModel,"my-custom-model")&&privateReads==0);
@@ -353,7 +371,7 @@ int main(int argc,char **argv){
   const int menuBack[]={48};SCRIPT(menuBack);phoneSetup();assert(requestCount[W_SETUP]==before+4&&!fakePortal&&quitting);
   assert(requestCount[W_ASK]==paidBefore);quitting=0;
  }
- testMathInput();testAutoConnect();testUARTRecovery();
+ testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();
  if(argc==3&&!strcmp(argv[1],"--screens")){
@@ -373,6 +391,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, bounded read-only metadata waits, automatic settings reconnect, sub-second free reconnect and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, synchronous UART cleanup before OS dispatch, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, 800ms delayed metadata without closing UART, three-miss hysteresis and one reset on confirmed failure, automatic settings reconnect and continuous typing with delayed heartbeat ACK and no UART close, no saved closing-dialog flash across forty sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, OS-owned UART preserved across MENU/re-entry, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }

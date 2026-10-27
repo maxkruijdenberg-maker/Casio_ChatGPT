@@ -1,33 +1,33 @@
-# ChatGPT V12.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V13.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Vanaf V11: vervang alleen `dist/ChatGPT.g3a`. De Atom blijft V11.0.**
-Zie [UPGRADE-V12.md](UPGRADE-V12.md). Het normale ChatGPT-pictogram uit de
-originele V11 is terug; dit is geen versie met een verborgen menu-item.
+**Vanaf V11/V12: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
+Zie [UPGRADE-V13.md](UPGRADE-V13.md). Normaal ChatGPT-pictogram en telefooninstallatie.
 
-V12 herstelt de seriële verbinding wanneer de Casio-poort nog open is terwijl
-onze lokale vlag gesloten zegt, of wanneer de OS-poort dicht is terwijl onze
-vlag open zegt. V11 kon in het eerste geval iedere nieuwe poging weigeren.
-Na een schrijffout of probe-timeout wordt de poort opnieuw geopend. De
-achtergrondcontrole probeert offline iedere 750 ms (was 3 seconden), met
-500 ms antwoordtijd. Instellingen verbindt ook automatisch opnieuw.
-Read-only UART-informatie heeft maximaal twee antwoordvensters van 300 ms,
-in plaats van vier van 800 ms. Belangrijke opdrachten behouden hun bestaande
-retrybeleid en herhalen bij transportproblemen exact hetzelfde bericht.
+V13 richt zich op de gemelde uitval bij toetsen en na herhaald heropenen:
 
-Dit zijn verbindingstijden van de lokale UART; wifi, internet en OpenAI hebben
-hun eigen responstijden. Achtergrondherstel verstuurt alleen gratis HELLO-
-berichten naar de Atom. Bij verlaten wordt UART nog steeds vóór de native
-menuoverdracht opgeruimd en er blijft geen eigen quit-callback achter.
+- Toetsen lezen rechtstreeks uit de zes SH7305 KEYSC-dataregisters; geen
+  PRGM_GetKey_OS tijdens typen/pollen, geen controllerwijzigingen of nieuwe ISR.
+- De OS-seriële poort blijft open wanneer onze app MENU opent en opnieuw wordt
+  geselecteerd. Geen eigen app-timer of quit-callback actief buiten de app.
+- Binnenkomende achtergrondantwoorden worden ook tijdens continu typen verwerkt.
+- Eén gemiste controle sluit de poort niet en meldt een eerder werkende link niet
+  meteen offline. Drie opeenvolgende gemiste controles starten pas driverherstel.
+- Metadata krijgt 3 × 1200 ms antwoordruimte; heartbeat 1200 ms. De korte V12-
+  vensters (metadata 300 ms, heartbeat 500 ms) worden niet meer gebruikt.
 
-Telefooninstallatie (F6 → F2), ALPHA-lock, SHIFT-wiskunde, chats, schermvulling
-en schaalinstellingen blijven behouden. De Atom-code en alle vier bijbehorende
-binaries zijn byte-identiek aan de originele V11. Geen nieuwe Atom-upload nodig.
-Bekijk [de V12-interface uit hosttests](docs/design/V12-actual-screens.png).
+UART is geen wifi-sessie. De OS-driver kan de poort zelf sluiten of een andere
+app kan hem gebruiken; V13 kan dat niet absoluut voorkomen. Als de poort nog
+open is bij herselectie gebruikt de app hem verder; anders opent hij opnieuw.
+De Atom moet zijn eigen USB-voeding houden. Extra batterijverbruik is niet gemeten.
 
-**Validatie:** SH4-build en elf softwaretestgroepen, inclusief een realistischer
-OS-poortmodel, achtergebleven poorten na menu, driveruitval, herstel in
-Instellingen en zes sessies via beide native menuroutes. Geen fysieke Casio/Atom
-beschikbaar; controleer heropenen met de apparaattest in UPGRADE-V12.md.
+Het rechtstreeks toetsen lezen verwijdert een mogelijke OS-nevenwerking; zonder
+OS-ROM/apparaattest is niet bewezen dat PRGM_GetKey_OS de gemelde uitval veroorzaakt.
+Bekijk [de V13-interface uit hosttests](docs/design/V13-actual-screens.png).
+
+**Validatie:** SH4-build; twaalf ASan/UBSan-testgroepen, alle 50 fysieke toetsen,
+geen app-polling via OS-keycalls, continu typen met vertraagde ACK, trage metadata,
+40 sessies over de twee menuroutes en een door het OS gesloten poort. Dit is geen
+fysieke Casio/Atom-test. Controleer ook andere apps en LINK op je eigen apparaat.
 
 ## Windows: installeren
 
@@ -111,7 +111,7 @@ en SHIFT+×10ˣ → `π`. Zie UPGRADE-V10.md voor de volledige tabel. Functies z
 vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
 
 Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
-op toetsen in het invoerscherm volgen retries iedere 750 ms offline
+op toetsen in het invoerscherm volgen nieuwe controles bij herstel (minimaal 1 seconde tussen startmomenten)
 en een controle iedere 10 seconden als de Atom online is. Het typen blijft
 beschikbaar. F3 is nog aanwezig voor diagnose; verbinden vereist geen F3.
 
@@ -133,7 +133,8 @@ Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
 niet-opgeslagen wijziging weg. MENU sluit ook het afgeschermde invoerveld.
 
-Instellingen probeert ook automatisch opnieuw verbinding te maken.
+Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
+vertraging geeft Herstel; de poort wordt niet bij de eerste timeout gesloten.
 Met **F2 Telefoon** kun je wifi en API-sleutel ook plakken via de tijdelijke
 installatiepagina. Zie [UPGRADE-V11.md](UPGRADE-V11.md) voor de stappen.
 

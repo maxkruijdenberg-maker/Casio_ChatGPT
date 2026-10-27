@@ -1,3 +1,5 @@
+**Opgevolgd door [V13](UPGRADE-V13.md): blijvende poort en nieuwe toetsuitlezing. De korte V12-timeouts zijn teruggedraaid.**
+
 # V12 — sneller en automatisch opnieuw verbinden
 
 V12 gebruikt het normale ChatGPT-pictogram en de telefooninstallatie uit de

@@ -222,3 +222,15 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Belangrijke opdrachten behouden 4x800 ms en identieke requestbytes/sequence.
 - Atom blijft V11, bron en binaries ongewijzigd. Geen extra betaald API-verkeer.
 - Uitgebreide UART-mocks en regressietests, elf groepen; fysieke verificatie nog nodig.
+
+
+## V13.0 — toetsen en blijvende OS-UART
+
+- Read-only SH7305 KEYSC-polling vervangt PRGM_GetKey_OS in app-bediening.
+- OS-poort blijft open door MENU en herselectie; geen eigen callback/ISR achtergelaten.
+- Achtergrond-RX verwerken vóór het afhandelen van toetsen.
+- Drie gemiste controles vóór offline/driver-reset; geen sluiten bij losse timeout.
+- Metadata 3x1200 ms, heartbeat 1200 ms; belangrijke opdrachten nog 4x800 ms.
+- Atom V11 bron/binaries ongewijzigd. Normale iconen behouden.
+- Twaalf testgroepen, 50 fysieke keys, trage ACK tijdens typen, 40 sessies.
+- Fysieke oorzaak per-toets-uitval en OS-gedrag buiten app nog niet bewezen.
