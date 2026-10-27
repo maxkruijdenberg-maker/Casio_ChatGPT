@@ -1,3 +1,5 @@
+**Nieuwste versie: [V12](UPGRADE-V12.md), normaal pictogram en automatisch UART-herstel. Vanaf V11 alleen de Casio-app vervangen.**
+
 # V11 installeren — telefooninstallatie en menuherstel
 
 ## Menupatch v11.0.1 — alleen hoofdmenu

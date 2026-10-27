@@ -59,9 +59,12 @@ static const char *const errNames[]={
 static const char *const phases[]={"Gereed","Wifi verbinden...","Klok synchroniseren...","Model controleren...","Antwoord ophalen...","Antwoord ontvangen","Fout","Geannuleerd"};
 static void erase(void *p,size_t n){volatile unsigned char *v=p;while(n--)*v++=0;}
 static int elapsed(int start,int ms){return RTC_Elapsed_ms(start,ms);}
+static void resetSerialTransport(void){
+ if(serialOpen&&Serial_IsOpen()==1){Serial_ClearTX();Serial_Close(1);}
+ serialOpen=0;memset(&parser,0,sizeof(parser));
+}
 static void closeSerial(void){
- if(serialOpen){Serial_ClearTX();Serial_Close(1);serialOpen=0;}
- SetSetupSetting(0x14,oldSetup);
+ resetSerialTransport();SetSetupSetting(0x14,oldSetup);
 }
 static void stopMenuTimer(void);
 static void stopAutoProbe(void);
@@ -137,7 +140,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V11",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V12",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!elapsed(linkSeen,30000);
   const char *status=autoProbeActive&&!linkOnline?"Atom...":linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -213,24 +216,32 @@ static int confirm(const char *question){waitForKeyRelease();clear("Bevestigen")
 }
 static int ensureSerial(void){
  unsigned char mode[6]={0,5,0,0,0,0};
- storageClose();if(serialOpen)return 1;
- if(Serial_IsOpen()==1||Serial_Open(mode)!=0)return 0;
+ storageClose();
+ if(serialOpen&&Serial_IsOpen()==1)return 1;
+ /* The OS may keep the port open across menu/USB transitions, or close it
+  * while our cached flag still says open. Reclaim and configure our own UART. */
+ serialOpen=0;
+ if(Serial_IsOpen()==1){Serial_ClearTX();Serial_Close(1);OS_InnerWait_ms(20);}
+ if(Serial_Open(mode)!=0)return 0;
  serialOpen=1;Serial_ClearRX();Serial_ClearTX();memset(&parser,0,sizeof(parser));return 1;
 }
 /* RPC status: 1 success, 0 device error (reply data[0]), -1 timeout,
- * -2 user cancelled/menu. Identical encoded bytes are retried at most 4 times. */
+ * -2 user cancelled/menu. Identical encoded bytes: 2 attempts for read-only metadata, otherwise up to 4. */
 static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  WFrame req;uint8_t bytes[WIRE_ENCODED];size_t n;int attempt,start,k;
+ int readOnly=type==W_HELLO||type==W_INFO||type==W_DEVICE||type==W_GET_CONFIG;
+ int attempts=readOnly?2:4,timeout=readOnly?300:800;
  stopAutoProbe();
  if(len>WIRE_MAX)return -1;
  if(!ensureSerial()){linkKnown=1;linkOnline=0;return -1;}
  req.type=(uint8_t)type;req.seq=++seq;req.len=(uint8_t)len;if(len)memcpy(req.data,data,len);
  n=w_encode(&req,bytes);
- for(attempt=0;attempt<4&&!quitting;attempt++){
+ for(attempt=0;attempt<attempts&&!quitting;attempt++){
   if(attempt)retries++;
-  if(Serial_Write(bytes,(int)n)!=0){OS_InnerWait_ms(50);continue;}
+  if(!ensureSerial()){OS_InnerWait_ms(20);continue;}
+  if(Serial_Write(bytes,(int)n)!=0){resetSerialTransport();OS_InnerWait_ms(20);ensureSerial();continue;}
   start=RTC_GetTicks();
-  while(!elapsed(start,800)&&!quitting){
+  while(!elapsed(start,timeout)&&!quitting){
    while(Serial_PollRX()>0){unsigned char c;WFrame f;int ok;
     if(Serial_ReadSingle(&c)!=0)break;ok=w_feed(&parser,c,&f);if(ok<0)errors++;
     if(ok==1&&f.seq==req.seq&&f.type==(req.type|0x80)&&f.len){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();*reply=f;return f.data[0]?0:1;}
@@ -239,7 +250,7 @@ static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancell
    OS_InnerWait_ms(5);
   }
   memset(&parser,0,sizeof(parser));
- }if(!quitting){linkKnown=1;linkOnline=0;}return quitting?-2:-1;
+ }if(!quitting){resetSerialTransport();linkKnown=1;linkOnline=0;}return quitting?-2:-1;
 }
 static int checkedRpcEx(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  int ok=rpc(type,data,len,reply,cancellable);
@@ -274,16 +285,16 @@ static int autoConnectTick(void){
     if(linkOnline)linkSeen=RTC_GetTicks();stopAutoProbe();return 1;
    }
   }
-  if(!elapsed(autoProbeAt,600))return 0;
-  stopAutoProbe();linkKnown=1;linkOnline=0;return 1;
+  if(!elapsed(autoProbeAt,500))return 0;
+  stopAutoProbe();resetSerialTransport();linkKnown=1;linkOnline=0;return 1;
  }
- if(autoProbeStarted&&!elapsed(autoProbeAt,linkOnline?15000:3000))return 0;
+ if(autoProbeStarted&&!elapsed(autoProbeAt,linkOnline?10000:750))return 0;
  autoProbeStarted=1;autoProbeAt=RTC_GetTicks();
  if(!ensureSerial()){changed=!linkKnown||linkOnline;linkKnown=1;linkOnline=0;return changed;}
  memset(&frame,0,sizeof(frame));frame.type=W_HELLO;frame.seq=autoProbeSeq=++seq;
  memset(&autoProbeParser,0,sizeof(autoProbeParser));n=w_encode(&frame,bytes);
  autoProbeActive=1;
- if(Serial_Write(bytes,(int)n)!=0){stopAutoProbe();changed=!linkKnown||linkOnline;linkKnown=1;linkOnline=0;return changed;}
+ if(Serial_Write(bytes,(int)n)!=0){stopAutoProbe();resetSerialTransport();changed=!linkKnown||linkOnline;linkKnown=1;linkOnline=0;return changed;}
  return 1;
 }
 static int waitEditorKey(int promptMode){
@@ -480,19 +491,20 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"11.0 / Atom %s",atomMajor==11?"11.0":atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"12.0 / Atom %s",atomMajor==11?"11.0":atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
-  printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · F3: opnieuw verbinden",known?C_MUTED:C_RED);
-  footer("Wijzig","Telefoon","Test","Scherm","","");show();k=waitKey();
+  printAt(8,175,known?"F3: vernieuwen · EXIT: terug":"Atom offline · automatisch opnieuw proberen",known?C_MUTED:C_RED);
+  footer("Wijzig","Telefoon","Test","Scherm","","");show();k=waitEditorKey(1);
+  if(k==UI_LINK_REFRESH){if(!linkOnline)known=0;else if(!known)known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_EXIT)break;
-  if(k==KEY_PRGM_F2){phoneSetup();known=refreshSettings(configured);continue;}
+  if(k==KEY_PRGM_F2){phoneSetup();if(!quitting)known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_F3){known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_F4){screenSettings();continue;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V11.0\nTelefooninstallatie: Atom V11.0 nodig.\nMenu-route: %s\n\nWerk voor telefooninstallatie ook de Atom bij. Gesprekken en instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
+  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V12.0\nCompatibel met Atom V11.0.\nMenu-route: %s\n\nSneller automatisch UART-herstel. Vanaf V11 alleen ChatGPT.g3a vervangen. Instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;

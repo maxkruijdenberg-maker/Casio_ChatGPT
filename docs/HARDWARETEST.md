@@ -216,3 +216,14 @@ quit-callback, UART of bestandsresource achterblijft bij OS-dispatch; dit is gee
 fysieke OS-emulatie. Test op Android/iOS de lokale pagina, verkeerd wachtwoord,
 WPA2-wachtwoord, opslaan, Terug, tienminutentimeout en opnieuw opstarten.
 Wifi-status is geen API-sleutelvalidatie. Een API-test vereist eigen tegoed.
+
+
+## V12 — heropenen en UART herstellen
+
+Zie UPGRADE-V12.md. Open/sluit/heropen ChatGPT tien keer, met normale
+USB-voeding op de Atom. Test ook na RUN-MAT en SYSTEM. Geen F3 nodig.
+Open Instellingen terwijl de Atom uit is en sluit vervolgens USB-voeding aan:
+status en instellingen moeten automatisch herstellen. Controleer na Atom-
+herstart dat geen betaalde vraag opnieuw wordt verzonden. Hosttests modelleren
+nu Serial_IsOpen werkelijk; V11-mocks retourneerden altijd 0 en misten de
+OS-open/lokaal-gesloten regressie. Fysieke responstijden zijn niet gemeten.

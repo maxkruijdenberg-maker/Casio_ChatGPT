@@ -209,3 +209,16 @@ New V10 behavior still needs hardware confirmation; see UPGRADE-V10.md.
 Beide menutegels wit; zichtbare basis- en taalnamen bevatten alleen een spatie.
 Interne identiteit @CHATGPT behouden. Uitvoerbare Casio-code en alle Atom-binaries
 identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen.
+
+
+## V12.0 — automatisch seriële verbinding herstellen
+
+- Normaal menu-icoon en naam van de oorspronkelijke V11 terug.
+- V11-fout opgelost die een reeds geopende OS-poort definitief afwees;
+  controleer ook een extern gesloten poort bij lokaal geopende vlag.
+- Poort opnieuw initialiseren na schrijffout of heartbeat-timeout. Achtergrond-
+  retry elke 750 ms offline / controle elke 10 s online; 500 ms heartbeat-timeout.
+- Automatisch herstel binnen Instellingen; read-only metadata maximaal 2x300 ms.
+- Belangrijke opdrachten behouden 4x800 ms en identieke requestbytes/sequence.
+- Atom blijft V11, bron en binaries ongewijzigd. Geen extra betaald API-verkeer.
+- Uitgebreide UART-mocks en regressietests, elf groepen; fysieke verificatie nog nodig.

@@ -14,6 +14,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Casio-compilatie mislukt.' }
 if ($LASTEXITCODE -ne 0) { throw 'Casio-syscallcompilatie mislukt.' }
 & $cc @flags '-nostdlib' "-T$sdk\toolchain\prizm.x" "-L$sdk\lib" "$root\casio\build\main.o" "$root\casio\build\native-syscalls.o" '-lc' '-lfxcg' '-lgcc' '-o' "$root\casio\build\ChatGPT.bin"
 if ($LASTEXITCODE -ne 0) { throw 'Casio-linken mislukt.' }
-& $mk '-n' 'basic: ' '-n' 'internal:ChatGPT' '-i' "uns:$root\casio\unselected.bmp" '-i' "sel:$root\casio\selected.bmp" "$root\casio\build\ChatGPT.bin" "$root\dist\ChatGPT.g3a"
+& $mk '-n' 'basic:ChatGPT' '-i' "uns:$root\casio\unselected.bmp" '-i' "sel:$root\casio\selected.bmp" "$root\casio\build\ChatGPT.bin" "$root\dist\ChatGPT.g3a"
 if ($LASTEXITCODE -ne 0) { throw 'Maken van G3A mislukt.' }
 Write-Host "Gebouwd: $root\dist\ChatGPT.g3a"

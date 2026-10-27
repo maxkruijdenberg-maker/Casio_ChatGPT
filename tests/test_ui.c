@@ -50,7 +50,10 @@ void Bdisp_PutDisp_DD_stripe(int first,int last){(void)first;(void)last;stripeCa
 void Bdisp_DefineDMARange(int x1,int x2,int y1,int y2){dma[0]=x1;dma[1]=x2;dma[2]=y1;dma[3]=y2;}
 
 static unsigned char rx[8192];static size_t rxAt,rxEnd;
+static int osSerialOpen=0,serialOpens=0,openFailures=0,writeFailures=0;
+static unsigned char failedWrite[WIRE_ENCODED];static int failedWriteLength=0,expectSameWrite=0;
 static int connected=1,busyUntil,requestCount[32],privateReads,replyDelay=0,replyReadyAt=0;
+static int connectAt=-1;
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
@@ -111,16 +114,18 @@ int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code)
  rawMenuQueued=0;inNativeWait=0;nativeTimerCalls++;menuReturned();
  *c=2;*r=1;*code=KEY_CTRL_EXE;return KEYREP_KEYEVENT;
 }
-int PRGM_GetKey(void){if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
+int PRGM_GetKey(void){if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script\n");abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
 int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
 void OS_InnerWait_ms(int ms){timeTicks+=ms;}
 int Serial_ClearTX(void){return 0;}int Serial_ClearRX(void){rxAt=rxEnd=0;return 0;}
-int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(!quitCallback);serialCloses++;return 0;}int Serial_IsOpen(void){return 0;}
-int Serial_Open(unsigned char *p){(void)p;return 0;}
+int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(!quitCallback);serialCloses++;osSerialOpen=0;return 0;}int Serial_IsOpen(void){return osSerialOpen;}
+int Serial_Open(unsigned char *p){assert(p[0]==0&&p[1]==5&&p[2]==0&&p[3]==0&&p[4]==0&&p[5]==0);serialOpens++;if(openFailures){openFailures--;return 1;}osSerialOpen=1;return 0;}
 int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return timeTicks<replyReadyAt?0:(int)(rxEnd-rxAt);}
 int Serial_ReadSingle(unsigned char*p){if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];return 0;}
 int Serial_Write(const unsigned char*p,int n){
+ assert(osSerialOpen);if(writeFailures){writeFailures--;if(expectSameWrite){memcpy(failedWrite,p,n);failedWriteLength=n;}return 1;}
+ if(expectSameWrite&&failedWriteLength){assert(n==failedWriteLength&&!memcmp(p,failedWrite,n));expectSameWrite=0;failedWriteLength=0;}
  WParser parser={0};WFrame f,r={0};int got=0;for(int i=0;i<n;i++)if(w_feed(&parser,p[i],&f)==1)got=1;
  assert(got&&f.type<32);requestCount[f.type]++;
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+800;return 0;}
@@ -178,6 +183,7 @@ static void menuReturned(void){
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
  if(nativeMenus==3)longjmp(lifecycleDone,1);
  assert(fullCopies==copiesAtMenu);
+ if(nativeMenus==1)osSerialOpen=1; /* OS leaves port open before re-selection. */
  deviceFramebuffer=nativeMenus%2?otherFramebuffer:framebuffer;
  for(size_t i=0;i<384*216;i++)deviceFramebuffer[i]=0xffff;
  lcdFrame=0xffff;dma[0]=52;dma[1]=300;dma[2]=24;dma[3]=191;
@@ -204,13 +210,13 @@ static void testLifecycle(int direct){
  assert(requestCount[W_HELLO]==hellos+3);
  assert(nativeDirectCalls==directBefore+(direct?3:0)&&nativeTimerCalls==timerBefore+(direct?0:3));
  assert(!timerInstalled&&!timerArmed&&menuTimer==-1);
- assert(serialCloses==closes+3&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
+ assert(serialCloses==closes+4&&requestCount[W_CANCEL]==cancels&&drainedEvents>=drains+15);
  lifecycleTesting=0;deviceFramebuffer=framebuffer;vram=framebuffer;quitting=0;lastKey=0;
  assert(statusMode==0&&field[0]==0);applyView(view_default());
 }
 
 static void testMenuFailures(void){
- nativeResolverReady=0;serialOpen=1;quitting=1;vram=framebuffer;
+ nativeResolverReady=0;serialOpen=1;osSerialOpen=1;quitting=1;vram=framebuffer;
  clear("MENU-test");show();int closes=serialCloses,stops=timerStops,deletes=timerDeletes;SetQuitHandler(0);
  failTimerInstall=1;assert(!nativeMainMenu());failTimerInstall=0;
  assert(serialOpen&&serialCloses==closes&&!timerInstalled&&lcdFrame==C_BG);
@@ -231,15 +237,46 @@ static void testAutoConnect(void){
  assert(!strcmp(text,"Bb")&&timeTicks-start<150&&autoProbeActive);
  size_t at=keyAt;timeTicks+=150;assert(autoConnectTick()&&linkOnline&&!autoProbeActive&&keyAt==at);
  /* A pending heartbeat cannot hijack a foreground RPC or consume its reply. */
- timeTicks+=15000;assert(autoConnectTick()&&autoProbeActive);replyDelay=0;
+ timeTicks+=10000;assert(autoConnectTick()&&autoProbeActive);replyDelay=0;
  assert(rpc(W_INFO,0,0,&r,0)==1&&r.type==(W_INFO|0x80)&&!autoProbeActive);
  connected=0;linkOnline=0;autoProbeStarted=0;busyUntil=0;Serial_ClearRX();
  assert(autoConnectTick()&&autoProbeActive);timeTicks+=601;
  assert(autoConnectTick()&&!linkOnline&&!autoProbeActive);
- connected=1;timeTicks+=3000;assert(autoConnectTick()&&autoProbeActive);
+ connected=1;timeTicks+=750;assert(autoConnectTick()&&autoProbeActive);
  assert(autoConnectTick()&&linkOnline&&!autoProbeActive);
  for(int i=0;i<32;i++)if(i!=W_HELLO&&i!=W_INFO)assert(requestCount[i]==counts[i]);
  cleanup();replyDelay=0;autoProbeStarted=0;
+}
+static void testUARTRecovery(void){
+ int counts[32];WFrame r;memcpy(counts,requestCount,sizeof(counts));
+ cleanup();quitting=0;connected=1;replyDelay=0;autoProbeStarted=0;
+ /* Regression: V11 permanently rejected Serial_IsOpen()==1 if local flag=0. */
+ osSerialOpen=1;serialOpen=0;int closed=serialCloses,opened=serialOpens;
+ assert(ensureSerial()&&serialOpen&&osSerialOpen&&serialCloses==closed+1&&serialOpens==opened+1);
+ osSerialOpen=0;assert(ensureSerial()&&serialOpen&&osSerialOpen&&serialOpens==opened+2);
+ /* A driver write failure is recovered using exactly the same RPC sequence. */
+ const int quiet[32]={0};SCRIPT(quiet);writeFailures=1;openFailures=1;expectSameWrite=1;
+ assert(rpc(W_INFO,0,0,&r,0)==1&&writeFailures==0&&osSerialOpen&&!expectSameWrite&&!openFailures);
+ /* Failed opens retry in the background in <1s, without typing a Test command. */
+ cleanup();autoProbeStarted=0;openFailures=1;linkOnline=0;linkKnown=0;
+ int started=timeTicks;assert(autoConnectTick()&&!autoProbeActive&&!serialOpen);
+ timeTicks+=749;assert(!autoConnectTick());timeTicks++;
+ assert(autoConnectTick()&&autoProbeActive);assert(autoConnectTick()&&linkOnline&&timeTicks-started<1000);
+ /* A silently non-responsive UART is closed on timeout and reopened next probe. */
+ connected=0;autoProbeStarted=0;Serial_ClearRX();assert(autoConnectTick()&&autoProbeActive);
+ closed=serialCloses;timeTicks+=501;assert(autoConnectTick()&&!linkOnline&&!osSerialOpen&&serialCloses==closed+1);
+ connected=1;timeTicks+=249;assert(autoConnectTick()&&autoProbeActive&&osSerialOpen);
+ assert(autoConnectTick()&&linkOnline);
+ /* Read-only offline metadata is bounded to two attempts / 600ms. */
+ const int quietOffline[256]={0};SCRIPT(quietOffline);connected=0;
+ int before=timeTicks,infos=requestCount[W_INFO];assert(rpc(W_INFO,0,0,&r,0)==-1);
+ assert(timeTicks-before==600&&requestCount[W_INFO]==infos+2&&!osSerialOpen);
+ /* Settings recovers without Test when Atom becomes available while it is open. */
+ int waitThenExit[260]={0};waitThenExit[259]=47;SCRIPT(waitThenExit);
+ connectAt=timeTicks+1200;autoProbeStarted=0;infos=requestCount[W_INFO];settings();
+ assert(connected&&connectAt==-1&&linkOnline&&requestCount[W_INFO]>=infos+2);
+ for(int i=0;i<32;i++)if(i!=W_HELLO&&i!=W_INFO&&i!=W_DEVICE&&i!=W_GET_CONFIG)assert(requestCount[i]==counts[i]);
+ cleanup();autoProbeStarted=0;
 }
 static void testMathInput(void){
  char text[256]="";
@@ -316,7 +353,7 @@ int main(int argc,char **argv){
   const int menuBack[]={48};SCRIPT(menuBack);phoneSetup();assert(requestCount[W_SETUP]==before+4&&!fakePortal&&quitting);
   assert(requestCount[W_ASK]==paidBefore);quitting=0;
  }
- testMathInput();testAutoConnect();
+ testMathInput();testAutoConnect();testUARTRecovery();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();
  if(argc==3&&!strcmp(argv[1],"--screens")){
@@ -336,6 +373,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and automatic free UART connection and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, synchronous UART cleanup before OS dispatch, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, bounded read-only metadata waits, automatic settings reconnect, sub-second free reconnect and no saved closing-dialog flash across six sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, synchronous UART cleanup before OS dispatch, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }

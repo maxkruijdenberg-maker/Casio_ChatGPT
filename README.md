@@ -1,35 +1,33 @@
-# ChatGPT V11.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V12.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**V11-menupatch (v11.0.1):** beide menuafbeeldingen zijn volledig wit en de
-zichtbare appnaam is een spatie. Alleen het Casio-menutegeltje is aangepast;
-ChatGPT zelf en de Atom blijven V11. De OS-selectierand of OS-sneltoetsletter
-kan nog zichtbaar zijn; volledige onzichtbaarheid is niet op hardware bevestigd.
-Zie [UPGRADE-V11.md](UPGRADE-V11.md).
+**Vanaf V11: vervang alleen `dist/ChatGPT.g3a`. De Atom blijft V11.0.**
+Zie [UPGRADE-V12.md](UPGRADE-V12.md). Het normale ChatGPT-pictogram uit de
+originele V11 is terug; dit is geen versie met een verborgen menu-item.
 
-**Bijwerken naar V11: werk zowel de Casio-app als de Atom bij. Zie [UPGRADE-V11.md](UPGRADE-V11.md).**
+V12 herstelt de seriële verbinding wanneer de Casio-poort nog open is terwijl
+onze lokale vlag gesloten zegt, of wanneer de OS-poort dicht is terwijl onze
+vlag open zegt. V11 kon in het eerste geval iedere nieuwe poging weigeren.
+Na een schrijffout of probe-timeout wordt de poort opnieuw geopend. De
+achtergrondcontrole probeert offline iedere 750 ms (was 3 seconden), met
+500 ms antwoordtijd. Instellingen verbindt ook automatisch opnieuw.
+Read-only UART-informatie heeft maximaal twee antwoordvensters van 300 ms,
+in plaats van vier van 800 ms. Belangrijke opdrachten behouden hun bestaande
+retrybeleid en herhalen bij transportproblemen exact hetzelfde bericht.
 
-Nieuw: F6 Instellingen → F2 Telefoon opent een tijdelijk, met een willekeurig
-wachtwoord beveiligd wifi-netwerk. Verbind je telefoon, open http://192.168.4.1
-en plak je eigen OpenAI API-sleutel. Wifi en sleutel worden op de Atom opgeslagen;
-het installatienetwerk sluit na opslaan, Terug of tien minuten. Geen betaalde
-API-vraag wordt tijdens installatie verstuurd. De Casio toont of wifi verbinden lukt;
-de API-sleutel wordt pas bij de eerste vraag bij OpenAI gecontroleerd.
+Dit zijn verbindingstijden van de lokale UART; wifi, internet en OpenAI hebben
+hun eigen responstijden. Achtergrondherstel verstuurt alleen gratis HELLO-
+berichten naar de Atom. Bij verlaten wordt UART nog steeds vóór de native
+menuoverdracht opgeruimd en er blijft geen eigen quit-callback achter.
 
-V11 verwijdert ook de geregistreerde add-in-opruimcallback bij het verlaten van
-ChatGPT. UART, bestanden en invoervlaggen worden vóór de OS-overdracht opgeruimd,
-zodat geen ChatGPT-opruimcode wordt uitgevoerd tijdens het laden van andere apps.
-Dit adresseert de gemelde System ERROR na het kiezen van een ander pictogram.
-De exacte foutlocatie kan zonder de OS-ROM en een apparaattest niet worden bewezen.
+Telefooninstallatie (F6 → F2), ALPHA-lock, SHIFT-wiskunde, chats, schermvulling
+en schaalinstellingen blijven behouden. De Atom-code en alle vier bijbehorende
+binaries zijn byte-identiek aan de originele V11. Geen nieuwe Atom-upload nodig.
+Bekijk [de V12-interface uit hosttests](docs/design/V12-actual-screens.png).
 
-De bestaande vormgeving, pictogrammen, ALPHA-lock, eenmalige SHIFT, chats,
-scherminstellingen en automatische UART-verbinding blijven behouden. Geen slaapstand.
-Bekijk [de interface uit de echte UI-renderer in hosttests](docs/design/V11-actual-screens.png).
-Het taalmodel draait bij OpenAI; de Atom verstuurt HTTPS-verzoeken met certificaatcontrole.
-
-**Validatie:** beide programma's worden gebouwd; elf softwaretestgroepen testen
-ook de telefooninstallatie en het opruimen vóór het menu. Geen fysieke Casio/Atom,
-telefoon-wifitest of betaalde API-test beschikbaar in deze omgeving. Test de stappen
-in UPGRADE-V11.md op het apparaat vóór gebruik voor verkoop.
+**Validatie:** SH4-build en elf softwaretestgroepen, inclusief een realistischer
+OS-poortmodel, achtergebleven poorten na menu, driveruitval, herstel in
+Instellingen en zes sessies via beide native menuroutes. Geen fysieke Casio/Atom
+beschikbaar; controleer heropenen met de apparaattest in UPGRADE-V12.md.
 
 ## Windows: installeren
 
@@ -113,8 +111,8 @@ en SHIFT+×10ˣ → `π`. Zie UPGRADE-V10.md voor de volledige tabel. Functies z
 vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
 
 Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
-op toetsen in het invoerscherm volgen retries na ongeveer 3 seconden offline
-en een controle iedere 15 seconden als de Atom online is. Het typen blijft
+op toetsen in het invoerscherm volgen retries iedere 750 ms offline
+en een controle iedere 10 seconden als de Atom online is. Het typen blijft
 beschikbaar. F3 is nog aanwezig voor diagnose; verbinden vereist geen F3.
 
 Na versturen komt een apart antwoordscherm. Omhoog/omlaag scrolt een regel;
@@ -135,6 +133,7 @@ Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
 niet-opgeslagen wijziging weg. MENU sluit ook het afgeschermde invoerveld.
 
+Instellingen probeert ook automatisch opnieuw verbinding te maken.
 Met **F2 Telefoon** kun je wifi en API-sleutel ook plakken via de tijdelijke
 installatiepagina. Zie [UPGRADE-V11.md](UPGRADE-V11.md) voor de stappen.
 
