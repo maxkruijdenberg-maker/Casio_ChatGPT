@@ -284,3 +284,12 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Modelnamen met dubbele punten toegestaan voor aangepaste modellen; paden blijven ongeldig.
 - Config11/opslag/V13-toetsen/native menu blijven; Atom-update deze keer vereist.
 - Veertien hosttestgroepen en beide builds; echte hardware en live API nog te testen.
+
+## V18.0 — kleurrijke kaartstijl en gecentreerde teksten
+
+- Gedeelde kaartstijl met zachte schaduw en gekleurde selectierand.
+- Teal/blauw/paars/goud voor de vier instellingen, met kleine pictogrammen.
+- Gecentreerde tekst onder logo's op start- en laadscherm; aparte zin voor modellen ophalen.
+- Consistente kaders rond functieknoppen en kleurrijke accenten in Chats/Hulp.
+- Alleen visuele wijzigingen; Atom-broncode en firmware bytegelijk aan V17.
+- Casio-build, veertien hosttestgroepen en 40 gesimuleerde menuheropeningen.

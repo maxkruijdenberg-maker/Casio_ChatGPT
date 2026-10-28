@@ -283,3 +283,10 @@ filter. Test je gekozen modellen afzonderlijk met echte vragen. Controleer een
 ongeldige sleutel, geen wifi, vernieuwen/annuleren, modelbehoud en een aangepaste
 modelnaam indien je account die heeft. Accountlisting is geen betaalde completion
 en bewijst geen ondersteuning door Chat Completions.
+
+## V18 — kaartstijl en tekstuitlijning
+
+Vanaf V17 alleen de .g3a vervangen. Controleer gecentreerde teksten, selectieranden
+in alle lijsten, de vier accentkleuren, kleine pictogrammen en functietoetskadertjes.
+Test laadtekst bij vragen én modellen ophalen, annuleren, aangepaste schermschaal
+en menuheropenen. De softwaretests vervangen geen visuele controle op een echte Casio.

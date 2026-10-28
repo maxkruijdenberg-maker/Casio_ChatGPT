@@ -1,33 +1,26 @@
-# ChatGPT V17.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V18.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-Een lichte interface met teal-accenten, rustige kaarten en vier instellingen:
-**Wifi en account, Model, Hulp en Meer**. De versie en het aanpassen van het
-scherm staan onder Meer; het beginscherm bevat geen ontwikkelinformatie.
+V18 verfijnt de lichte V17-interface met meer kleur, duidelijke selectieranden,
+zachte schaduwen en gecentreerde teksten onder de logo's.
 
-**Deze upgrade bevat ook nieuwe Atom-firmware.** Upload de volledige sketchmap
-of flash de meegeleverde binaries en vervang daarna `ChatGPT.g3a`.
-Laat `CGPT3` staan en schakel volledig wissen van de Atom-flash uit.
-Zie [UPGRADE-V17.md](UPGRADE-V17.md) en [de korte gebruikersgids](docs/V17-STARTGIDS.md).
+- Teal voor Wifi, blauw voor Model, paars voor Hulp en goud voor Meer.
+- Gekleurde pictogrammen, afgeronde kaarten en een zichtbare rand om je selectie.
+- Gecentreerd beginscherm met een korte uitnodiging om je vraag te typen.
+- Laadlogo met bewegend accent en een passende zin voor vragen of modellen ophalen.
+- Knoppen onderaan met een kader, een duidelijke Stuur-knop en Terug in blauw.
 
-- Modellen uit je eigen API-account ophalen en kiezen zonder typen.
-- Scrolbare lijst met pagina's, vernieuwen en modelinformatie.
-- Hulp met starten, toetsen, antwoorden/kosten en verbinding controleren.
-- Vernieuwde laadanimatie met ChatGPT-logo en bewegend accent.
-- Verbonden/Verbroken rechtsboven; leesbare = in antwoorden.
-- EXIT blijft binnen de app; MENU vraagt om afsluiten. ALPHA blijft letterlock.
+**Vanaf V17 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
+Laat `CGPT3` staan. Vanaf V16 of ouder moet de Atom nog naar de meegeleverde V17-firmware.
+Zie [UPGRADE-V18.md](UPGRADE-V18.md) en de [gebruikersgids](docs/V18-STARTGIDS.md).
 
-De app gebruikt OpenAI Chat Completions. De accountlijst vermeldt geen
-endpointondersteuning: V17 toont tekst-chatkandidaten en filtert beeld/audio en
-andere niet-chatfamilies. **Niet elk model uit de lijst werkt noodzakelijk met
-Chat Completions.** Web-only ChatGPT-modellen zijn geen API-keuzes. Bij een
-niet-ondersteund model kies je een ander; er wordt niet automatisch betaald
-opnieuw geprobeerd. Er is geen verzonnen actuele prijs per model.
+[De V18-schermen](docs/design/V18-actual-screens.png) en
+[de laadanimatie](docs/design/V18-loading.gif) komen uit de echte UI-renderer
+in hosttests; de modellenlijst gebruikt voorbeelddata.
 
-[Werkelijke V17-schermen](docs/design/V17-actual-screens.png) en
-[de laadanimatie](docs/design/V17-loading.gif) zijn uit de UI-renderer in hosttests.
-De modellen in de preview zijn voorbeelddata, geen ingelezen privéaccount.
-Veertien ASan/UBSan-testgroepen, Casio-build en Atom-build worden gecontroleerd.
-Echte hardware, netwerk en betaalde API-antwoorden moeten op jouw apparaat getest worden.
+De vier instellingen, modellen uit je API-account, Hulp, =-weergave en MENU/EXIT
+werken zoals in V17. De verbindingslogica, pins, baudrate en opslag blijven gelijk.
+Niet ieder model uit de accountlijst ondersteunt de Chat Completions API van deze app.
+Er zijn veertien ASan/UBSan-testgroepen en een Casio-build; fysieke controle blijft nodig.
 
 ## Windows: installeren
 

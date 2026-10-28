@@ -7,7 +7,7 @@ PASS: V4 viewport; 80-120% scales, +/-24 pixel offsets, identity mapping, monoto
 PASS: native CG menu resolver; all SH register pairs, signed BSR, exact pattern, bounded reads, invalid/misaligned ROM pointers, missing/ambiguous patterns and read errors.
 PASS raw CG50 keyboard: 50 physical keys, word/bit mapping, held keys, MENU priority, chord/diagnostic rejection; read-only KEYSC path without OS key calls
 PASS answer display: ASCII/full-width/small equality, math letters, Unicode minus/spaces, LaTeX delimiters, relation/currency preservation, unchanged originals and bounded output
-PASS: V17 light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, logo-only animated waiting/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.
+PASS: V18 colored cards and centered captions; light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.
 In file included from /workspace/casio-tools/ArduinoJson/src/ArduinoJson.hpp:50,
                  from /workspace/casio-tools/ArduinoJson/src/ArduinoJson.h:9,
                  from tests/../atom/ChatGPTAtom/api_response.h:3,

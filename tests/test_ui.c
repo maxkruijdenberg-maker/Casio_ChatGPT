@@ -66,7 +66,7 @@ void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
  if(verifyLogoOnly&&loadingActive&&!closePromptActive){
-  for(int y=175;y<216;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
+  for(int y=185;y<191;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
   logoFrames++;
  }
 
@@ -530,7 +530,8 @@ int main(int argc,char **argv){
   assert(lib_append(&disk,1,&savedChats[1],"Leg breuken eenvoudig uit.","Een breuk is een deel van een geheel.",&savedChats[1]));
   activeChatSlot=0;viewTurn=savedChats[0].turns-1;
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
-  strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
+  activeChatSlot=-1;prompt[0]=0;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/home.ppm",argv[2]);dumpFrame(path);snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
+  activeChatSlot=0;strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
   strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
@@ -543,11 +544,11 @@ int main(int argc,char **argv){
   SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
   paintModels(1);snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
-  for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
+  loadingPurpose=0;for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
   paintLoading(0);snprintf(path,sizeof(path),"%s/loading.ppm",argv[2]);dumpFrame(path);
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V17 light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, logo-only animated waiting/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V18 colored cards and centered captions; light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

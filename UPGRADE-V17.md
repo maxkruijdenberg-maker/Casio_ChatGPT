@@ -1,3 +1,5 @@
+> Nieuwste versie: [UPGRADE-V18.md](UPGRADE-V18.md). Vanaf V17 hoeft alleen de Casio-app vervangen te worden.
+
 # V17 — lichte stijl, eenvoudig menu en accountmodellen
 
 ## Upgraden vanaf V11 t/m V16

@@ -1,0 +1,7 @@
+Casio SH4 build: PASS
+Casio bytes: 80824
+SHA256: 6f228547f2328cf4da5b6f9af8764c30c9431687d95c5f10502406c80c64f3fb
+Atom source and all four binaries: identical to v17.0.0
+14 ASan/UBSan groups: PASS
+40 simulated menu reopens: PASS
+UI previews are host renders, not device photos. No physical hardware test.

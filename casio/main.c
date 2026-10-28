@@ -36,7 +36,7 @@ static int rpcDepth=0;
 static int autoConnectTick(void);
 static void animateLoading(void);
 static void paintLoading(int phase);
-static int loadingActive=0,loadingPhase=0,loadingAt=0;
+static int loadingActive=0,loadingPhase=0,loadingAt=0,loadingPurpose=0;
 static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
 static uint8_t seq=0;
@@ -110,7 +110,9 @@ static int keyEvent(void){
 static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
 enum {C_BG=0xf7be,C_PANEL=0xffff,C_RAISED=0xdf7c,C_TEXT=0x1925,
- C_MUTED=0x5b8d,C_LINE=0xe73c,C_MINT=0x03ce,C_RED=0xb166};
+ C_MUTED=0x5b8d,C_LINE=0xe73c,C_MINT=0x03ce,C_RED=0xb166,
+ C_BLUE=0x2b39,C_PURPLE=0x7255,C_GOLD=0x9be2,C_SHADOW=0xe71c,
+ C_BLUE_SOFT=0xe75f,C_PURPLE_SOFT=0xef1f,C_GOLD_SOFT=0xffba};
 static int linkKnown=0,linkOnline=0,linkSeen=0,linkMisses=0;
 static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;}
 static void linkFailed(void){
@@ -133,8 +135,16 @@ static void rect(int x,int y,int w,int h,unsigned short color){
 static void rounded(int x,int y,int w,int h,unsigned short color){
  int row,inset;for(row=0;row<h;row++){
   int edge=row<h/2?row:h-1-row;inset=edge==0?4:edge==1?2:edge==2?1:0;
+  if(inset>(w-1)/2)inset=(w-1)/2;if(inset<0)inset=0;
   rect(x+inset,y+row,w-2*inset,1,color);
  }
+}
+/* One card language across all selectable lists: shadow, colored focus ring,
+ * tinted interior. Geometry stays inside the native 384x216 canvas. */
+static void choiceCard(int x,int y,int w,int h,int selected,unsigned short accent,unsigned short tint){
+ rounded(x+1,y+2,w,h,C_SHADOW);
+ rounded(x,y,w,h,selected?accent:C_LINE);
+ rounded(x+1+(selected!=0),y+1+(selected!=0),w-2-2*(selected!=0),h-2-2*(selected!=0),selected?tint:C_PANEL);
 }
 static void drawLogo(int x,int y,int size,unsigned short color){
  int source=size==16?16:size>=40?40:24,i;
@@ -159,11 +169,22 @@ static void clipped(int x,int y,const char*s,int width,unsigned short color){
   glyph(x+8*col,y,cp,color);col++;at+=n;
  }
 }
+static void centered(int y,const char *text,unsigned short color){
+ size_t at=0,len=strlen(text);int chars=0;uint32_t cp;
+ while(at<len){at+=u_decode(text+at,len-at,&cp);chars++;}
+ if(chars>46)chars=46;clipped((384-chars*8)/2,y,text,46,color);
+}
+static void settingIcon(int x,int y,int type,unsigned short color){
+ if(type==0){rect(x+3,y+12,3,5,color);rect(x+9,y+8,3,9,color);rect(x+15,y+3,3,14,color);}
+ else if(type==1){rect(x+9,y+2,3,17,color);rect(x+2,y+9,17,3,color);rect(x+5,y+6,11,3,color);rect(x+5,y+12,11,3,color);}
+ else if(type==2)glyph(x+6,y+3,'?',color);
+ else {rounded(x+2,y+8,4,4,color);rounded(x+9,y+8,4,4,color);rounded(x+16,y+8,4,4,color);}
+}
 static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
- drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- rect(0,31,384,1,C_LINE);
+ drawLogo(8,4,24,C_MINT);clipped(40,9,name,29,C_TEXT);
+ rect(0,30,384,2,C_LINE);rect(8,30,40,2,C_MINT);
  {
   const char *status=linkOnline?"Verbonden":"Verbroken";
   rounded(292,9,5,5,linkOnline?C_MINT:C_RED);
@@ -187,7 +208,7 @@ static void footer(const char *a,const char*b,const char*c,const char*d,const ch
  rect(0,192,384,24,C_PANEL);rect(0,192,384,1,C_LINE);
  for(i=0;i<6;i++){
   int n=(int)strlen(p[i]),step=n>7?7:8,j;unsigned short color=C_TEXT;
-  if(n>8)n=8;if(i)rect(i*64,197,1,14,C_LINE);
+  if(n>8)n=8;if(n){rounded(i*64+3,195,58,19,i==5?C_BLUE:C_LINE);rounded(i*64+4,196,56,17,C_PANEL);}
   if(i==0&&(!strcmp(a,"Stuur")||!strcmp(a,"Opslaan")||!strcmp(a,"Verder")||!strcmp(a,"Kies")||!strcmp(a,"Open")||!strcmp(a,"Opnieuw"))){rounded(3,195,58,19,C_MINT);color=C_BG;}
   for(j=0;j<n;j++)glyph(i*64+32-n*step/2+j*step,197,(unsigned char)p[i][j],color);
  }
@@ -374,11 +395,12 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  clear(title);rounded(8,35,152,15,C_RAISED);
  sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
  (void)cap;
- rounded(6,50,368,120,C_PANEL);
+ choiceCard(6,50,368,120,0,C_MINT,C_RAISED);
  if(promptMode==1&&!buf[0]){
-  drawLogo(172,62,40,C_TEXT);printAt(80,109,activeChatSlot>=0?"Stel je vervolgvraag":"Waar wil je hulp bij?",C_TEXT);
-  printAt(68,135,"Typ je vraag. We denken mee.",C_MUTED);
-  printAt(60,155,"F6 Instel: starten via je telefoon",C_MUTED);
+  rounded(160,54,64,48,C_RAISED);drawLogo(172,58,40,C_MINT);
+  centered(107,activeChatSlot>=0?"We gaan verder.":"Waar wil je hulp bij?",C_TEXT);
+  centered(128,activeChatSlot>=0?"Vraag door, op jouw tempo.":"Een goed idee begint met een vraag.",C_MUTED);
+  centered(149,"Typ je vraag en kies Stuur.",C_MINT);
  }else textPage(buf,first,secret);
  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw","Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
@@ -569,7 +591,7 @@ static int fetchModelsWork(void){
  return !quitting&&parseModelList(total);
 }
 static int fetchModels(void){
- int ok;modelFetchCancelled=modelFetchError=0;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
+ int ok;modelFetchCancelled=modelFetchError=0;loadingPurpose=1;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
  ok=fetchModelsWork();loadingActive=0;
  if(!ok&&!quitting&&!modelFetchCancelled)message("Modellen niet geladen",modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer Wifi en account en probeer opnieuw. Je huidige model is niet gewijzigd.");
  return ok;
@@ -579,9 +601,8 @@ static void paintModels(int selected){
  sprintf(label,"%d modellen · %s",count,remoteModelCount?"jouw account":"startkeuzes");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
-  rounded(8,y-3,368,21,i==selected?C_RAISED:C_PANEL);
-  if(i==selected)rounded(8,y-3,3,21,C_MINT);
-  clipped(18,y,name,40,i==selected?C_MINT:C_TEXT);
+  choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
+  clipped(18,y,name,40,i==selected?C_BLUE:C_TEXT);
   if(!strcmp(publicModel,name))rounded(362,y+4,5,5,C_MINT);
  }
  printAt(14,177,"↑↓ kiezen · EXE opslaan",C_MUTED);
@@ -621,13 +642,13 @@ static void deviceSettings(void){
  int selected=0,k,i;WFrame reply;const char *names[]={"Scherm aanpassen","Over deze app","Wifi en sleutel wissen"};
  while(!quitting){
   clear("Meer instellingen");
-  for(i=0;i<3;i++){int y=58+i*34;rounded(8,y-4,368,28,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
+  for(i=0;i<3;i++){int y=58+i*34;choiceCard(8,y-4,368,28,i==selected,C_GOLD,C_GOLD_SOFT);printAt(18,y,names[i],i==selected?C_GOLD:C_TEXT);glyph(362,y,'>',C_MUTED);}
   footer("Open","","","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 17.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 18.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -642,7 +663,7 @@ static void helpAndDevice(void){
  };
  while(!quitting){
   clear("Hulp");
-  for(i=0;i<4;i++){int y=48+i*31;rounded(8,y-4,368,27,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
+  for(i=0;i<4;i++){int y=48+i*31;choiceCard(8,y-4,368,27,i==selected,C_PURPLE,C_PURPLE_SOFT);printAt(18,y,names[i],i==selected?C_PURPLE:C_TEXT);glyph(362,y,'>',C_MUTED);}
   footer("Open","","","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
@@ -654,9 +675,11 @@ static void paintSettings(int selected){
  const char *notes[]={publicSSID[0]?publicSSID:"Instellen via telefoon",publicModel[0]?publicModel:"Kies je model","Zo werkt de app","Scherm en appinformatie"};
  clear("Instellingen");
  for(i=0;i<4;i++){
-  int y=43+i*35;rounded(8,y-3,368,32,i==selected?C_RAISED:C_PANEL);
-  if(i==selected)rounded(8,y-3,3,32,C_MINT);
-  printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);clipped(18,y+14,notes[i],40,C_MUTED);glyph(362,y+7,'>',C_MUTED);
+  static const unsigned short accent[4]={C_MINT,C_BLUE,C_PURPLE,C_GOLD};
+  static const unsigned short tint[4]={C_RAISED,C_BLUE_SOFT,C_PURPLE_SOFT,C_GOLD_SOFT};
+  int y=43+i*35;choiceCard(8,y-3,368,32,i==selected,accent[i],tint[i]);
+  rounded(17,y+1,29,25,tint[i]);settingIcon(20,y+3,i,accent[i]);
+  printAt(56,y,names[i],i==selected?accent[i]:C_TEXT);clipped(56,y+14,notes[i],36,C_MUTED);glyph(362,y+7,'>',accent[i]);
  }
  footer("Open","","","","Hulp","Terug");show();
 }
@@ -687,7 +710,7 @@ static void paintDiagnosis(int successes,int checked){
 static void diagnose(void){
  int k,successes,checked,i,beforeRetries,beforeErrors;WFrame reply;
  do {
-  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");drawLogo(172,67,40,C_MINT);printAt(92,132,"Even controleren...",C_TEXT);show();
+  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");rounded(160,53,64,58,C_RAISED);drawLogo(172,61,40,C_MINT);centered(127,"Even controleren...",C_TEXT);centered(149,"We kijken of alles goed is aangesloten.",C_MUTED);show();
   for(i=0;i<3&&!quitting;i++){
    int result=rpc(W_HELLO,0,0,&reply,1);if(quitting||result==-2)return;checked++;
    if(result==1&&reply.len>=2&&reply.data[1]==1)successes++;else if(!successes)break;
@@ -742,11 +765,13 @@ static void readAnswer(int contextWasDropped){
 
 #include "chats.h"
 static void paintLoading(int phase){
- static const int orbit[8][2]={{0,-53},{38,-38},{53,0},{38,38},{0,53},{-38,38},{-53,0},{-38,-38}};
- int i;clear("ChatGPT");rounded(134,50,116,116,C_PANEL);
- drawLogo(152,68,80,C_MINT);
- for(i=0;i<8;i++){int active=(phase%8)==i;rounded(190+orbit[i][0],106+orbit[i][1],active?6:3,active?6:3,active?C_MINT:C_LINE);}
- show();
+ static const int orbit[8][2]={{0,-43},{30,-30},{43,0},{30,30},{0,43},{-30,30},{-43,0},{-30,-30}};
+ int i;clear("ChatGPT");choiceCard(136,40,112,98,0,C_MINT,C_RAISED);
+ rounded(151,53,82,72,C_RAISED);drawLogo(160,57,64,C_MINT);
+ for(i=0;i<8;i++){int active=(phase%8)==i;rounded(190+orbit[i][0],87+orbit[i][1],active?6:3,active?6:3,active?C_BLUE:C_LINE);}
+ centered(147,loadingPurpose?"Jouw modellen, op een rij.":"Even voor je aan de slag.",C_TEXT);
+ centered(167,loadingPurpose?"Je modellen worden opgehaald.":"Je vraag wordt verwerkt.",C_MUTED);
+ centered(196,"EXIT of F1: annuleren",C_MINT);show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
 static void askWork(void){
@@ -777,7 +802,7 @@ static void askWork(void){
  }
 }
 static void ask(void){
- loadingActive=prompt[0]!=0;loadingPhase=0;loadingAt=RTC_GetTicks();if(loadingActive)paintLoading(0);
+ loadingPurpose=0;loadingActive=prompt[0]!=0;loadingPhase=0;loadingAt=RTC_GetTicks();if(loadingActive)paintLoading(0);
  askWork();loadingActive=0;
 }
 /* Fresh state after a cold launch or a return from native GetKey/MENU. */
