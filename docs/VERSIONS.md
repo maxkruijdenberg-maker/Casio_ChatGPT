@@ -234,3 +234,15 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Atom V11 bron/binaries ongewijzigd. Normale iconen behouden.
 - Twaalf testgroepen, 50 fysieke keys, trage ACK tijdens typen, 40 sessies.
 - Fysieke oorzaak per-toets-uitval en OS-gedrag buiten app nog niet bewezen.
+
+
+## V14.0 — verkoopgerichte bediening
+
+- EXIT sluit niet af; alleen MENU opent een globale bevestiging met Blijven.
+- F3 en SHIFT+punt voeren = in; eerste symbool in de tekenkiezer is =.
+- Eén Diagnose in Instellingen; antwoord F3 toont de vraag, bij opslagfout Bewaar.
+- Drie modelpresets met naam, uitleg en indicatieve relatieve kosten; geen vrije invoer.
+- Verfijnde donker/mint UI, Hulp, kopersgids en verticale TikTok-interfacepreview.
+- Atom V11, V13-keyboard/heartbeat/menu-driver blijven behouden.
+- Nieuwe integratietests voor menu/drafts/geheimen/modellen, twaalf groepen en 40 sessies.
+- Fysieke V14, API-toegang en actuele prijzen nog niet door deze omgeving geverifieerd.

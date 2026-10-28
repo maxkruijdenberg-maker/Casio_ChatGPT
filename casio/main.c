@@ -13,6 +13,7 @@
 #include "viewport.h"
 #include "native_menu_device.h"
 #include "keyboard_raw.h"
+#include "models.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -43,6 +44,9 @@ static int restoreChat(void);
 static void newLocalChat(void);
 static int canLeaveReply(void);
 static int loadChatPair(int slot,int turn);
+static int requestClose(void);
+static void diagnose(void);
+static int closePromptActive=0;
 
 static unsigned short *vram;
 static ViewProfile viewProfile={100,0,0};
@@ -52,7 +56,7 @@ static const char *const errNames[]={
  "Geen fout","Vul eerst Instellingen in","Wifi niet verbonden: controleer hotspot",
  "Internet of DNS niet bereikbaar","Tijdsynchronisatie mislukt","TLS/HTTPS-verbinding mislukt",
  "API-sleutel ongeldig of geen toegang","API-limiet of onvoldoende tegoed",
- "Model niet beschikbaar","API gaf een fout terug","Antwoord of invoer te groot",
+ "Kies een ander model via Instellingen","API gaf een fout terug","Antwoord of invoer te groot",
  "Antwoord niet leesbaar","Antwoord-time-out","Atom is nog bezig",
  "Upload mislukt","Atom herstart; vraag niet opnieuw verstuurd",
  "Geheugen of opslag niet beschikbaar","Ongeldig bericht",
@@ -87,9 +91,12 @@ static void drainNativeKeys(void){
 }
 static int keyEvent(void){
  int k=keyboardRead(lastKey),now=RTC_GetTicks();
- if(k==KEY_PRGM_MENU){quitting=1;return k;}
+
  if(!k){lastKey=0;return 0;}
- if(k!=lastKey){lastKey=k;heldTick=repeatTick=now;return k;}
+ if(k!=lastKey){lastKey=k;heldTick=repeatTick=now;
+  if(k==KEY_PRGM_MENU){if(closePromptActive)return 0;return requestClose()?KEY_PRGM_MENU:UI_LINK_REFRESH;}
+  return k;
+ }
  if((k==KEY_PRGM_UP||k==KEY_PRGM_DOWN||k==KEY_PRGM_LEFT||k==KEY_PRGM_RIGHT||k==44)&&elapsed(heldTick,450)&&elapsed(repeatTick,100)){
   repeatTick=now;return k;
  }return 0;
@@ -147,7 +154,7 @@ static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
- if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V13",C_MUTED);
+ if(!strcmp(name,"ChatGPT")||!strcmp(name,"Vraag"))printAt(112,9,"V14",C_MUTED);
  rect(0,31,384,1,C_LINE);
  {int fresh=linkOnline&&!linkMisses&&!elapsed(linkSeen,30000);
   const char *status=linkMisses?"Herstel":autoProbeActive&&!linkOnline?"Atom...":linkKnown?(linkOnline?(fresh?"Atom OK":"Atom ?"):"Offline"):"Atom ?";
@@ -171,9 +178,10 @@ static void footer(const char *a,const char*b,const char*c,const char*d,const ch
  const char *p[6];int i;p[0]=a;p[1]=b;p[2]=c;p[3]=d;p[4]=e;p[5]=f;
  rect(0,192,384,24,C_PANEL);rect(0,192,384,1,C_LINE);
  for(i=0;i<6;i++){
-  int n=(int)strlen(p[i]);if(i)rect(i*64,197,1,14,C_LINE);
-  if(i==0&&(!strcmp(a,"Stuur")||!strcmp(a,"Opslaan"))){rounded(3,195,58,19,C_MINT);printAt(32-n*4,197,p[i],C_BG);}
-  else printAt(i*64+32-n*4,197,p[i],C_TEXT);
+  int n=(int)strlen(p[i]),step=n>7?7:8,j;unsigned short color=C_TEXT;
+  if(n>8)n=8;if(i)rect(i*64,197,1,14,C_LINE);
+  if(i==0&&(!strcmp(a,"Stuur")||!strcmp(a,"Opslaan")||!strcmp(a,"Verder")||!strcmp(a,"Kies"))){rounded(3,195,58,19,C_MINT);color=C_BG;}
+  for(j=0;j<n;j++)glyph(i*64+32-n*step/2+j*step,197,(unsigned char)p[i][j],color);
  }
 }
 static void textPage(const char *s,int first,int hide){
@@ -218,8 +226,15 @@ static void message(const char *title,const char *body){
   if(k==KEY_PRGM_DOWN&&first<max)first++;if(k==KEY_PRGM_UP&&first>0)first--;
  }
 }
-static int confirm(const char *question){waitForKeyRelease();clear("Bevestigen");textPage(question,0,0);footer("Ja","Nee","","","","");show();
+static int confirm(const char *question){waitForKeyRelease();clear(closePromptActive?"ChatGPT afsluiten?":"Bevestigen");paragraph(question,0,12,52,COLS,ROWS);footer(closePromptActive?"Sluiten":"Ja",closePromptActive?"Blijven":"Nee","","","","");show();
  while(!quitting){int k=waitKey();if(k==KEY_PRGM_F1)return 1;if(k==KEY_PRGM_F2||k==KEY_PRGM_EXIT)return 0;}return 0;
+}
+/* MENU is the sole application exit route. Cancelling keeps the caller's
+ * screen, typed draft, selection and UART state; the held key is consumed. */
+static int requestClose(void){
+ int yes;closePromptActive=1;
+ yes=confirm("ChatGPT sluiten en naar het Casio-menu? Opgeslagen chats blijven bewaard. Niet-verstuurde invoer wordt bij sluiten gewist. Een verstuurde API-vraag kan nog kosten maken.");
+ closePromptActive=0;waitForKeyRelease();if(yes)quitting=1;return yes;
 }
 static int ensureSerial(void){
  unsigned char mode[6]={0,5,0,0,0,0};
@@ -316,10 +331,11 @@ static int waitEditorKey(int promptMode){
 static uint32_t pickCharacter(int asciiOnly){
  static const char extras[]="éëèêáàâäíïìîóöòôúüùûçñÉËπθαβγδμωφ∞√≤≥≠×÷±∑∫∆→←↑↓²³°€";
  uint32_t choices[180];int count=0,i,sel=0,first=0,k;size_t pos=0,len=strlen(extras);uint32_t cp;
- for(i=32;i<=126;i++)choices[count++]=(uint32_t)i;
+ choices[count++]='=';
+ for(i=32;i<=126;i++)if(i!='=')choices[count++]=(uint32_t)i;
  if(!asciiOnly)while(pos<len){pos+=u_decode(extras+pos,len-pos,&cp);choices[count++]=cp;}
  while(!quitting){char label[80];clear("Kies een teken");
-  sprintf(label,"Teken %d/%d: U+%04lX",sel+1,count,(unsigned long)choices[sel]);printAt(8,35,label,C_MUTED);
+  sprintf(label,"Teken %d van %d",sel+1,count);printAt(8,35,label,C_MUTED);
   if(sel<first)first=(sel/12)*12;if(sel>=first+96)first=(sel/12-7)*12;
   for(i=first;i<count&&i<first+96;i++){
    int x=8+((i-first)%12)*30,y=51+((i-first)/12)*15;glyph(x,y,choices[i],i==sel?0x0280:0);
@@ -338,15 +354,16 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  int row,col;char label[100];cursorPosition(buf,cursor,&row,&col);
  clear(title);rounded(8,35,152,15,C_RAISED);
  sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA-lock":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
- sprintf(label,"%u/%u bytes",(unsigned)strlen(buf),(unsigned)(cap-1));printAt(240,35,label,C_MUTED);
+ sprintf(label,"Ruimte %u%%",(unsigned)(100*(cap-1-strlen(buf))/(cap-1)));printAt(272,35,label,C_MUTED);
  rounded(6,50,368,120,C_LINE);rounded(7,51,366,118,C_PANEL);
  if(promptMode==1&&!buf[0]){
-  drawLogo(172,62,40,C_TEXT);printAt(104,109,"Waar wil je hulp bij?",C_TEXT);
-  printAt(76,135,"Typ een vraag. F1 verstuurt.",C_MUTED);
+  drawLogo(172,62,40,C_TEXT);printAt(80,109,activeChatSlot>=0?"Stel je vervolgvraag":"Waar wil je hulp bij?",C_TEXT);
+  printAt(68,135,"Typ je vraag. We denken mee.",C_MUTED);
+  printAt(60,155,"F6 Instel: starten via je telefoon",C_MUTED);
  }else textPage(buf,first,secret);
  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
- if(promptMode==1)footer("Stuur","Nieuw","Test","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
- printAt(8,175,promptMode==1?"OPTN: chats · EXIT: terug":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();
+ if(promptMode==1)footer("Stuur","Nieuw","=","Tekens","ABC/abc","Instel");else footer("Opslaan","","=","Tekens","ABC/abc","");
+ printAt(8,175,promptMode==1?"OPTN: chats · MENU: afsluiten":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();
 }
 static void prepareMenuSnapshot(void){
  int known=linkKnown,online=linkOnline,seen=linkSeen,active=autoProbeActive;
@@ -354,7 +371,7 @@ static void prepareMenuSnapshot(void){
  renderEditor("",PROMPT_MAX+1,0,"ChatGPT - Vraag",0,1,0,0,0,1,0);
  linkKnown=known;linkOnline=online;linkSeen=seen;autoProbeActive=active;
 }
-/* Returns F1/F2/F3/F6/EXIT. Secret input is never revealed or retained on Casio. */
+/* Returns F1/F2/F6/EXIT. Secret input is never revealed or retained on Casio. */
 static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
  size_t cursor=strlen(buf);int letters=0,upper=0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
  while(!quitting){
@@ -369,14 +386,15 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(promptMode==1&&k==KEY_PRGM_OPTN)return UI_CHATS;
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return KEY_PRGM_F1;
   if(k==KEY_PRGM_EXIT)return k;
-  if(promptMode==1&&(k==KEY_PRGM_F2||k==KEY_PRGM_F3||k==KEY_PRGM_F6))return k;
+  if(promptMode==1&&(k==KEY_PRGM_F2||k==KEY_PRGM_F6))return k;
   if(k==KEY_PRGM_LEFT){cursor=useShift?0:u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_RIGHT){if(useShift)cursor=strlen(buf);else if(cursor<strlen(buf))cursor=u_next(buf,cursor);continue;}
   if(k==44){u_delete(buf,&cursor);if(!buf[0])firstLetter=autoCapital;continue;}
-  if(k==34){if(confirm("Dit invoerveld helemaal wissen?")){erase(buf,cap);cursor=0;firstLetter=autoCapital;}continue;}
+  if(k==KEY_PRGM_ACON){if(confirm("Dit invoerveld helemaal wissen?")){erase(buf,cap);cursor=0;firstLetter=autoCapital;}continue;}
   if(k==KEY_PRGM_UP){int i;for(i=0;i<COLS&&cursor;i++)cursor=u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_DOWN){int i;for(i=0;i<COLS&&cursor<strlen(buf);i++)cursor=u_next(buf,cursor);continue;}
-  if(k==KEY_PRGM_F4)cp=(int)pickCharacter(asciiOnly);
+  if(k==KEY_PRGM_F3||(useShift&&k==61))cp='=';
+  else if(k==KEY_PRGM_F4)cp=(int)pickCharacter(asciiOnly);
   else {
    if(useShift||(!letters&&promptMode==1))token=math_key(k,useShift);
    if(token){
@@ -393,7 +411,7 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(!cp){if(k!=KEY_PRGM_F4)message("Teken niet ondersteund","Gebruik F4 Tekens voor speciale tekens en formules.");continue;}
   if(asciiOnly&&(cp<32||cp>126)){message("Ongeldig teken","Dit veld ondersteunt alleen ASCII.");continue;}
   if(glyphIndex((uint32_t)cp)<0){message("Teken niet ondersteund","Dit invoerteken kan niet worden weergegeven.");continue;}
-  if(!u_insert(buf,cap,&cursor,(uint32_t)cp)){message("Invoer vol","De maximale lengte in bytes is bereikt.");continue;}
+  if(!u_insert(buf,cap,&cursor,(uint32_t)cp)){message("Invoer vol","Dit veld is vol. Verwijder tekst om verder te typen.");continue;}
   if((cp>='a'&&cp<='z')||(cp>='A'&&cp<='Z'))firstLetter=0;
  }return KEY_PRGM_MENU;
 }
@@ -440,7 +458,7 @@ static void screenSettings(void){
    printAt(76,y,text,selected==i?C_MINT:C_TEXT);
   }
   printAt(52,157,"↑↓ kiezen · ←→ aanpassen",C_MUTED);printAt(64,175,"EXIT: annuleren",C_MUTED);
-  footer("Opslaan","Test","100%","","","");show();k=waitKey();
+  footer("Opslaan","Hoeken","100%","","","");show();k=waitKey();
   if(k==KEY_PRGM_EXIT){applyView(original);return;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k==KEY_PRGM_F3){draft=view_default();applyView(draft);continue;}
@@ -485,9 +503,41 @@ static void phoneSetup(void){
  }
  {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
 }
+static void paintModels(int selected){
+ int i;clear("Kies je model");
+ {char current[104];sprintf(current,"Nu: %s",publicModel[0]?publicModel:"nog geen keuze");clipped(12,37,current,44,C_MUTED);}
+ for(i=0;i<MODEL_COUNT;i++){
+  int y=59+i*37;rounded(8,y-2,368,34,i==selected?C_RAISED:C_PANEL);
+  printAt(16,y,modelChoices[i].label,i==selected?C_MINT:C_TEXT);
+  {char cost[32];sprintf(cost,"Kosten: %s",modelChoices[i].cost);printAt(240,y,cost,C_MUTED);}
+  printAt(16,y+15,modelChoices[i].id,C_MUTED);
+  if(!strcmp(publicModel,modelChoices[i].id))printAt(344,y+15,"Nu",C_MINT);
+ }
+ printAt(12,175,"↑↓ kiezen · kosten zijn relatief",C_MUTED);
+ footer("Kies","","","Uitleg","","");show();
+}
+static int modelPicker(void){
+ int selected=modelChoiceIndex(publicModel),k;char details[520];
+ if(selected<0)selected=1;
+ while(!quitting){
+  paintModels(selected);k=waitEditorKey(1);if(quitting)return 0;
+  if(k==KEY_PRGM_EXIT)return 0;
+  if(k==KEY_PRGM_UP&&selected>0)selected--;
+  if(k==KEY_PRGM_DOWN&&selected<MODEL_COUNT-1)selected++;
+  if(k==KEY_PRGM_F4){sprintf(details,"%s\n%s\n\n%s\n\nRelatieve kosten: %s per token. De echte kosten hangen af van je tekst en antwoord. Controleer actuele API-prijzen. Je eigen API-tegoed wordt gebruikt. Beschikbaarheid wordt bij je eerste vraag gecontroleerd.",modelChoices[selected].label,modelChoices[selected].id,modelChoices[selected].description,modelChoices[selected].cost);message("Over dit model",details);}
+  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN){
+   if(!strcmp(publicModel,modelChoices[selected].id))return 1;
+   if(uploadText(4,modelChoices[selected].id)){
+    strcpy(publicModel,modelChoices[selected].id);settingsEpoch++;
+    message("Model opgeslagen","Je keuze is op de Atom bewaard. Er is geen betaalde vraag verstuurd.");return 1;
+   }
+  }
+ }
+ return 0;
+}
 static void settings(void){
  int selected=0,k,i,known;uint8_t configured[4]={0};WFrame r;
- const char *names[]={"Hotspotnaam","Hotspotwachtwoord","API-sleutel","Model","Taal","Versie","Instellingen wissen"};
+ const char *names[]={"Wifi-netwerk","Wifi-wachtwoord","API-sleutel","Model","Taal","Versie","Instellingen wissen"};
  const size_t caps[]={33,64,257,81};
  known=refreshSettings(configured);
  while(!quitting){clear("Instellingen");
@@ -499,29 +549,30 @@ static void settings(void){
     if(known&&i==0&&publicSSID[0])value=publicSSID;
     if(known&&i==3&&publicModel[0])value=publicModel;
    }else if(i==4)value="Nederlands";
-   else if(i==5){sprintf(version,"13.0 / Atom %s",atomMajor==11?"11.0":atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
+   else if(i==5){sprintf(version,"14.0 / Atom %s",atomMajor==11?"11.0":atomMajor==3?"3.0":atomMajor==2?"2.0":atomMajor==1?"1.x":"?");value=version;}
    clipped(224,y,value,16,C_MUTED);if(i!=4&&i!=5)glyph(364,y,'>',C_MUTED);
   }
-  printAt(8,175,known?"F3: vernieuwen · EXIT: terug":linkOnline?"Instellingen ophalen · verbinding behouden":"Atom verbinden · automatisch opnieuw proberen",known?C_MUTED:C_RED);
-  footer("Wijzig","Telefoon","Test","Scherm","","");show();k=waitEditorKey(1);
+  printAt(8,175,known?"F3: diagnose · EXIT: terug":linkOnline?"Instellingen ophalen · verbinding behouden":"Atom verbinden · automatisch opnieuw proberen",known?C_MUTED:C_RED);
+  footer("Wijzig","Telefoon","Diagnose","Scherm","Hulp","");show();k=waitEditorKey(1);
   if(k==UI_LINK_REFRESH){if(!linkOnline)known=0;else if(!known)known=refreshSettings(configured);continue;}
   if(k==KEY_PRGM_EXIT)break;
   if(k==KEY_PRGM_F2){phoneSetup();if(!quitting)known=refreshSettings(configured);continue;}
-  if(k==KEY_PRGM_F3){known=refreshSettings(configured);continue;}
+  if(k==KEY_PRGM_F3){diagnose();if(!quitting)known=refreshSettings(configured);continue;}
+  if(k==KEY_PRGM_F5){message("Snel beginnen","1. F2 Telefoon: verbind je eigen wifi en plak je API-sleutel.\n2. Kies een model.\n3. Typ een vraag en druk F1.\n\nEXIT gaat terug binnen de app. Alleen MENU vraagt om afsluiten.\n\nGebruik je eigen OpenAI API-account met betaald tegoed. ChatGPT Plus bevat geen API-tegoed. Chats worden lokaal opgeslagen.");continue;}
   if(k==KEY_PRGM_F4){screenSettings();continue;}
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<6)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN)continue;
+  if(selected==3){modelPicker();if(!quitting)known=refreshSettings(configured);continue;}
   if(selected==4){message("Taal","De interface en de standaard antwoordtaal zijn Nederlands.");continue;}
-  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V13.0\nCompatibel met Atom V11.0.\nMenu-route: %s\n\nUART blijft open in MENU; minder onnodig herstel. Vanaf V11 alleen ChatGPT.g3a vervangen. Instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
+  if(selected==5){char details[320];sprintf(details,"Casio ChatGPT V14.0\nCompatibel met Atom V11.0.\nMenu-route: %s\n\nMENU sluit af; EXIT gaat terug. F3 voert = in. Kies je model in Instellingen. Vanaf V11 alleen ChatGPT.g3a vervangen. Instellingen blijven behouden.",nativeMenuTarget()?"native functie gevonden":"OS-timer");message("Versie",details);continue;}
   if(selected==6){if(confirm("Hotspotgegevens en API-sleutel op de Atom wissen?")){
    settingsEpoch++;checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&r);known=refreshSettings(configured);}
    continue;
   }
   erase(field,sizeof(field));
   if(selected==0&&known)strcpy(field,publicSSID);
-  if(selected==3)strcpy(field,known&&publicModel[0]?publicModel:"gpt-4.1-mini");
   do {
-   k=editor(field,caps[selected],names[selected],selected==1||selected==2,0,selected==2||selected==3,0);
+   k=editor(field,caps[selected],names[selected],selected==1||selected==2,0,selected==2,0);
    if(k!=KEY_PRGM_F1||quitting)break;
    if(!setting_valid(selected+1,field,strlen(field))){
     message("Controleer de invoer",selected==2?"Een API-sleutel mag geen spaties bevatten. Let op hoofdletters en kleine letters.":selected==3?"Modelnaam: gebruik letters, cijfers, punten, streepjes en underscores. De naam mag niet leeg zijn.":"Deze instelling bevat ongeldige tekst.");continue;
@@ -539,7 +590,7 @@ static void diagnose(void){WFrame r;char text[640];int beforeR=retries,beforeE=e
  clear("UART-diagnose");printAt(8,40,"Atom wordt getest...",0);show();
  if(!checkedRpc(W_HELLO,0,0,&r))return;
  {WFrame version;if(rpc(W_DEVICE,0,0,&version,0)==1&&version.len>=4)atomMajor=version.data[1];else atomMajor=1;}
- sprintf(text,"Atom antwoordt op protocol v%u.\n9600 baud, 8N1, geen inversie.\n\nHerhalingen deze test: %d\nCRC/framefouten deze test: %d\nPoort geopend sinds start: %u\nDoor app gesloten: %u\n\nEen geldig antwoord controleert UART-verkeer in beide richtingen. Dit controleert geen wifi of API-toegang.",r.len>1?r.data[1]:0,retries-beforeR,errors-beforeE,uartOpens,uartCloses);
+ sprintf(text,"Verbinding met Atom: goed.\nDeze controle verstuurt geen API-vraag.\n\nProtocol v%u, 9600 baud, 8N1.\n\nHerhalingen deze test: %d\nCRC/framefouten deze test: %d\nPoort geopend sinds start: %u\nDoor app gesloten: %u\n\nEen geldig antwoord controleert UART-verkeer in beide richtingen. Dit controleert geen wifi of API-toegang.",r.len>1?r.data[1]:0,retries-beforeR,errors-beforeE,uartOpens,uartCloses);
  if(atomMajor<3)strcat(text,"\n\nWerk de Atom-firmware bij naar V3.");
  message("UART-diagnose",text);
 }
@@ -559,14 +610,14 @@ static void readAnswer(int contextWasDropped){
   if(activeChatSlot>=0&&savedChats[activeChatSlot].used){sprintf(position,"%d/%d",viewTurn+1,savedChats[activeChatSlot].turns);printAt(288,71,position,C_MUTED);}
   paragraph(answer,first,12,91,43,6);scrollbar(376,91,84,first,6,lines);
   printAt(8,176,unsavedReply?"Nog niet opgeslagen · F3: bewaren":contextWasDropped?"Oudste API-context gewist":activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Oud bericht · F1 vervolgt laatste":"SHIFT: vraag · OPTN: chats",unsavedReply?C_RED:C_MUTED);
-  footer("Vraag","Nieuw",unsavedReply?"Bewaar":"Test","Chats",viewTurn>0?"Vorig":"",activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Volgend":"Instel");show();k=waitKey();
+  footer("Verder","Nieuw",unsavedReply?"Bewaar":"Vraag","Chats",viewTurn>0?"Vorig":"",activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Volgend":"Instel");show();k=waitKey();
   if(k==KEY_PRGM_F1){prompt[0]=0;return;}
   if(k==KEY_PRGM_EXIT)return;
   if(k==KEY_PRGM_SHIFT){message("Jouw vraag",lastQuestion);continue;}
   if(k==KEY_PRGM_UP&&first>0)first--;if(k==KEY_PRGM_DOWN&&first<max)first++;
   if(k==KEY_PRGM_LEFT){first-=6;if(first<0)first=0;}if(k==KEY_PRGM_RIGHT){first+=6;if(first>max)first=max;}
-  if(k==KEY_PRGM_F2&&canLeaveReply()&&confirm("Nieuw gesprek beginnen?")){newLocalChat();return;}
-  if(k==KEY_PRGM_F3){if(unsavedReply)saveReply();else diagnose();}
+  if(k==KEY_PRGM_F2&&canLeaveReply()){newLocalChat();return;}
+  if(k==KEY_PRGM_F3){if(unsavedReply)saveReply();else message("Jouw vraag",lastQuestion);}
   if(k==KEY_PRGM_F4||k==KEY_PRGM_OPTN){int changed=chatSidebar();if(changed==2)return;if(changed)first=0;}
   if(k==KEY_PRGM_F5&&viewTurn>0&&!unsavedReply){if(loadChatPair(activeChatSlot,viewTurn-1))first=0;}
   if(k==KEY_PRGM_F6){
@@ -591,7 +642,7 @@ static void ask(void){
  while(!quitting){
   ok=rpc(W_STATUS,0,0,&r,1);
   if(ok==-2){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);if(!quitting)message("Annulering aangevraagd","Een al verstuurde API-aanvraag kan nog kosten maken. De Atom moet de netwerkbewerking eerst afronden.");return;}
-  if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Controleer de Atom met F3.");return;}
+  if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen en kies Diagnose.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
   if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){strcpy(lastQuestion,prompt);prompt[0]=0;unsavedReply=1;saveReply();readAnswer(dropped);}return;}
@@ -610,7 +661,7 @@ static void beginSession(void){
  int warm=serialOpen&&Serial_IsOpen()==1;storageClose();
  if(!warm){serialOpen=0;linkKnown=linkOnline=linkSeen=0;}
  oldSetup=GetSetupSetting(0x14);
- quitting=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
+ quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
  linkMisses=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
@@ -630,12 +681,11 @@ static void runSession(void){
   while(!quitting){
    k=editor(prompt,sizeof(prompt),"ChatGPT - Vraag",0,1,0,1);
    if(k==KEY_PRGM_F1)ask();
-   else if(k==KEY_PRGM_F2){if(canLeaveReply()&&confirm("Nieuw gesprek beginnen?"))newLocalChat();}
-   else if(k==KEY_PRGM_F3)diagnose();
+   else if(k==KEY_PRGM_F2){if(canLeaveReply()&&(!prompt[0]||confirm("De niet-verstuurde vraag wissen en opnieuw beginnen?")))newLocalChat();}
    else if(k==UI_CHATS){int changed=chatSidebar();if(changed==1)readAnswer(0);}
    else if(k==KEY_PRGM_F6){epoch=settingsEpoch;settings();if(epoch!=settingsEpoch)contextDirty=1;}
    else if(k==KEY_PRGM_EXIT){
-    if(answer[0])readAnswer(0);else if(confirm("ChatGPT sluiten en terug naar MENU?"))quitting=1;
+    /* Root EXIT leaves the app and typed draft exactly as they are. */
    }
   }
   if(!unsavedReply)break;
@@ -688,7 +738,7 @@ int main(void){
    if(nativeMainMenu())break;
    /* Do not strand a white-rimmed closing dialog on an unsupported path. */
    quitting=0;
-   message("MENU niet geopend","De OS-menuovergang kon niet worden gestart. Je sessie en Atom-verbinding blijven beschikbaar. Probeer EXIT opnieuw.");
+   message("MENU niet geopend","De OS-menuovergang kon niet worden gestart. Je sessie en Atom-verbinding blijven beschikbaar. Probeer MENU opnieuw.");
   }
   /* Restart UI only after SaveAndOpenMainMenu/native key-wait returns. */
  }

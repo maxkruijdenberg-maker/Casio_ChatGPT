@@ -1,3 +1,5 @@
+**Nieuwste versie: [V14](UPGRADE-V14.md) met MENU-bevestiging, =-toets, centrale Diagnose en modelkeuze.**
+
 # V13 — verbinding behouden en toetsen apart uitlezen
 
 Deze versie corrigeert het te agressieve sluiten/heropenen uit V12 en verandert

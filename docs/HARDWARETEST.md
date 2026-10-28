@@ -238,3 +238,16 @@ herhaal via MENU. Test ook RUN-MAT, SYSTEM en LINK: UART blijft nu OS-open
 waar mogelijk. Herstart de Casio als LINK de poort niet vrij kan krijgen en
 rapporteer dat gedrag; geen eigen quitcallback als omweg installeren.
 Hosttests controleren 50 keyposities en 40 gesimuleerde sessies, geen echte OS-uitvoering.
+
+
+## V14 — bediening en modelkeuze vóór verkoop
+
+Controleer F3 =, SHIFT+punt en F4 eerste teken; ook met ALPHA-lock en in een
+afgeschermd veld. EXIT mag vanaf geen enkel scherm de app afsluiten. MENU
+moet overal bevestigen; Blijven/EXIT behoudt concept en selectie, Sluiten gaat
+naar het echte menu. Herhaal twintig heropeningen en veel typen met de stabiele
+GND. Controleer één centrale Diagnose en de telefooninstallatie. Kies alle
+drie modelpresets; controleer met eigen API-tegoed echte vragen en modeltoegang.
+De oude aangepaste modelnaam moet blijven staan na annuleren van de lijst.
+Test lokaal opslaan, volle opslag en gebruikersgegevens wissen vóór overdracht.
+Zie UPGRADE-V14.md en docs/V14-STARTGIDS.md. Hosttests zijn geen hardwarecertificatie.

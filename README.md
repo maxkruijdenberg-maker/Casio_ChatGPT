@@ -1,33 +1,32 @@
-# ChatGPT V13.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V14.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Vanaf V11/V12: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
-Zie [UPGRADE-V13.md](UPGRADE-V13.md). Normaal ChatGPT-pictogram en telefooninstallatie.
+**Vanaf V11/V12/V13: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
+Zie [UPGRADE-V14.md](UPGRADE-V14.md), [startgids](docs/V14-STARTGIDS.md) en
+[TikTok-demonstratieplan](docs/V14-TIKTOK.md).
 
-V13 richt zich op de gemelde uitval bij toetsen en na herhaald heropenen:
+- F3 typt direct `=`, ook met ALPHA-lock. SHIFT + punt en F4 Tekens werken ook.
+- EXIT gaat terug binnen de app; op het beginscherm blijft je concept staan.
+- Alleen MENU vraagt om afsluiten. Blijven bewaart je scherm, invoer en verbinding.
+- Eén Diagnose-knop in Instellingen; geen dubbele Test-knoppen meer.
+- Modellen kiezen zonder typen: Voordelig (`gpt-4.1-nano`), Dagelijks
+  (`gpt-4.1-mini`) en Uitgebreid (`gpt-4.1`), met relatieve kostenindicatie en uitleg.
+- Donker/mint ontwerp verfijnd, duidelijke hoofdacties en ingebouwde startuitleg.
 
-- Toetsen lezen rechtstreeks uit de zes SH7305 KEYSC-dataregisters; geen
-  PRGM_GetKey_OS tijdens typen/pollen, geen controllerwijzigingen of nieuwe ISR.
-- De OS-seriële poort blijft open wanneer onze app MENU opent en opnieuw wordt
-  geselecteerd. Geen eigen app-timer of quit-callback actief buiten de app.
-- Binnenkomende achtergrondantwoorden worden ook tijdens continu typen verwerkt.
-- Eén gemiste controle sluit de poort niet en meldt een eerder werkende link niet
-  meteen offline. Drie opeenvolgende gemiste controles starten pas driverherstel.
-- Metadata krijgt 3 × 1200 ms antwoordruimte; heartbeat 1200 ms. De korte V12-
-  vensters (metadata 300 ms, heartbeat 500 ms) worden niet meer gebruikt.
+Iedere koper gebruikt een eigen OpenAI API-sleutel en betaald API-tegoed.
+ChatGPT Plus bevat geen API-tegoed. Modelkeuze opslaan, diagnose en lokale
+chatgeschiedenis versturen geen betaalde vraag. Toegang tot een model wordt
+bij de eerste vraag door de bestaande Atom-code gecontroleerd vóór de POST.
+De kostenlabels zijn indicatief; actuele bedragen konden niet worden opgehaald.
 
-UART is geen wifi-sessie. De OS-driver kan de poort zelf sluiten of een andere
-app kan hem gebruiken; V13 kan dat niet absoluut voorkomen. Als de poort nog
-open is bij herselectie gebruikt de app hem verder; anders opent hij opnieuw.
-De Atom moet zijn eigen USB-voeding houden. Extra batterijverbruik is niet gemeten.
+De stabiele V13-toetsdecoder, poortlevensduur, heartbeat-timers, native menu-route
+en Atom-firmware blijven behouden. Opgeslagen chats, schermprofiel en wifi/sleutel
+blijven bijwerken behouden. Geen verborgen pictogram of systeempatch.
 
-Het rechtstreeks toetsen lezen verwijdert een mogelijke OS-nevenwerking; zonder
-OS-ROM/apparaattest is niet bewezen dat PRGM_GetKey_OS de gemelde uitval veroorzaakt.
-Bekijk [de V13-interface uit hosttests](docs/design/V13-actual-screens.png).
-
-**Validatie:** SH4-build; twaalf ASan/UBSan-testgroepen, alle 50 fysieke toetsen,
-geen app-polling via OS-keycalls, continu typen met vertraagde ACK, trage metadata,
-40 sessies over de twee menuroutes en een door het OS gesloten poort. Dit is geen
-fysieke Casio/Atom-test. Controleer ook andere apps en LINK op je eigen apparaat.
+Bekijk [de echte V14 UI-renderer in hosttests](docs/design/V14-actual-screens.png)
+en [de verticale interfacepreview](docs/design/V14-tiktok-preview.mp4).
+**Validatie:** twaalf ASan/UBSan-testgroepen en SH4-build, inclusief de nieuwe
+navigatie, drie =-routes, alle modelkeuzes zonder ASK/ALLOC en 40 menu-sessies.
+Nog geen fysieke V14-/API-test: doorloop de hardwarecheck vóór verkoop.
 
 ## Windows: installeren
 
@@ -48,7 +47,7 @@ fysieke Casio/Atom-test. Controleer ook andere apps en LINK op je eigen apparaat
 10. Sluit de Casio via zijn USB-kabel aan op Windows en kies op de Casio
     **USB Flash / USB-opslag**. Kopieer `dist\ChatGPT.g3a` naar de hoofdmap van
     het Casio-station. Werp het station veilig uit en ontkoppel de kabel.
-11. Open in MENU het pictogram **ChatGPT**. Druk F3 voor de UART-diagnose.
+11. Open in MENU het pictogram **ChatGPT**. Open F6 Instel → F3 Diagnose voor de UART-controle.
 12. Open **F6 Instellingen → F2 Telefoon**. Verbind je telefoon met het netwerk
     en wachtwoord op de Casio. Open **http://192.168.4.1**, vul je 2,4GHz-wifi in
     en plak je volledige OpenAI API-sleutel. Laat de Casio open tot de wifi-status
@@ -88,16 +87,16 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 | SHIFT | Eenmalige gele functie, bijvoorbeeld sin → asin; nogmaals annuleert SHIFT |
 | F5 | Hoofdletters/kleine letters |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
-| F2 | Nieuw gesprek, na bevestiging |
-| F3 | UART-diagnose |
+| F2 | Nieuw gesprek; vraagt bevestiging als een concept verloren zou gaan |
+| F3 | Direct `=` invoeren; Diagnose staat onder Instellingen |
 | F4 | Tekenkeuzescherm; pijlen kiezen, EXE invoegen |
 | F6 | Instellingen |
 | Links/rechts | Cursor naar vorige/volgende volledige letter |
 | Omhoog/omlaag | Cursor ongeveer een schermregel verplaatsen |
 | DEL | Vorige letter verwijderen |
 | AC | Invoerveld wissen, na bevestiging |
-| EXIT | Terug, annuleren of afsluiten met bevestiging |
-| MENU | UART sluiten en terug naar het Casio-menu |
+| EXIT | Terug/annuleren binnen de app; op het beginscherm blijft je concept staan |
+| MENU | Vraagt om afsluiten; Blijven bewaart de huidige invoer en verbinding |
 
 De letterlabels op de normale toetsen worden gebruikt. Op het scherm staat
 123, abc, ABC of Abc. De eerste gewone letter van een nieuwe vraag wordt een
@@ -113,11 +112,11 @@ vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
 Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
 op toetsen in het invoerscherm volgen nieuwe controles bij herstel (minimaal 1 seconde tussen startmomenten)
 en een controle iedere 10 seconden als de Atom online is. Het typen blijft
-beschikbaar. F3 is nog aanwezig voor diagnose; verbinden vereist geen F3.
+beschikbaar. Diagnose staat in Instellingen; verbinden vereist geen handmatige diagnose.
 
 Na versturen komt een apart antwoordscherm. Omhoog/omlaag scrolt een regel;
-links/rechts scrolt een pagina. F1 begint een vervolgvraag. F2 wist het gesprek
-na bevestiging. EXIT tijdens wachten vraagt annulering aan. Een al verstuurde
+links/rechts scrolt een pagina. F1 Verder begint een vervolgvraag. F2 begint een nieuw gesprek; de oude
+opgeslagen chat blijft behouden. EXIT tijdens wachten vraagt annulering aan. Een al verstuurde
 API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
@@ -126,12 +125,12 @@ Instellingen toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sle
 toont Instellingen alleen of een waarde is ingesteld. De sleutel en het
 hotspotwachtwoord worden afgeschermd ingevoerd en niet teruggelezen. Kies de
 instelling opnieuw om deze te vervangen. Een leeg opgeslagen hotspot-, wachtwoord- of sleutelveld wist die
-waarde. Een modelnaam mag niet leeg zijn. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
+waarde. Een model kies je in de lijst; een bestaande aangepaste naam blijft behouden. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
 De enige taalkeuze in deze versie is Nederlands. Bij een onbereikbare Atom
 verschijnt geen foutpopup vóór het instellingenmenu: de waarden staan als
-Onbekend en F3 probeert opnieuw. Een mislukte opslag laat het invoerveld
+Onbekend en de app probeert automatisch opnieuw; F3 opent Diagnose. Een mislukte opslag laat het invoerveld
 open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
-niet-opgeslagen wijziging weg. MENU sluit ook het afgeschermde invoerveld.
+niet-opgeslagen wijziging weg. MENU vraagt ook vanuit het afgeschermde veld om afsluiten; Blijven behoudt de wijziging.
 
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
 vertraging geeft Herstel; de poort wordt niet bij de eerste timeout gesloten.

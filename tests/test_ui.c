@@ -169,9 +169,9 @@ static void dumpFrame(const char*path){
  FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n384 216\n255\n");
  for(int i=0;i<384*216;i++){unsigned short v=vram[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
 }
-static const int lifeOne[]={31,31,0,0,0,0,47,47,0,0,0,79,79,0,0,0};
-static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0};
-static const int lifeThree[]={31,31,0,0,0,0,47,47,0,0,0,69,69,0,48,48,0,0,0};
+static const int lifeOne[]={31,31,0,0,0,0,47,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
+static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
+static const int lifeThree[]={31,31,0,0,0,0,47,0,48,48,0,0,0,69,69,0,0,0,47,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
 static void menuReturned(void){
  assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
  assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu&&linkOnline);
@@ -313,6 +313,63 @@ static void testMathInput(void){
  char tiny[5]="a";const int noSpace[]={78,0,46,0,47,0,79};SCRIPT(noSpace);editor(tiny,sizeof(tiny),"Test",0,0,0,1);assert(!strcmp(tiny,"a"));
 }
 
+static void testV14NavigationAndModels(void){
+ int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],devices=requestCount[W_DEVICE];
+ char text[128]="";connected=1;replyDelay=0;quitting=0;activeChatSlot=-1;unsavedReply=0;
+ /* F3 and the physical SHIFT-dot route both insert a real printable '='. */
+ const int equals[]={59,0,77,0,59,0,78,0,61,0,79};SCRIPT(equals);
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!strcmp(text,"==="));
+ assert(glyphIndex('=')>=0&&glyphIndex('=')!=glyphIndex('?')&&requestCount[W_DEVICE]==devices);
+ const int symbolEquals[]={49,0,79,0,79};text[0]=0;SCRIPT(symbolEquals);
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!strcmp(text,"="));
+ const int clearCancel[]={10,0,0,0,69,0,79};strcpy(text,"Blijft");SCRIPT(clearCancel);
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!strcmp(text,"Blijft"));
+ const int clearYes[]={10,0,0,0,79,0,79};SCRIPT(clearYes);
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!text[0]);
+ /* MENU is modal and consumes held keys. Repeating MENU inside the modal
+  * cannot recurse, close UART, or discard the text when No is chosen. */
+ assert(ensureSerial());int closes=serialCloses,opens=serialOpens;
+ strcpy(prompt,"Bewaar mijn concept = 42");
+ const int cancel[]={48,48,0,0,0,48,48,0,69,69,0,0,0};SCRIPT(cancel);
+ assert(keyEvent()==UI_LINK_REFRESH&&!quitting&&!closePromptActive);
+ assert(!strcmp(prompt,"Bewaar mijn concept = 42")&&serialCloses==closes&&serialOpens==opens);
+ /* MENU-No while an RPC is waiting leaves its parser and UART intact. */
+ int rpcCancel[150]={48,0,0,0,69,0,0,0};SCRIPT(rpcCancel);replyDelay=500;WFrame reply;
+ assert(rpc(W_INFO,0,0,&reply,0)==1&&!quitting&&serialCloses==closes);replyDelay=0;
+ /* Root EXIT does not request exit; MENU-No stays; only MENU-Yes leaves. */
+ const int rootExit[]={47,0,48,0,0,0,69,0,0,0,48,0,0,0,79,0,0,0};
+ answer[0]=0;SCRIPT(rootExit);runSession();assert(quitting&&!strcmp(prompt,"Bewaar mijn concept = 42"));
+ assert(serialCloses==closes&&serialOpens==opens);
+ /* Secret drafts also survive MENU-No and remain masked in the editor. */
+ strcpy(text,"aBc-123");const int secretCancel[]={48,0,0,0,69,0,0,0,59,0,79};SCRIPT(secretCancel);
+ assert(editor(text,sizeof(text),"API",1,0,1,0)==79&&!strcmp(text,"aBc-123="));
+ /* A legacy custom model is retained when cancelling the new picker. */
+ strcpy(publicModel,"my-custom-model");strcpy(storedModel,publicModel);
+ int uploads=requestCount[W_APPLY];const int back[]={47};SCRIPT(back);assert(!modelPicker());
+ assert(!strcmp(storedModel,"my-custom-model")&&requestCount[W_APPLY]==uploads);
+ /* Every catalogue model saves through the real chunked config transport. */
+ for(int i=0;i<MODEL_COUNT;i++){
+  strcpy(publicModel,modelChoices[i].id);strcpy(storedModel,modelChoices[i].id);
+  int other=(i+1)%MODEL_COUNT,keysToPick[20],n=0;
+  for(int step=i;step!=other;step+=step<other?1:-1){keysToPick[n++]=step<other?37:28;keysToPick[n++]=0;}
+  keysToPick[n++]=79;keysToPick[n++]=0;keysToPick[n++]=47;
+  script(keysToPick,n);assert(modelPicker());assert(!strcmp(storedModel,modelChoices[other].id));
+ }
+ /* MENU-No in the picker retains its pending row before choosing it. */
+ strcpy(publicModel,modelChoices[0].id);strcpy(storedModel,publicModel);
+ const int pickerCancel[]={37,0,48,0,0,0,69,0,0,0,79,0,47};SCRIPT(pickerCancel);
+ assert(modelPicker()&&!strcmp(storedModel,modelChoices[1].id)&&!quitting);
+ const int explain[]={49,0,47,0,47};SCRIPT(explain);assert(!modelPicker());
+ /* Exactly one diagnostics entry lives in Settings. Normal answer F3
+  * opens the question without issuing diagnosis/network requests. */
+ strcpy(lastQuestion,"23 + 42 = ?");strcpy(answer,"23 + 42 = 65");activeChatSlot=-1;
+ devices=requestCount[W_DEVICE];const int fullQuestion[]={59,0,47,0,47};SCRIPT(fullQuestion);readAnswer(0);
+ assert(requestCount[W_DEVICE]==devices);
+ const int diagSettings[]={59,0,47,0,47};SCRIPT(diagSettings);settings();assert(requestCount[W_DEVICE]>devices);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
+ prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
+}
+
 int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
@@ -330,7 +387,7 @@ int main(int argc,char **argv){
  /* Offline settings must open without a misleading configuration popup. */
  const int leave[]={47};connected=0;SCRIPT(leave);settings();assert(requestCount[W_INFO]>0);
  connected=1;strcpy(storedModel,"my-custom-model");
- const int modelEdit[]={37,0,37,0,37,0,79,0,79,0,79,0,47};SCRIPT(modelEdit);settings();
+ const int modelEdit[]={37,0,37,0,37,0,79,0,47,0,47};SCRIPT(modelEdit);settings();
  assert(!strcmp(storedModel,"my-custom-model")&&privateReads==0);
  assert(field[0]==0&&atomMajor==3);
  /* Last page cannot scroll into blank rows. */
@@ -368,12 +425,12 @@ int main(int argc,char **argv){
  {int before=requestCount[W_SETUP],paidBefore=requestCount[W_ASK];
   const int back[]={47};connected=1;atomMajor=3;SCRIPT(back);phoneSetup();assert(requestCount[W_SETUP]==before);
   atomMajor=11;SCRIPT(back);phoneSetup();assert(requestCount[W_SETUP]==before+2&&!fakePortal);
-  const int menuBack[]={48};SCRIPT(menuBack);phoneSetup();assert(requestCount[W_SETUP]==before+4&&!fakePortal&&quitting);
+  const int menuBack[]={48,0,0,0,79,0,0,0};SCRIPT(menuBack);phoneSetup();assert(requestCount[W_SETUP]==before+4&&!fakePortal&&quitting);
   assert(requestCount[W_ASK]==paidBefore);quitting=0;
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();
+ testMenuFailures();testV14NavigationAndModels();
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -388,9 +445,10 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
+  paintModels(1);snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, 800ms delayed metadata without closing UART, three-miss hysteresis and one reset on confirmed failure, automatic settings reconnect and continuous typing with delayed heartbeat ACK and no UART close, no saved closing-dialog flash across forty sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, OS-owned UART preserved across MENU/re-entry, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: V14 MENU-only modal exit and cancellation preserving drafts/UART, root EXIT stays, direct/SHIFT/symbol equality input, all model presets saved without paid requests, legacy model cancellation, single Settings diagnosis; actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, 800ms delayed metadata without closing UART, three-miss hysteresis and one reset on confirmed failure, automatic settings reconnect and continuous typing with delayed heartbeat ACK and no UART close, no saved closing-dialog flash across forty sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, OS-owned UART preserved across MENU/re-entry, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
  return 0;
 }
