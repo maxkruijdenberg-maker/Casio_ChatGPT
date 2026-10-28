@@ -1,3 +1,5 @@
+> Nieuwste versie: [UPGRADE-V17.md](UPGRADE-V17.md). V17 vereist ook nieuwe Atom-firmware.
+
 # V16 — V13 als basis, een rustigere interface
 
 ## Installeren

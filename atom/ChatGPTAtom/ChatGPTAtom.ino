@@ -1,4 +1,4 @@
-/* ChatGPT V11.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V17.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
@@ -20,6 +20,7 @@
 #include "ledger.h"
 #include "trust.h"
 #include "hardware.h"
+#include "model_catalog.h"
 static const size_t QUESTION_MAX=1024, ANSWER_MAX=8192, HISTORY_MAX=12288, BODY_MAX=32768;
 HardwareSerial Calc(1);
 Preferences prefs;
@@ -37,7 +38,10 @@ static WFrame cachedIn={},cachedOut={};
 static bool cached=false;
 static uint32_t lastByte=0,bootId=0;
 struct Lock { Lock(){xSemaphoreTake(gate,portMAX_DELAY);} ~Lock(){xSemaphoreGive(gate);} };
-static bool busy(){return state>=S_WIFI&&state<=S_API;}
+static bool catalogRunning=false;
+static uint8_t catalogState=0,catalogError=0;
+static String catalog;
+static bool busy(){return catalogRunning||(state>=S_WIFI&&state<=S_API);}
 static void phase(uint8_t s,uint8_t e=0){Lock l;state=s;errorCode=e;}
 static void fail(uint8_t e){phase(cancelled?S_CANCELLED:S_ERROR,e);}
 static void clearHistory(){context.clear();}
@@ -132,6 +136,39 @@ static void performApi() {
 }
 static void runApi(void*){performApi();vTaskDelete(nullptr);}
 
+/* Model discovery is free GET work on a separate task, never a completion. */
+static void performCatalog(){
+ String ssid,pass,key;bool dirty;uint8_t error=E_NONE;String result;
+ {Lock l;ssid=cfg[0];pass=cfg[1];key=cfg[2];dirty=wifiDirty;wifiDirty=false;}
+ do {
+  if(!ssid.length()||!key.length()){error=E_CONFIG;break;}
+  WiFi.mode(WIFI_STA);
+  if(dirty||WiFi.status()!=WL_CONNECTED||WiFi.SSID()!=ssid){WiFi.disconnect(false,false);WiFi.begin(ssid.c_str(),pass.c_str());}
+  uint32_t at=millis();while(WiFi.status()!=WL_CONNECTED&&millis()-at<20000)delay(30);
+  if(WiFi.status()!=WL_CONNECTED){error=E_WIFI;break;}
+  if(time(nullptr)<1767225600)configTime(0,0,"pool.ntp.org","time.google.com");
+  at=millis();while(time(nullptr)<1767225600&&millis()-at<15000)delay(30);
+  if(time(nullptr)<1767225600){error=E_TIME;break;}
+  WiFiClientSecure tls;tls.setCACert(ROOT_CA);tls.setHandshakeTimeout(12);tls.setTimeout(20000);
+  HTTPClient http;http.useHTTP10(true);http.setConnectTimeout(12000);http.setTimeout(20000);http.setReuse(false);
+  if(!http.begin(tls,"https://api.openai.com/v1/models")){error=E_TLS;break;}
+  http.addHeader("Authorization","Bearer "+key);
+  int code=http.GET();if(code!=200){error=httpError(code);http.end();break;}
+  if(http.getSize()>524288){error=E_BIG;http.end();break;}
+  JsonDocument filter;filter["data"][0]["id"]=true;JsonDocument document;
+  auto parsed=deserializeJson(document,http.getStream(),DeserializationOption::Filter(filter),DeserializationOption::NestingLimit(8));
+  http.end();
+  if(parsed||document.overflowed()){error=parsed==DeserializationError::NoMemory?E_MEMORY:E_JSON;break;}
+  char *buffer=(char*)malloc(CATALOG_MAX);if(!buffer){error=E_MEMORY;break;}
+  int count=catalog_text(document.as<JsonVariantConst>(),buffer,CATALOG_MAX);
+  if(count>0){result=buffer;if(result.length()!=strlen(buffer))error=E_MEMORY;}
+  else error=E_MODEL;
+  free(buffer);
+ }while(false);
+ {Lock l;catalogError=error;catalogState=error?3:2;if(!error)catalog=std::move(result);catalogRunning=false;}
+}
+static void runCatalog(void*){performCatalog();vTaskDelete(nullptr);}
+
 #include "phone_setup.h"
 
 static bool sameFrame(const WFrame&a,const WFrame&b){return a.type==b.type&&a.seq==b.seq&&a.len==b.len&&!memcmp(a.data,b.data,a.len);}
@@ -140,9 +177,21 @@ static void handle(const WFrame& in) {
  if(in.type&0x80)return;
  if(cached&&sameFrame(in,cachedIn)){sendFrame(cachedOut);return;}
  WFrame out={};out.type=in.type|0x80;out.seq=in.seq;out.len=1;out.data[0]=E_NONE;
- bool start=false;
+ bool start=false,startCatalog=false;
  {Lock l;
  if(portalActive && in.type!=W_SETUP && in.type!=W_HELLO && in.type!=W_INFO && in.type!=W_DEVICE && in.type!=W_STATUS && in.type!=W_GET_CONFIG){out.data[0]=E_BUSY;}else switch(in.type){
+ case W_MODELS:
+  /* action 0 status, 1 refresh, 2 read(offset). Reply status includes byte length. */
+  if(!in.len||in.data[0]>2||(in.data[0]==2?in.len!=3:in.len!=1)){out.data[0]=E_REQUEST;break;}
+  if(in.data[0]==1){
+   if(busy()){out.data[0]=E_BUSY;break;}
+   catalogState=1;catalogError=0;catalogRunning=true;startCatalog=true;
+  }
+  if(in.data[0]==2){
+   size_t at=w_get16(in.data+1);if(catalogState!=2||at>catalog.length()){out.data[0]=E_REQUEST;break;}
+   size_t n=min((size_t)WIRE_MAX-1,catalog.length()-at);out.len=n+1;memcpy(out.data+1,catalog.c_str()+at,n);
+  }else {out.len=5;out.data[1]=catalogState;out.data[2]=catalogError;w_put16(out.data+3,catalog.length());}
+  break;
  case W_SETUP:
   if(in.len!=1||in.data[0]>2){out.data[0]=E_REQUEST;break;}
   if(in.data[0]==1){if(busy()){out.data[0]=E_BUSY;break;}if(!portalActive&&!startPortal()){out.data[0]=E_WIFI;break;}}
@@ -183,7 +232,7 @@ static void handle(const WFrame& in) {
    String next=upload.bytes;if(next.length()!=upload.used){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
    String values[4];for(int i=0;i<4;i++)values[i]=cfg[i];values[idx]=next;
    if(!saveConfiguration(values)){out.data[0]=E_MEMORY;upload_clear(&upload);break;}
-   if(idx<2)wifiDirty=true;clearHistory();context.restoring=false;context.pending="";
+   catalog="";catalogState=0;if(idx<2)wifiDirty=true;clearHistory();context.restoring=false;context.pending="";
   }
   upload_clear(&upload);break;
  case W_ASK:
@@ -225,7 +274,7 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=11;out.data[2]=0;out.data[3]=15;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=17;out.data[2]=0;out.data[3]=31;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
@@ -241,11 +290,12 @@ static void handle(const WFrame& in) {
   {String empty[4];empty[3]="gpt-4.1-mini";
    if(!saveConfiguration(empty)){out.data[0]=E_MEMORY;break;}
    const char *names[]={"ssid","pass","key","model"};for(int i=0;i<4;i++)prefs.remove(names[i]);}
-  upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  catalog="";catalogState=0;upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
  default:out.data[0]=E_REQUEST;
  }
  }
  cachedIn=in;cachedOut=out;cached=true;sendFrame(out);
+ if(startCatalog&&xTaskCreate(runCatalog,"models",16384,nullptr,1,nullptr)!=pdPASS){Lock l;catalogRunning=false;catalogState=3;catalogError=E_MEMORY;}
  if(start&&xTaskCreate(runApi,"openai",16384,nullptr,1,nullptr)!=pdPASS)fail(E_MEMORY);
 }
 void setup(){

@@ -1,0 +1,10 @@
+Casio SH4 build: PASS
+Atom ESP32 build: PASS
+Casio bytes: 79708
+Casio SHA256: 5dadadd84e9eb8c702b1e25543bd684690fbe858ffae03b26f87a7158178169a
+Atom bytes: 1123472
+Atom SHA256: c48686479470ed4fbf3b021c181abc121ee97af403ff386daf4b8d567d0f80f2
+14 ASan/UBSan groups: PASS
+40 simulated native menu reopens: PASS
+No physical hardware or live account/API test.
+Arduino CLI index/discovery warnings were emitted; installed platform compiled successfully.

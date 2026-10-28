@@ -16,3 +16,6 @@ build/tests/test_context
 
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function -I"$ARDUINOJSON_HOME/src" tests/test_phone.cpp -o build/tests/test_phone
 build/tests/test_phone
+
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -I"$ARDUINOJSON_HOME/src" tests/test_catalog.cpp -o build/tests/test_catalog
+build/tests/test_catalog

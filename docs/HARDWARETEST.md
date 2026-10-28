@@ -272,3 +272,14 @@ terug, MENU → Blijven in een bevestiging, Atom uit/aan en de drie-miss herstel
 Controleer met een echte vraag het pulserende logo zonder statuslijst/knoppenbalk,
 annuleren met EXIT/F1 en leesbare =-tekens zonder gewijzigde opslag.
 De versie hoort alleen bij Instellingen → Hulp en versie → Over deze app.
+
+## V17 — lichte UI en modellen uit je account
+
+Volg UPGRADE-V17.md en werk Atom én Casio-app bij. Controleer behoud van wifi,
+sleutel en chats, alle vier instellingen en Hulp-pagina's via EXE/rechts, laden,
+annuleren en twintig echte menuheropeningen. Vergelijk de accountlijst met de
+GET /v1/models-respons van je eigen account, rekening houdend met het beschreven
+filter. Test je gekozen modellen afzonderlijk met echte vragen. Controleer een
+ongeldige sleutel, geen wifi, vernieuwen/annuleren, modelbehoud en een aangepaste
+modelnaam indien je account die heeft. Accountlisting is geen betaalde completion
+en bewijst geen ondersteuning door Chat Completions.

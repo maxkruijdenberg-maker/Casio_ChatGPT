@@ -56,6 +56,8 @@ static unsigned char failedWrite[WIRE_ENCODED];static int failedWriteLength=0,ex
 static int connected=1,busyUntil,requestCount[32],privateReads,replyDelay=0,replyReadyAt=0;
 static int keyAdvanceMs=0,connectAt=-1;
 static const char *servedAnswer=0;
+static const char *servedModels="gpt-4.1\ngpt-4.1-mini\ngpt-5-mini\no3\nft:gpt-4.1:project:custom\ngpt-next-a\ngpt-next-b\ngpt-next-c\n";
+static int modelsLoading=0,modelRefreshes=0;
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
 static Upload fakeUpload;
@@ -64,7 +66,7 @@ void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
  if(verifyLogoOnly&&loadingActive&&!closePromptActive){
-  for(int y=160;y<216;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
+  for(int y=175;y<216;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
   logoFrames++;
  }
 
@@ -142,6 +144,11 @@ int Serial_Write(const unsigned char*p,int n){
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
+ case W_MODELS:
+  assert(fakeAtomMajor>=17);
+  if(f.data[0]==2){size_t at=w_get16(f.data+1),n=strlen(servedModels)-at;if(n>WIRE_MAX-1)n=WIRE_MAX-1;r.len=n+1;memcpy(r.data+1,servedModels+at,n);}
+  else {if(f.data[0]==1){modelsLoading=2;modelRefreshes++;}r.len=5;r.data[1]=modelsLoading?1:2;if(modelsLoading)modelsLoading--;w_put16(r.data+3,strlen(servedModels));}
+  break;
  case W_ALLOC:assert(emulateQuestion);r.len=5;w_put32(r.data+1,1234);break;
  case W_ASK:assert(emulateQuestion&&w_get32(f.data)==1234);break;
  case W_STATUS:
@@ -383,21 +390,21 @@ static void testV14NavigationAndModels(void){
  strcpy(lastQuestion,"23 + 42 = ?");strcpy(answer,"23 + 42 = 65");activeChatSlot=-1;
  devices=requestCount[W_DEVICE];const int fullQuestion[]={59,0,47,0,47};SCRIPT(fullQuestion);readAnswer(0);
  assert(requestCount[W_DEVICE]==devices);
- int hellosBefore=requestCount[W_HELLO];const int diagSettings[]={59,0,47,0,47};SCRIPT(diagSettings);settings();assert(requestCount[W_HELLO]>hellosBefore);
+ int hellosBefore=requestCount[W_HELLO];const int diagSettings[]={37,0,37,0,27,0,37,0,37,0,37,0,27,0,47,0,47,0,47};SCRIPT(diagSettings);settings();assert(requestCount[W_HELLO]>hellosBefore);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
 }
 
-static void testV16BuyerInterface(void){
+static void testV17BuyerInterface(void){
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];WFrame reply;
  connected=1;replyDelay=0;quitting=0;loadingActive=0;linkOnline=0;settingsKnown=0;atomMajor=11;fakeAtomMajor=11;
  /* Right arrow opens every buyer row. EXE uses the same action. */
  int setups=requestCount[W_SETUP];const int wifiRight[]={27,0,38,0,47};SCRIPT(wifiRight);settings();assert(requestCount[W_SETUP]==setups+2);
  setups=requestCount[W_SETUP];const int wifiExe[]={31,0,47,0,47};SCRIPT(wifiExe);settings();assert(requestCount[W_SETUP]==setups+2);
  const int modelRight[]={37,0,27,0,47,0,47};SCRIPT(modelRight);settings();
- int hello=requestCount[W_HELLO];const int diagRight[]={37,0,37,0,27,0,47,0,47};SCRIPT(diagRight);settings();assert(requestCount[W_HELLO]>=hello+3);
- const int screenRight[]={37,0,37,0,37,0,27,0,47,0,47};SCRIPT(screenRight);settings();
- const int helpRight[]={37,0,37,0,37,0,37,0,27,0,27,0,47,0,47,0,47};SCRIPT(helpRight);settings();
+ int hello=requestCount[W_HELLO];const int diagRight[]={37,0,37,0,27,0,37,0,37,0,37,0,27,0,47,0,47,0,47};SCRIPT(diagRight);settings();assert(requestCount[W_HELLO]>=hello+3);
+ const int screenRight[]={37,0,37,0,37,0,27,0,27,0,47,0,47,0,47};SCRIPT(screenRight);settings();
+ const int helpRight[]={37,0,37,0,27,0,27,0,47,0,47,0,47};SCRIPT(helpRight);settings();
  /* V13 transport policy: a single missed probe keeps the port, three
   * confirmed misses reset once. Shared UI changes must not add paid requests. */
  assert(ensureSerial());int closes=serialCloses;Serial_ClearRX();
@@ -435,6 +442,25 @@ static void testV16BuyerInterface(void){
  assert(!strcmp(displayedAnswer,"23 + 42 = 65")&&!strcmp(answer,servedAnswer)&&!unsavedReply);
  emulateQuestion=verifyLogoOnly=0;servedAnswer=0;
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
+}
+
+static void testAccountModels(void){
+ connected=1;fakeAtomMajor=atomMajor=17;modelsLoading=1;remoteModelCount=0;loadingActive=0;
+ int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];
+ int quiet[300]={0};SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==8&&!loadingActive);
+ char id[81];assert(!strcmp(choiceId(2,id),"gpt-5-mini"));
+ strcpy(publicModel,"gpt-4.1");strcpy(storedModel,publicModel);
+ const int select[]={37,0,37,0,27};SCRIPT(select);assert(modelPicker()&&!strcmp(storedModel,"gpt-5-mini"));
+ const int pageForward[]={39,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-next-c"));
+ const int pageBack[]={59,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-5-mini"));
+ const int fine[]={37,0,37,0,31};SCRIPT(fine);assert(modelPicker()&&!strcmp(storedModel,"ft:gpt-4.1:project:custom"));
+ /* Refresh is GET-only work and does not change the selected config. */
+ int refresh[180]={69};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==1&&!strcmp(storedModel,"ft:gpt-4.1:project:custom"));
+ strcpy(remoteModels,"gpt-good\nbad name\n");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
+ strcpy(remoteModels,"gpt-no-final-newline");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
+ modelsLoading=1;const int cancel[]={47};SCRIPT(cancel);assert(!fetchModels()&&!loadingActive&&!remoteModelCount);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
+ fakeAtomMajor=atomMajor=11;modelsLoading=0;
 }
 
 int main(int argc,char **argv){
@@ -497,12 +523,12 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV16BuyerInterface();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
   assert(lib_append(&disk,1,&savedChats[1],"Leg breuken eenvoudig uit.","Een breuk is een deel van een geheel.",&savedChats[1]));
-  activeChatSlot=0;viewTurn=0;
+  activeChatSlot=0;viewTurn=savedChats[0].turns-1;
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
   strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
@@ -512,6 +538,9 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
+  strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
+  SCRIPT(leave);helpAndDevice();snprintf(path,sizeof(path),"%s/help.ppm",argv[2]);dumpFrame(path);
+  SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
   paintModels(1);snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
   for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
@@ -519,6 +548,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V16 V13 transport recovery and raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, logo-only animated waiting/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V17 light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, logo-only animated waiting/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

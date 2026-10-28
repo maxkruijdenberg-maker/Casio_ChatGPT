@@ -35,6 +35,7 @@ static unsigned uartOpens=0,uartCloses=0;
 static int rpcDepth=0;
 static int autoConnectTick(void);
 static void animateLoading(void);
+static void paintLoading(int phase);
 static int loadingActive=0,loadingPhase=0,loadingAt=0;
 static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
@@ -58,7 +59,7 @@ static ViewProfile viewProfile={100,0,0};
 static ViewMap viewMap;
 static int viewReady=0;
 static const char *const errNames[]={
- "Geen fout","Vul eerst Instellingen in","Wifi niet verbonden: controleer hotspot",
+ "Geen fout","Stel Wifi en account eerst in","Wifi niet verbonden: controleer hotspot",
  "Internet of DNS niet bereikbaar","De klok kan niet worden bijgewerkt","Beveiligde internetverbinding mislukt",
  "API-sleutel ongeldig of geen toegang","Je API-tegoed of gebruikslimiet is bereikt",
  "Kies een ander model via Instellingen","API gaf een fout terug","Antwoord of invoer te groot",
@@ -108,8 +109,8 @@ static int keyEvent(void){
 }
 static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
-enum {C_BG=0x10a2,C_PANEL=0x2104,C_RAISED=0x2965,C_TEXT=0xef7d,
- C_MUTED=0xa514,C_LINE=0x39c7,C_MINT=0x7737,C_RED=0xfc10};
+enum {C_BG=0xf7be,C_PANEL=0xffff,C_RAISED=0xdf7c,C_TEXT=0x1925,
+ C_MUTED=0x5b8d,C_LINE=0xe73c,C_MINT=0x03ce,C_RED=0xb166};
 static int linkKnown=0,linkOnline=0,linkSeen=0,linkMisses=0;
 static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;}
 static void linkFailed(void){
@@ -260,12 +261,12 @@ static int ensureSerial(void){
  if(Serial_Open(mode)!=0)return 0;
  uartOpens++;serialOpen=1;Serial_ClearRX();Serial_ClearTX();memset(&parser,0,sizeof(parser));return 1;
 }
-/* V16 retains the V13 transport and keyboard polling policy. */
+/* V17 retains the V13 transport and keyboard polling policy. */
 /* RPC status: 1 success, 0 device error (reply data[0]), -1 timeout,
  * -2 user cancelled/menu. Identical encoded bytes; metadata tolerates 3 x 1200ms, other commands 4 x 800ms. */
 static int rpcInner(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  WFrame req;uint8_t bytes[WIRE_ENCODED];size_t n;int attempt,start,k;
- int readOnly=type==W_HELLO||type==W_INFO||type==W_DEVICE||type==W_GET_CONFIG;
+ int readOnly=type==W_HELLO||type==W_INFO||type==W_DEVICE||type==W_GET_CONFIG||type==W_MODELS;
  int attempts=readOnly?3:4,timeout=readOnly?1200:800;
  stopAutoProbe();
  if(len>WIRE_MAX)return -1;
@@ -371,7 +372,7 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  int letters,int upper,int shifted,int firstLetter,int first){
  int row,col;char label[100];cursorPosition(buf,cursor,&row,&col);
  clear(title);rounded(8,35,152,15,C_RAISED);
- sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA-lock":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
+ sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
  (void)cap;
  rounded(6,50,368,120,C_PANEL);
  if(promptMode==1&&!buf[0]){
@@ -435,6 +436,10 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
 }
 static char publicSSID[33],publicModel[81];
 static unsigned settingsEpoch=0;
+static char remoteModels[32768];
+static unsigned short modelOffsets[384];
+static int remoteModelCount=0;
+static int fetchModels(void);
 static int atomMajor=0,settingsKnown=0;
 static int readPublic(int target,char*out,size_t cap){
  uint8_t b[3];size_t at=0,total=0;WFrame r;out[0]=0;
@@ -523,65 +528,137 @@ static void phoneSetup(void){
  }
  {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
 }
-static void paintModels(int selected){
- int i;clear("Kies je model");
- {char current[104];sprintf(current,"Nu: %s",publicModel[0]?publicModel:"nog geen keuze");clipped(12,37,current,44,C_MUTED);}
- for(i=0;i<MODEL_COUNT;i++){
-  int y=59+i*37;rounded(8,y-2,368,34,i==selected?C_RAISED:C_PANEL);
-  printAt(16,y,modelChoices[i].label,i==selected?C_MINT:C_TEXT);
-  {char cost[32];sprintf(cost,"Kosten: %s",modelChoices[i].cost);printAt(240,y,cost,C_MUTED);}
-  printAt(16,y+15,modelChoices[i].id,C_MUTED);
-  if(!strcmp(publicModel,modelChoices[i].id))printAt(344,y+15,"Nu",C_MINT);
+static int choiceCount(void){return remoteModelCount?remoteModelCount:MODEL_COUNT;}
+static const char *choiceId(int index,char out[81]){
+ if(!remoteModelCount)return modelChoices[index].id;
+ size_t at=modelOffsets[index],n=0;while(remoteModels[at]&&remoteModels[at]!='\n'&&n<80)out[n++]=remoteModels[at++];out[n]=0;return out;
+}
+static int parseModelList(unsigned total){
+ unsigned at=0,n=0,start=0;int count=0;remoteModelCount=0;
+ if(!total||total>=sizeof(remoteModels))return 0;
+ while(at<total){unsigned char c=remoteModels[at++];
+  if(c=='\n'){if(!n||count>=384||!setting_valid(4,remoteModels+start,n))return 0;modelOffsets[count++]=(unsigned short)start;start=at;n=0;}
+  else if(c<33||c>126||++n>80)return 0;
  }
- printAt(12,175,"↑↓ kiezen · kosten zijn relatief",C_MUTED);
- footer("Kies","","","Uitleg","","");show();
+ if(n||!count)return 0;remoteModels[total]=0;remoteModelCount=count;return 1;
+}
+static int modelFetchCancelled=0,modelFetchError=0;
+static int modelRpc(const uint8_t *b,size_t n,WFrame *r){
+ int ok=rpc(W_MODELS,b,n,r,1);if(ok==-2)modelFetchCancelled=1;else if(ok!=1)modelFetchError=ok==0?r->data[0]:E_TIMEOUT;return ok;
+}
+static int fetchModelsWork(void){
+ WFrame r;uint8_t b[3]={0};int started=RTC_GetTicks();unsigned total,pos=0;
+ if(modelRpc(b,1,&r)!=1||r.len!=5)return 0;
+ if(r.data[1]!=1){b[0]=1;if(modelRpc(b,1,&r)!=1||r.len!=5)return 0;}
+ while(r.data[1]==1&&!quitting){
+  int at=RTC_GetTicks();while(!elapsed(at,200)&&!quitting){
+   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){modelFetchCancelled=1;return 0;}OS_InnerWait_ms(10);
+  }
+  if(elapsed(started,90000))return 0;b[0]=0;if(modelRpc(b,1,&r)!=1||r.len!=5)return 0;
+ }
+ if(quitting)return 0;
+ if(r.data[1]!=2){modelFetchError=r.data[2];return 0;}
+ total=w_get16(r.data+3);if(!total||total>=sizeof(remoteModels))return 0;
+ /* Do not retain partial lists after a failed refresh. */
+ remoteModelCount=0;
+ while(pos<total&&!quitting){
+  b[0]=2;w_put16(b+1,(uint16_t)pos);
+  if(modelRpc(b,3,&r)!=1||r.len<2||pos+r.len-1>total)return 0;
+  memcpy(remoteModels+pos,r.data+1,r.len-1);pos+=r.len-1;
+ }
+ return !quitting&&parseModelList(total);
+}
+static int fetchModels(void){
+ int ok;modelFetchCancelled=modelFetchError=0;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
+ ok=fetchModelsWork();loadingActive=0;
+ if(!ok&&!quitting&&!modelFetchCancelled)message("Modellen niet geladen",modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer Wifi en account en probeer opnieuw. Je huidige model is niet gewijzigd.");
+ return ok;
+}
+static void paintModels(int selected){
+ int i,first=(selected/5)*5,count=choiceCount();char id[81],label[64];clear("Jouw modellen");
+ sprintf(label,"%d modellen · %s",count,remoteModelCount?"jouw account":"startkeuzes");printAt(14,38,label,C_MUTED);
+ for(i=first;i<count&&i<first+5;i++){
+  int y=61+(i-first)*23;const char *name=choiceId(i,id);
+  rounded(8,y-3,368,21,i==selected?C_RAISED:C_PANEL);
+  if(i==selected)rounded(8,y-3,3,21,C_MINT);
+  clipped(18,y,name,40,i==selected?C_MINT:C_TEXT);
+  if(!strcmp(publicModel,name))rounded(362,y+4,5,5,C_MINT);
+ }
+ printAt(14,177,"↑↓ kiezen · EXE opslaan",C_MUTED);
+ footer("Kies","Ververs","Vorig","Info","Volgend","Terug");show();
 }
 static int modelPicker(void){
- int selected=modelChoiceIndex(publicModel),k;char details[520];
- if(selected<0)selected=1;
+ int selected=0,k;char id[81],details[520];
+ if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
+ if(atomMajor>=17&&!remoteModelCount&&!fetchModels()&&modelFetchCancelled)return 0;
+ for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
  while(!quitting){
+  if(selected>=choiceCount())selected=0;
   paintModels(selected);k=waitEditorKey(1);if(quitting)return 0;
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return 0;
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;
-  if(k==KEY_PRGM_DOWN&&selected<MODEL_COUNT-1)selected++;
-  if(k==KEY_PRGM_F4){sprintf(details,"%s\n%s\n\n%s\n\nRelatieve kosten: %s per token. De echte kosten hangen af van je tekst en antwoord. Controleer actuele API-prijzen. Je eigen API-tegoed wordt gebruikt. Beschikbaarheid wordt bij je eerste vraag gecontroleerd.",modelChoices[selected].label,modelChoices[selected].id,modelChoices[selected].description,modelChoices[selected].cost);message("Over dit model",details);}
+  if(k==KEY_PRGM_DOWN&&selected<choiceCount()-1)selected++;
+  if(k==KEY_PRGM_F5){selected+=5;if(selected>=choiceCount())selected=choiceCount()-1;}
+  if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
+  if(k==KEY_PRGM_F2){
+   if(atomMajor<17)message("Atom bijwerken","Upload de meegeleverde Atom-firmware om de modellen uit je eigen account op te halen. Je wifi en sleutel blijven bewaard.");
+   else if(!fetchModels()&&modelFetchCancelled)return 0;
+   continue;
+  }
+  if(k==KEY_PRGM_F4){
+   const char *name=choiceId(selected,id);int preset=modelChoiceIndex(name);
+   sprintf(details,"%s\n\n%s\n\n%s",name,preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Kosten zijn relatief; controleer actuele API-prijzen.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
+   message("Over dit model",details);
+  }
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){
-   if(!strcmp(publicModel,modelChoices[selected].id))return 1;
-   if(uploadText(4,modelChoices[selected].id)){
-    strcpy(publicModel,modelChoices[selected].id);settingsEpoch++;
-    message("Model opgeslagen","Je keuze is op de Atom bewaard. Er is geen betaalde vraag verstuurd.");return 1;
-   }
+   const char *name=choiceId(selected,id);if(!strcmp(publicModel,name))return 1;
+   if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;return 1;}
   }
  }
  return 0;
 }
-static void helpAndDevice(void){
- int selected=0,k,i;WFrame reply;
- const char *names[]={"Snel beginnen","Over deze app","Wifi en sleutel wissen"};
+static void deviceSettings(void){
+ int selected=0,k,i;WFrame reply;const char *names[]={"Scherm aanpassen","Over deze app","Wifi en sleutel wissen"};
  while(!quitting){
-  clear("Hulp en versie");
-  for(i=0;i<3;i++){int y=56+i*34;rounded(8,y-4,368,28,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
-  printAt(12,175,"EXE of →: openen · EXIT: terug",C_MUTED);footer("Open","","","","","Terug");show();k=waitKey();
+  clear("Meer instellingen");
+  for(i=0;i<3;i++){int y=58+i*34;rounded(8,y-4,368,28,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
+  footer("Open","","","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
-  if(selected==0)message("Snel beginnen","1. Open Wifi en account en volg de stappen op je telefoon.\n2. Kies een model.\n3. Typ je vraag en druk op Stuur.\n\nEXIT gaat terug. MENU vraagt om afsluiten.\n\nJe gebruikt je eigen OpenAI API-tegoed. Een ChatGPT-abonnement bevat dit niet.");
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 16.0\n\nJe chats staan op je rekenmachine. Je wifi en sleutel staan op de Atom.\n\nEen internetverbinding en eigen API-tegoed zijn nodig. AI kan fouten maken; controleer de uitleg.");
-  if(selected==2&&confirm("Wifi en API-sleutel van de Atom wissen? Je opgeslagen chats blijven behouden.")){
-   if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Stel Wifi en account opnieuw in om verder te gaan.");}
+  if(selected==0)screenSettings();
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 17.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
+   if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
  }
 }
-static void paintSettings(int selected){
- int i,index=modelChoiceIndex(publicModel);const char *names[]={"Wifi en account","Model","Verbinding","Scherm en bediening","Hulp en versie"};
- const char *values[]={publicSSID[0]?publicSSID:"Instellen",index>=0?modelChoices[index].label:publicModel[0]?"Zelf ingesteld":"Kies een model",linkOnline?"Verbonden":"Verbroken","Aanpassen","Openen"};
- clear("Instellingen");
- for(i=0;i<5;i++){
-  int y=44+i*25;rounded(8,y-4,368,23,i==selected?C_RAISED:C_PANEL);
-  if(i==selected)rect(8,y,2,14,C_MINT);
-  clipped(18,y,names[i],22,i==selected?C_MINT:C_TEXT);clipped(208,y,values[i],18,C_MUTED);glyph(364,y,'>',C_MUTED);
+static void helpAndDevice(void){
+ int selected=0,k,i;const char *names[]={"Aan de slag","Typen en toetsen","Antwoorden en kosten","Verbinding controleren"};
+ const char *body[]={
+ "1. Open Wifi en account.\n2. Volg de stappen op je telefoon.\n3. Kies een model.\n4. Typ je vraag en kies Stuur.\n\nJe hebt eigen OpenAI API-tegoed nodig. Een ChatGPT-abonnement bevat dit niet.",
+ "ALPHA zet letters aan of uit. F5 wisselt hoofdletters. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens.\n\nEXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
+ "F1 Verder stelt een vervolgvraag. Chats blijven lokaal op je Casio.\n\nAPI-gebruik kost geld via je eigen account. Controleer prijzen en antwoorden. Een al verstuurde vraag kan ook na annuleren kosten maken."
+ };
+ while(!quitting){
+  clear("Hulp");
+  for(i=0;i<4;i++){int y=48+i*31;rounded(8,y-4,368,27,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
+  footer("Open","","","","","Terug");show();k=waitKey();
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return;
+  if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
+  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){if(selected<3)message(names[selected],body[selected]);else diagnose();}
  }
- printAt(12,175,"EXE of →: openen · EXIT: terug",C_MUTED);footer("Open","","","","Hulp","Terug");show();
+}
+static void paintSettings(int selected){
+ int i;const char *names[]={"Wifi en account","Model","Hulp","Meer"};
+ const char *notes[]={publicSSID[0]?publicSSID:"Instellen via telefoon",publicModel[0]?publicModel:"Kies je model","Zo werkt de app","Scherm en appinformatie"};
+ clear("Instellingen");
+ for(i=0;i<4;i++){
+  int y=43+i*35;rounded(8,y-3,368,32,i==selected?C_RAISED:C_PANEL);
+  if(i==selected)rounded(8,y-3,3,32,C_MINT);
+  printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);clipped(18,y+14,notes[i],40,C_MUTED);glyph(362,y+7,'>',C_MUTED);
+ }
+ footer("Open","","","","Hulp","Terug");show();
 }
 static void settings(void){
  int selected=0,k;uint8_t configured[4]={0};
@@ -590,16 +667,13 @@ static void settings(void){
   paintSettings(selected);k=waitEditorKey(1);
   if(k==UI_LINK_REFRESH){if(linkOnline&&!settingsKnown)refreshSettings(configured);continue;}
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
-  if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<4)selected++;
-  /* Retain old function-key shortcuts without crowding the buyer menu. */
-  if(k==KEY_PRGM_F2){if(!atomMajor&&linkOnline)refreshSettings(configured);phoneSetup();if(!quitting)refreshSettings(configured);continue;}
-  if(k==KEY_PRGM_F3){diagnose();continue;}if(k==KEY_PRGM_F4){screenSettings();continue;}if(k==KEY_PRGM_F5){helpAndDevice();continue;}
+  if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
+  if(k==KEY_PRGM_F5){helpAndDevice();continue;}
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
-  if(selected==0){if(!atomMajor&&linkOnline)refreshSettings(configured);phoneSetup();if(!quitting)refreshSettings(configured);}
+  if(selected==0){phoneSetup();remoteModelCount=0;if(!quitting)refreshSettings(configured);}
   if(selected==1)modelPicker();
-  if(selected==2)diagnose();
-  if(selected==3)screenSettings();
-  if(selected==4){helpAndDevice();if(!settingsKnown&&linkOnline)refreshSettings(configured);}
+  if(selected==2)helpAndDevice();
+  if(selected==3){deviceSettings();if(!settingsKnown&&linkOnline)refreshSettings(configured);}
  }
 }
 static void paintDiagnosis(int successes,int checked){
@@ -668,8 +742,11 @@ static void readAnswer(int contextWasDropped){
 
 #include "chats.h"
 static void paintLoading(int phase){
- static const unsigned short pulse[8]={0x7737,0x87b8,0x9fda,0xb7fc,0xc7fd,0xb7fc,0x9fda,0x87b8};
- clear("ChatGPT");drawLogo(152,68,80,pulse[phase%8]);show();
+ static const int orbit[8][2]={{0,-53},{38,-38},{53,0},{38,38},{0,53},{-38,38},{-53,0},{-38,-38}};
+ int i;clear("ChatGPT");rounded(134,50,116,116,C_PANEL);
+ drawLogo(152,68,80,C_MINT);
+ for(i=0;i<8;i++){int active=(phase%8)==i;rounded(190+orbit[i][0],106+orbit[i][1],active?6:3,active?6:3,active?C_MINT:C_LINE);}
+ show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
 static void askWork(void){
@@ -686,7 +763,7 @@ static void askWork(void){
  while(!quitting){
   ok=rpc(W_STATUS,0,0,&r,1);
   if(ok==-2){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);if(!quitting)message("Annulering aangevraagd","Een al verstuurde API-aanvraag kan nog kosten maken. De Atom moet de netwerkbewerking eerst afronden.");return;}
-  if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen en kies Diagnose.");return;}
+  if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
   if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){loadingActive=0;strcpy(lastQuestion,prompt);prompt[0]=0;unsavedReply=1;saveReply();readAnswer(dropped);}return;}
@@ -711,7 +788,7 @@ static void beginSession(void){
  quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
- linkMisses=0;settingsKnown=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
+ linkMisses=0;settingsKnown=0;remoteModelCount=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();

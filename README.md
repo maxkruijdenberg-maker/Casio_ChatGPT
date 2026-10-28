@@ -1,30 +1,33 @@
-# ChatGPT V16.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V17.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Vanaf V11 t/m V15: vervang alleen `dist/ChatGPT.g3a`. De Atom blijft V11.0.**
-Zie [UPGRADE-V16.md](UPGRADE-V16.md) en [de korte gebruikersgids](docs/V16-STARTGIDS.md).
+Een lichte interface met teal-accenten, rustige kaarten en vier instellingen:
+**Wifi en account, Model, Hulp en Meer**. De versie en het aanpassen van het
+scherm staan onder Meer; het beginscherm bevat geen ontwikkelinformatie.
 
-V16 herneemt de verbindingsafhandeling en fysieke toetsdecoder van V13,
-met de gewenste verbeteringen aan de interface:
+**Deze upgrade bevat ook nieuwe Atom-firmware.** Upload de volledige sketchmap
+of flash de meegeleverde binaries en vervang daarna `ChatGPT.g3a`.
+Laat `CGPT3` staan en schakel volledig wissen van de Atom-flash uit.
+Zie [UPGRADE-V17.md](UPGRADE-V17.md) en [de korte gebruikersgids](docs/V17-STARTGIDS.md).
 
-- Rechtsboven **Verbonden** of **Verbroken**: contact met de module.
-- Tijdens wachten alleen een pulserend ChatGPT-logo onder de vaste bovenbalk.
-  EXIT of F1 annuleert; een al verstuurde aanvraag kan nog kosten maken.
-- Leesbare `=`-tekens in antwoorden; oorspronkelijke tekst blijft bewaard.
-- Vijf duidelijke instellingen, openen met EXE, pijl rechts of F1 Open.
-- De versie staat alleen onder Instellingen → Hulp en versie → Over deze app.
-- Geen ruimtemeter, technische voortgangslijst of aparte =-knop. F3 opent Chats.
-- Geen schermhertekening voor ieder achtergrondbericht; alleen een echte
-  statusverandering werkt de status van het invoer-/instellingenmenu bij.
+- Modellen uit je eigen API-account ophalen en kiezen zonder typen.
+- Scrolbare lijst met pagina's, vernieuwen en modelinformatie.
+- Hulp met starten, toetsen, antwoorden/kosten en verbinding controleren.
+- Vernieuwde laadanimatie met ChatGPT-logo en bewegend accent.
+- Verbonden/Verbroken rechtsboven; leesbare = in antwoorden.
+- EXIT blijft binnen de app; MENU vraagt om afsluiten. ALPHA blijft letterlock.
 
-EXIT blijft binnen de app. Alleen MENU vraagt om afsluiten; Blijven bewaart je
-concept. Eigen OpenAI API-tegoed en wifi blijven nodig. De drie modellen hebben
-indicatieve relatieve kosten, zonder gegarandeerde prijs per vraag.
+De app gebruikt OpenAI Chat Completions. De accountlijst vermeldt geen
+endpointondersteuning: V17 toont tekst-chatkandidaten en filtert beeld/audio en
+andere niet-chatfamilies. **Niet elk model uit de lijst werkt noodzakelijk met
+Chat Completions.** Web-only ChatGPT-modellen zijn geen API-keuzes. Bij een
+niet-ondersteund model kies je een ander; er wordt niet automatisch betaald
+opnieuw geprobeerd. Er is geen verzonnen actuele prijs per model.
 
-[De V16-schermen](docs/design/V16-actual-screens.png) komen uit de werkelijke
-UI-renderer in hosttests. [Ontwerp en bediening](docs/V16-ONTWERP.md) beschrijft
-de gemaakte keuzes. Dertien ASan/UBSan-testgroepen en de SH4-build slagen,
-inclusief 40 gesimuleerde menuheropeningen. Fysieke werking moet op jouw hardware
-worden gecontroleerd; de preview is geen apparaatfoto.
+[Werkelijke V17-schermen](docs/design/V17-actual-screens.png) en
+[de laadanimatie](docs/design/V17-loading.gif) zijn uit de UI-renderer in hosttests.
+De modellen in de preview zijn voorbeelddata, geen ingelezen privéaccount.
+Veertien ASan/UBSan-testgroepen, Casio-build en Atom-build worden gecontroleerd.
+Echte hardware, netwerk en betaalde API-antwoorden moeten op jouw apparaat getest worden.
 
 ## Windows: installeren
 
@@ -35,7 +38,7 @@ worden gecontroleerd; de preview is geen apparaatfoto.
    `https://espressif.github.io/arduino-esp32/package_esp32_index.json`.
 5. Installeer in Boardbeheer **esp32 by Espressif Systems 3.3.0**.
 6. Installeer in Bibliotheekbeheer **ArduinoJson by Benoit Blanchon 7.4.2**.
-7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. V11 bevat extra
+7. Open `atom\ChatGPTAtom\ChatGPTAtom.ino`. Laat **alle `.h`-bestanden** in dezelfde sketchmap staan. De firmware bevat extra
    gedeelde headers; alleen het `.ino`-bestand overnemen is niet voldoende.
 8. Selecteer board **M5Atom** (originele ESP32, geen M5AtomS3), de bijbehorende
    COM-poort en uploadsnelheid 115200. Compileer en upload. De firmware gebruikt
@@ -45,7 +48,7 @@ worden gecontroleerd; de preview is geen apparaatfoto.
 10. Sluit de Casio via zijn USB-kabel aan op Windows en kies op de Casio
     **USB Flash / USB-opslag**. Kopieer `dist\ChatGPT.g3a` naar de hoofdmap van
     het Casio-station. Werp het station veilig uit en ontkoppel de kabel.
-11. Open in MENU het pictogram **ChatGPT**. Open Instellingen → Verbinding voor een controle.
+11. Open in MENU het pictogram **ChatGPT**. Open Instellingen → Hulp → Verbinding controleren voor een controle.
 12. Open **F6 Instel → Wifi en account → EXE of pijl rechts**. Verbind je telefoon met het netwerk
     en wachtwoord op de Casio. Open **http://192.168.4.1**, vul je 2,4GHz-wifi in
     en plak je volledige OpenAI API-sleutel. Laat de Casio open tot de wifi-status
@@ -55,8 +58,7 @@ worden gecontroleerd; de preview is geen apparaatfoto.
 
 OpenAI API-gebruik wordt afzonderlijk betaald. Een ChatGPT-abonnement geeft
 niet automatisch API-tegoed. De app gebruikt geen bestaande ChatGPT-gesprekken.
-Maak en beheer de sleutel zelf via je OpenAI-platformaccount. Voer hem alleen
-lokaal in op de Casio, niet in chat, broncode of een screenshot.
+Maak en beheer de sleutel zelf via je OpenAI-platformaccount. Plak hem alleen op de lokale installatiepagina op je telefoon, niet in chat, broncode of een screenshot.
 
 ### Voorgebouwde firmware flashen zonder Arduino-build
 
@@ -110,7 +112,7 @@ vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
 Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
 op toetsen in het invoerscherm volgen nieuwe controles bij herstel (minimaal 1 seconde tussen startmomenten)
 en een controle iedere 10 seconden als de Atom online is. Het typen blijft
-beschikbaar. Diagnose staat in Instellingen; verbinden vereist geen handmatige diagnose.
+beschikbaar. Verbinding controleren staat onder Instellingen → Hulp; verbinden vereist geen handmatige diagnose.
 
 Na versturen komt een apart antwoordscherm. Omhoog/omlaag scrolt een regel;
 links/rechts scrolt een pagina. F1 Verder begint een vervolgvraag. F2 begint een nieuw gesprek; de oude
@@ -119,15 +121,15 @@ API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
-Instellingen toont vijf duidelijke keuzes. Wifi en account opent de telefooninstallatie; Model opent de keuzelijst. Je wifi-wachtwoord en API-sleutel worden niet teruggelezen of getoond.
-Aanpassen gaat via je telefoon. Via Hulp en apparaat kun je de lokale wifi en
+Instellingen toont vier duidelijke keuzes. Wifi en account opent de telefooninstallatie; Model opent de keuzelijst. Je wifi-wachtwoord en API-sleutel worden niet teruggelezen of getoond.
+Aanpassen gaat via je telefoon. Via Meer kun je de lokale wifi en
 sleutel wissen; opgeslagen chats blijven behouden. Die bevestiging reset ook
 de modelkeuze op de Atom. De interface is Nederlands.
 
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
-vertraging sluit de poort niet. Het kopje Verbinding geeft uitleg in gewone taal.
+vertraging sluit de poort niet. Hulp → Verbinding controleren geeft uitleg in gewone taal.
 Via **Wifi en account** kun je wifi en API-sleutel invullen via de tijdelijke
-installatiepagina. Zie [UPGRADE-V11.md](UPGRADE-V11.md) voor de stappen.
+installatiepagina. Zie [UPGRADE-V17.md](UPGRADE-V17.md) voor de stappen.
 
 ## Lokale chatgeschiedenis
 
@@ -140,7 +142,7 @@ V2- en ChatGPT-websitegesprekken worden niet geïmporteerd.
 
 ## Scherm instellen
 
-F6 Instellingen → Scherm en bediening. Pijlen omhoog/omlaag kiezen schaal of verschuiving;
+F6 Instellingen → Meer → Scherm aanpassen. Pijlen omhoog/omlaag kiezen schaal of verschuiving;
 links/rechts past aan. Schaal: 80–120%, verschuiving: -24 tot +24 pixels.
 F1 slaat op, F2 toont de hoekentest, F3 herstelt 100% / 0 / 0, EXIT annuleert.
 Alleen de app wordt aangepast. Zie UPGRADE-V4.md voor herstel en grenzen.

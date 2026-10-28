@@ -271,3 +271,16 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Geneste bevestiging wordt hersteld na MENU → Blijven; sessiecache wordt gewist bij heropenen.
 - Atom-firmware V11 ongewijzigd; dertien hosttestgroepen en SH4-build.
 - Geen fysieke duurtest of betaalde API-test uitgevoerd in deze omgeving.
+
+## V17.0 — lichte koperinterface en accountmodellen
+
+- Lichte stijl met teal en mintselectie, vier hoofdinstellingen.
+- Aparte Hulp met taakgerichte uitleg en verbindingscontrole; geavanceerd onder Meer.
+- Nieuwe laadkaart met bewegend accent, zonder ontwikkelstatus of versie.
+- Nieuwe Atom V17: asynchrone GET /v1/models met TLS, JSON-filter op ID's en begrensde lijst.
+- W_MODELS (17): starten/status/ophalen; W_DEVICE major 17, capabilitybit 16.
+- Accountgebonden tekst-chatkandidaten; endpointondersteuning is niet in /models beschikbaar.
+- Maximaal 384 unieke ID's/32767 bytes; geen stille afkapping of automatische completion-test.
+- Modelnamen met dubbele punten toegestaan voor aangepaste modellen; paden blijven ongeldig.
+- Config11/opslag/V13-toetsen/native menu blijven; Atom-update deze keer vereist.
+- Veertien hosttestgroepen en beide builds; echte hardware en live API nog te testen.
