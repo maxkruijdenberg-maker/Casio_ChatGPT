@@ -1,32 +1,31 @@
-# ChatGPT V14.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V15.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Vanaf V11/V12/V13: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
-Zie [UPGRADE-V14.md](UPGRADE-V14.md), [startgids](docs/V14-STARTGIDS.md) en
-[TikTok-demonstratieplan](docs/V14-TIKTOK.md).
+**Vanaf V11 t/m V14: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
+Zie [UPGRADE-V15.md](UPGRADE-V15.md), [kopersgids](docs/V15-STARTGIDS.md) en
+[demonstratieplan](docs/V15-TIKTOK.md).
 
-- F3 typt direct `=`, ook met ALPHA-lock. SHIFT + punt en F4 Tekens werken ook.
-- EXIT gaat terug binnen de app; op het beginscherm blijft je concept staan.
-- Alleen MENU vraagt om afsluiten. Blijven bewaart je scherm, invoer en verbinding.
-- Eén Diagnose-knop in Instellingen; geen dubbele Test-knoppen meer.
-- Modellen kiezen zonder typen: Voordelig (`gpt-4.1-nano`), Dagelijks
-  (`gpt-4.1-mini`) en Uitgebreid (`gpt-4.1`), met relatieve kostenindicatie en uitleg.
-- Donker/mint ontwerp verfijnd, duidelijke hoofdacties en ingebouwde startuitleg.
+V15 vereenvoudigt de app voor kopers:
 
-Iedere koper gebruikt een eigen OpenAI API-sleutel en betaald API-tegoed.
-ChatGPT Plus bevat geen API-tegoed. Modelkeuze opslaan, diagnose en lokale
-chatgeschiedenis versturen geen betaalde vraag. Toegang tot een model wordt
-bij de eerste vraag door de bestaande Atom-code gecontroleerd vóór de POST.
-De kostenlabels zijn indicatief; actuele bedragen konden niet worden opgehaald.
+- Rechtsboven alleen **Verbonden** of **Verbroken**: contact met de module.
+- Vijf duidelijke instellingen: Wifi en account, Model, Verbinding, Scherm en
+  bediening, Hulp en apparaat. Open elke pijl met EXE, pijl rechts of F1 Open.
+- Verbindingscontrole in gewone taal, zonder technische cijfers of instellingen.
+- Tijdens versturen een geanimeerd ChatGPT-logo, zonder technische statuslijst.
+- Geen ruimtepercentage. F3 opent Chats; er is geen aparte =-knop meer.
+- Gewone en Unicode-varianten van = worden leesbaar getoond in antwoorden.
+  De originele tekst blijft ongewijzigd in opslag en gesprekscontext.
+- Eén ontvangstparser voor achtergrond- en gewone antwoorden; tijdelijke
+  verzenddrukte en korte stiltes sluiten de poort niet meer automatisch.
 
-De stabiele V13-toetsdecoder, poortlevensduur, heartbeat-timers, native menu-route
-en Atom-firmware blijven behouden. Opgeslagen chats, schermprofiel en wifi/sleutel
-blijven bijwerken behouden. Geen verborgen pictogram of systeempatch.
+EXIT blijft binnen de app. Alleen MENU vraagt om afsluiten; Blijven bewaart je
+concept. Je eigen OpenAI API-account, betaald tegoed en wifi blijven nodig.
+Modelkeuze heeft indicatieve relatieve kosten; geen vast bedrag per vraag.
 
-Bekijk [de echte V14 UI-renderer in hosttests](docs/design/V14-actual-screens.png)
-en [de verticale interfacepreview](docs/design/V14-tiktok-preview.mp4).
-**Validatie:** twaalf ASan/UBSan-testgroepen en SH4-build, inclusief de nieuwe
-navigatie, drie =-routes, alle modelkeuzes zonder ASK/ALLOC en 40 menu-sessies.
-Nog geen fysieke V14-/API-test: doorloop de hardwarecheck vóór verkoop.
+[De V15-schermen](docs/design/V15-actual-screens.png) en
+[de verticale preview met laadanimatie](docs/design/V15-tiktok-preview.mp4)
+komen uit de echte UI-renderer in hosttests, niet uit een fysieke opname.
+**Validatie:** dertien ASan/UBSan-testgroepen, SH4-build en 40 menuheropeningen.
+Fysieke V15-werking, montage en API-toegang moeten vóór verkoop nog worden getest.
 
 ## Windows: installeren
 
@@ -47,8 +46,8 @@ Nog geen fysieke V14-/API-test: doorloop de hardwarecheck vóór verkoop.
 10. Sluit de Casio via zijn USB-kabel aan op Windows en kies op de Casio
     **USB Flash / USB-opslag**. Kopieer `dist\ChatGPT.g3a` naar de hoofdmap van
     het Casio-station. Werp het station veilig uit en ontkoppel de kabel.
-11. Open in MENU het pictogram **ChatGPT**. Open F6 Instel → F3 Diagnose voor de UART-controle.
-12. Open **F6 Instellingen → F2 Telefoon**. Verbind je telefoon met het netwerk
+11. Open in MENU het pictogram **ChatGPT**. Open Instellingen → Verbinding voor een controle.
+12. Open **F6 Instel → Wifi en account → EXE of pijl rechts**. Verbind je telefoon met het netwerk
     en wachtwoord op de Casio. Open **http://192.168.4.1**, vul je 2,4GHz-wifi in
     en plak je volledige OpenAI API-sleutel. Laat de Casio open tot de wifi-status
     verschijnt. Het model blijft je bestaande keuze (standaard `gpt-4.1-mini`).
@@ -88,7 +87,7 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 | F5 | Hoofdletters/kleine letters |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
 | F2 | Nieuw gesprek; vraagt bevestiging als een concept verloren zou gaan |
-| F3 | Direct `=` invoeren; Diagnose staat onder Instellingen |
+| F3 | Chats openen |
 | F4 | Tekenkeuzescherm; pijlen kiezen, EXE invoegen |
 | F6 | Instellingen |
 | Links/rechts | Cursor naar vorige/volgende volledige letter |
@@ -121,20 +120,14 @@ API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
-Instellingen toont de opgeslagen hotspotnaam en modelnaam. Bij wachtwoord en sleutel
-toont Instellingen alleen of een waarde is ingesteld. De sleutel en het
-hotspotwachtwoord worden afgeschermd ingevoerd en niet teruggelezen. Kies de
-instelling opnieuw om deze te vervangen. Een leeg opgeslagen hotspot-, wachtwoord- of sleutelveld wist die
-waarde. Een model kies je in de lijst; een bestaande aangepaste naam blijft behouden. 'Alle instellingen wissen' verwijdert alle vier instellingen op de Atom.
-De enige taalkeuze in deze versie is Nederlands. Bij een onbereikbare Atom
-verschijnt geen foutpopup vóór het instellingenmenu: de waarden staan als
-Onbekend en de app probeert automatisch opnieuw; F3 opent Diagnose. Een mislukte opslag laat het invoerveld
-open zodat je je invoer kunt corrigeren of opnieuw proberen. EXIT gooit een
-niet-opgeslagen wijziging weg. MENU vraagt ook vanuit het afgeschermde veld om afsluiten; Blijven behoudt de wijziging.
+Instellingen toont vijf duidelijke keuzes. Wifi en account opent de telefooninstallatie; Model opent de keuzelijst. Je wifi-wachtwoord en API-sleutel worden niet teruggelezen of getoond.
+Aanpassen gaat via je telefoon. Via Hulp en apparaat kun je de lokale wifi en
+sleutel wissen; opgeslagen chats blijven behouden. Die bevestiging reset ook
+de modelkeuze op de Atom. De interface is Nederlands.
 
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
-vertraging geeft Herstel; de poort wordt niet bij de eerste timeout gesloten.
-Met **F2 Telefoon** kun je wifi en API-sleutel ook plakken via de tijdelijke
+vertraging sluit de poort niet. Het kopje Verbinding geeft uitleg in gewone taal.
+Via **Wifi en account** kun je wifi en API-sleutel invullen via de tijdelijke
 installatiepagina. Zie [UPGRADE-V11.md](UPGRADE-V11.md) voor de stappen.
 
 ## Lokale chatgeschiedenis
@@ -146,9 +139,9 @@ volledige vraag. Je kunt oude chats offline lezen en later vervolgen met
 begrensde context. Zie UPGRADE-V3.md voor limieten, backups en herstel.
 V2- en ChatGPT-websitegesprekken worden niet geïmporteerd.
 
-## Scherm instellen in V4
+## Scherm instellen
 
-F6 Instellingen → F4 Scherm. Pijlen omhoog/omlaag kiezen schaal of verschuiving;
+F6 Instellingen → Scherm en bediening. Pijlen omhoog/omlaag kiezen schaal of verschuiving;
 links/rechts past aan. Schaal: 80–120%, verschuiving: -24 tot +24 pixels.
 F1 slaat op, F2 toont de hoekentest, F3 herstelt 100% / 0 / 0, EXIT annuleert.
 Alleen de app wordt aangepast. Zie UPGRADE-V4.md voor herstel en grenzen.

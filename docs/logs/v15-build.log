@@ -1,0 +1,6 @@
+Casio SH4 build completed successfully with tools/build-casio.sh
+G3A bytes: 78104
+SHA256: 5aaeaa679987cfd6d99e889a5b3ae74fd08ccb52e631c45c72846a66d856f420
+Buyer settings, customer diagnosis, answer display compatibility and animated loading compiled.
+Shared RX parser, bounded TX backpressure and cooldown-limited recovery tested.
+Atom V11 source and firmware reused unchanged.

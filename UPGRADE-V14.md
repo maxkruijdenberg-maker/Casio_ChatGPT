@@ -1,3 +1,5 @@
+**Nieuwste versie: [V15](UPGRADE-V15.md), eenvoudig kopersmenu, antwoordweergave en laadlogo.**
+
 # V14 — duidelijke bediening en modelkeuze
 
 Vanaf V11, V12 of V13 vervang je **alleen de Casio-app**. Atom blijft V11.

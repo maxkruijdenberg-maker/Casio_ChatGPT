@@ -1,4 +1,4 @@
-"""Create a 20s vertical storyboard from actual host UI fixtures, not a hardware demo."""
+"""Create a 24s vertical storyboard from actual host UI fixtures, not a hardware demo."""
 from pathlib import Path
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
@@ -8,6 +8,7 @@ font_dir=Path('/usr/share/fonts/truetype/dejavu')
 def font(size,bold=False):return ImageFont.truetype(str(font_dir/('DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')),size)
 slides=[
  ('input','Je vraag.\nOp je Casio.','Uitleg voor je volgende oefensessie.'),
+ ('loading','Je vraag.\nWordt verwerkt.','Een rustige animatie terwijl je wacht.'),
  ('answer','Stap voor stap.\nVraag gerust door.','Van formule naar uitleg, met je eigen vraag.'),
  ('models','Kies je model.\nHelder geregeld.','Drie keuzes, met naam en kostenindicatie.'),
  ('sidebar','Je chats.\nLees rustig terug.','Je recente gesprekken lokaal bewaard.'),
@@ -16,11 +17,11 @@ paths=[]
 for i,(screen,title,sub) in enumerate(slides):
  im=Image.new('RGB',(1080,1920),'#0e1512');d=ImageDraw.Draw(im)
  d.rounded_rectangle((60,65,575,124),radius=25,fill='#203b30')
- d.text((82,77),'INTERFACEPREVIEW / V14',font=font(29,True),fill='#b1f2d7')
+ d.text((82,77),'INTERFACEPREVIEW / V15',font=font(29,True),fill='#b1f2d7')
  d.multiline_text((60,180),title,font=font(84,True),fill='#f1f6f3',spacing=20)
  d.text((64,420),sub,font=font(35),fill='#b1c6ba')
  d.rounded_rectangle((44,600,1036,1212),radius=30,fill='#2b3b32')
- frame=Image.open(out/f'V14-{screen}.png').convert('RGB').resize((960,540),Image.Resampling.NEAREST)
+ frame=Image.open(out/f'V15-{screen}.png').convert('RGB').resize((960,540),Image.Resampling.NEAREST)
  im.paste(frame,(60,636))
  d.text((64,1275),'Vraag. Begrijp. Oefen.',font=font(53,True),fill='#b1f2d7')
  d.text((64,1390),'Voor de Casio fx-CG50',font=font(38),fill='#edf4ef')
@@ -31,11 +32,16 @@ for i,(screen,title,sub) in enumerate(slides):
                           'Interfacepreview: geen fysieke apparaatopname.']):
   d.text((64,1660+50*y),text,font=font(27),fill='#9db3a6')
  d.text((64,1850),'Onafhankelijk project',font=font(24),fill='#7f9a8b')
- path=work/f'frame-{i}.png';im.save(path);paths.append(path)
- if i==0:im.save(out/'V14-tiktok-cover.png')
+ path=work/f'frame-{i}.png';im.save(path);paths.append((path,4))
+ if screen=='loading':
+  paths.pop()
+  for phase in range(32):
+   animated=im.copy();frame=Image.open(out/f'V15-loading-{phase%8}.png').convert('RGB').resize((960,540),Image.Resampling.NEAREST)
+   animated.paste(frame,(60,636));animation_path=work/f'loading-{phase}.png';animated.save(animation_path);paths.append((animation_path,0.125))
+ if i==0:im.save(out/'V15-tiktok-cover.png')
 concat=work/'slides.txt'
-concat.write_text(''.join("file '"+str(p)+"'\nduration 4\n" for p in paths)+"file '"+str(paths[-1])+"'\n")
+concat.write_text(''.join("file '"+str(p)+"'\nduration "+str(duration)+"\n" for p,duration in paths)+"file '"+str(paths[-1][0])+"'\n")
 subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y','-f','concat','-safe','0','-i',str(concat),
- '-t','20','-r','30','-c:v','libx264','-preset','fast','-crf','25','-pix_fmt','yuv420p','-threads','2',
- '-movflags','+faststart',str(out/'V14-tiktok-preview.mp4')],check=True)
-print(out/'V14-tiktok-preview.mp4')
+ '-t','24','-r','30','-c:v','libx264','-preset','fast','-crf','25','-pix_fmt','yuv420p','-threads','2',
+ '-movflags','+faststart',str(out/'V15-tiktok-preview.mp4')],check=True)
+print(out/'V15-tiktok-preview.mp4')

@@ -251,3 +251,14 @@ drie modelpresets; controleer met eigen API-tegoed echte vragen en modeltoegang.
 De oude aangepaste modelnaam moet blijven staan na annuleren van de lijst.
 Test lokaal opslaan, volle opslag en gebruikersgegevens wissen vóór overdracht.
 Zie UPGRADE-V14.md en docs/V14-STARTGIDS.md. Hosttests zijn geen hardwarecertificatie.
+
+
+## V15 — kopersmenu, antwoordtekens en verbinding
+
+Volg UPGRADE-V15.md: alle vijf pijlen via EXE en rechts, terug met EXIT, MENU
+bevestigen/annuleren, veel toetsen en twintig heropeningen. Header uitsluitend
+Verbonden/Verbroken; test de overgang na module uit/aan. Diagnose mag geen
+getallen of protocolwaarden tonen. Controleer echte antwoorden met = en
+wiskundige tekens, de laadanimatie en annuleren zonder dubbele betaalde vraag.
+De tests voor TX-drukte, gedeelde deel-frame-parser en herstel met cooldown
+zitten in hosttests; die vervangen geen test met echte voeding/GND/draden.

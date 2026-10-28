@@ -246,3 +246,17 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Atom V11, V13-keyboard/heartbeat/menu-driver blijven behouden.
 - Nieuwe integratietests voor menu/drafts/geheimen/modellen, twaalf groepen en 40 sessies.
 - Fysieke V14, API-toegang en actuele prijzen nog niet door deze omgeving geverifieerd.
+
+
+## V15.0 — eenvoudige kopersinterface en stabieler berichtverkeer
+
+- Verbonden/Verbroken rechtsboven; klantentaal zonder technische diagnosewaarden.
+- Vijf instellingenkaarten, met EXE/rechts openen en telefooninstallatie als hoofdroute.
+- Geen ruimtemeter of aparte =-knop; F3 opent Chats.
+- Display-only antwoordnormalisatie voor =-varianten en veelvoorkomende wiskundetekens.
+- Groot geanimeerd laadlogo zonder technische voortgangsteksten.
+- Gedeelde RX-parser, TX-backpressure afwachten, cache van openbare instellingen.
+- Geen reset bij korte timeouts; herstel bij langdurige stilte met cooldown.
+- Achtergrondcontroles op meer schermen, afgeschermd tijdens foreground-RPC/modal.
+- Atom V11 en fysieke toetsdecoder/native-menu-route blijven ongewijzigd.
+- Dertien testgroepen en 40 menucycli; fysieke V15-duurtest/API-test nog nodig.
