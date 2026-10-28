@@ -34,7 +34,7 @@ static int atomBootKnown=0;
 static int restoreChat(void){
  WFrame r;uint8_t action=0;int i,start;
  if(!checkedRpc(W_DEVICE,0,0,&r))return 0;
- if(r.len<4||r.data[1]<3||!(r.data[3]&2)){message("Update nodig","Installeer de V3-firmware op de Atom om opgeslagen gesprekken te vervolgen.");return 0;}
+ if(r.len<4||r.data[1]<3||!(r.data[3]&2)){message("Update nodig","Werk de Atom bij met de meegeleverde firmware om opgeslagen gesprekken te vervolgen.");return 0;}
  if(r.len>=8&&(r.data[3]&4)){
   uint32_t boot=w_get32(r.data+4);if(atomBootKnown&&boot!=lastAtomBoot)contextDirty=1;
   lastAtomBoot=boot;atomBootKnown=1;

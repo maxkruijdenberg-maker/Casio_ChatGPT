@@ -106,25 +106,20 @@ static int keyEvent(void){
   repeatTick=now;return k;
  }return 0;
 }
-static int waitKey(void){int k;while(!quitting){int refresh=!rpcDepth&&!closePromptActive?autoConnectTick():0;k=keyEvent();if(k)return k;if(refresh)return UI_LINK_REFRESH;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
+static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
 enum {C_BG=0x10a2,C_PANEL=0x2104,C_RAISED=0x2965,C_TEXT=0xef7d,
  C_MUTED=0xa514,C_LINE=0x39c7,C_MINT=0x7737,C_RED=0xfc10};
 static int linkKnown=0,linkOnline=0,linkSeen=0,linkMisses=0;
-static int failureSince=0,lastRepairAt=0,repairStarted=0;
-static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;failureSince=0;}
+static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;}
 static void linkFailed(void){
- linkKnown=1;if(!linkMisses)failureSince=RTC_GetTicks();if(linkMisses<3)linkMisses++;
- if(linkMisses>=3){
-  linkOnline=0;
-  /* Reinitialise only after sustained silence, with a cooldown. Never on
-   * a keypress, a single missed heartbeat or a short response delay. */
-  if(elapsed(failureSince,15000)&&(!repairStarted||elapsed(lastRepairAt,30000))){resetSerialTransport();repairStarted=1;lastRepairAt=RTC_GetTicks();}
- }
+ linkKnown=1;if(linkMisses<3){linkMisses++;if(linkMisses==3)resetSerialTransport();}
+ if(linkMisses>=3)linkOnline=0;
 }
 static int autoProbeActive=0,autoProbeStarted=0,autoProbeAt=0;
 static uint8_t autoProbeSeq=0;
-static void stopAutoProbe(void){autoProbeActive=0;}
+static WParser autoProbeParser;
+static void stopAutoProbe(void){autoProbeActive=0;memset(&autoProbeParser,0,sizeof(autoProbeParser));}
 static void applyView(ViewProfile p){viewProfile=view_valid(p)?p:view_default();view_build(&viewMap,viewProfile);viewReady=1;}
 static void physicalRect(int x,int y,int w,int h,unsigned short color){
  int xx,yy;for(yy=y;yy<y+h;yy++)for(xx=x;xx<x+w;xx++)
@@ -238,8 +233,14 @@ static void message(const char *title,const char *body){
   if(k==KEY_PRGM_DOWN&&first<max)first++;if(k==KEY_PRGM_UP&&first>0)first--;
  }
 }
-static int confirm(const char *question){waitForKeyRelease();clear(closePromptActive?"ChatGPT afsluiten?":"Bevestigen");paragraph(question,0,12,52,COLS,ROWS);footer(closePromptActive?"Sluiten":"Ja",closePromptActive?"Blijven":"Nee","","","","");show();
- while(!quitting){int k=waitKey();if(k==KEY_PRGM_F1)return 1;if(k==KEY_PRGM_F2||k==KEY_PRGM_EXIT)return 0;}return 0;
+static int confirm(const char *question){
+ waitForKeyRelease();
+ while(!quitting){
+  int k;clear(closePromptActive?"ChatGPT afsluiten?":"Bevestigen");
+  paragraph(question,0,12,52,COLS,ROWS);
+  footer(closePromptActive?"Sluiten":"Ja",closePromptActive?"Blijven":"Nee","","","","");show();
+  k=waitKey();if(k==KEY_PRGM_F1)return 1;if(k==KEY_PRGM_F2||k==KEY_PRGM_EXIT)return 0;
+ }return 0;
 }
 /* MENU is the sole application exit route. Cancelling keeps the caller's
  * screen, typed draft, selection and UART state; the held key is consumed. */
@@ -259,18 +260,7 @@ static int ensureSerial(void){
  if(Serial_Open(mode)!=0)return 0;
  uartOpens++;serialOpen=1;Serial_ClearRX();Serial_ClearTX();memset(&parser,0,sizeof(parser));return 1;
 }
-/* A temporarily full transmit queue is not a disconnect. Reuse identical
- * frame bytes and wait up to one full 256-byte UART queue at 9600 baud. */
-static int writeFrame(const unsigned char *bytes,int n){
- int start=RTC_GetTicks();
- do {
-  if(Serial_Write(bytes,n)==0)return 1;
-  if(Serial_IsOpen()!=1||elapsed(start,400)||quitting)return 0;
-  if(loadingActive&&!closePromptActive)animateLoading();
-  keyEvent();OS_InnerWait_ms(10);
- }while(!quitting);
- return 0;
-}
+/* V16 retains the V13 transport and keyboard polling policy. */
 /* RPC status: 1 success, 0 device error (reply data[0]), -1 timeout,
  * -2 user cancelled/menu. Identical encoded bytes; metadata tolerates 3 x 1200ms, other commands 4 x 800ms. */
 static int rpcInner(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
@@ -285,18 +275,18 @@ static int rpcInner(int type,const uint8_t *data,size_t len,WFrame *reply,int ca
  for(attempt=0;attempt<attempts&&!quitting;attempt++){
   if(attempt)retries++;
   if(!ensureSerial()){OS_InnerWait_ms(20);continue;}
-  if(!writeFrame(bytes,(int)n)){if(quitting)return -2;resetSerialTransport();OS_InnerWait_ms(20);ensureSerial();continue;}
+  if(Serial_Write(bytes,(int)n)!=0){resetSerialTransport();OS_InnerWait_ms(20);ensureSerial();continue;}
   start=RTC_GetTicks();
   while(!elapsed(start,timeout)&&!quitting){
    while(Serial_PollRX()>0){unsigned char c;WFrame f;int ok;
     if(Serial_ReadSingle(&c)!=0)break;ok=w_feed(&parser,c,&f);if(ok<0)errors++;
-    if(ok==1&&f.len&&(f.type&0x80))linkSucceeded();
     if(ok==1&&f.seq==req.seq&&f.type==(req.type|0x80)&&f.len){linkSucceeded();*reply=f;return f.data[0]?0:1;}
    }
    if(loadingActive&&!closePromptActive)animateLoading();
    k=keyEvent();if(quitting||(cancellable&&(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1)))return -2;
    OS_InnerWait_ms(5);
   }
+  memset(&parser,0,sizeof(parser));
  }if(!quitting)linkFailed();return quitting?-2:-1;
 }
 static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){int result;rpcDepth++;result=rpcInner(type,data,len,reply,cancellable);rpcDepth--;return result;}
@@ -327,8 +317,7 @@ static int autoConnectTick(void){
   int limit=2*WIRE_ENCODED;
   while(limit--&&Serial_PollRX()>0){
    unsigned char c;int ok;if(Serial_ReadSingle(&c)!=0)break;
-   ok=w_feed(&parser,c,&frame);if(ok<0)errors++;
-   if(ok==1&&frame.len&&(frame.type&0x80))linkSucceeded();
+   ok=w_feed(&autoProbeParser,c,&frame);if(ok<0)errors++;
    if(ok==1&&frame.type==(W_HELLO|0x80)&&frame.seq==autoProbeSeq&&frame.len>=2){
     if(frame.data[0]==E_NONE&&frame.data[1]==1)linkSucceeded();else linkFailed();
     stopAutoProbe();return 1;
@@ -341,15 +330,16 @@ static int autoConnectTick(void){
  autoProbeStarted=1;autoProbeAt=RTC_GetTicks();
  if(!ensureSerial()){linkFailed();return 1;}
  memset(&frame,0,sizeof(frame));frame.type=W_HELLO;frame.seq=autoProbeSeq=++seq;
- n=w_encode(&frame,bytes);
+ memset(&autoProbeParser,0,sizeof(autoProbeParser));n=w_encode(&frame,bytes);
  autoProbeActive=1;
- if(Serial_Write(bytes,(int)n)!=0){stopAutoProbe();if(Serial_IsOpen()!=1)resetSerialTransport();linkFailed();return 1;}
+ if(Serial_Write(bytes,(int)n)!=0){stopAutoProbe();resetSerialTransport();linkFailed();return 1;}
  return 1;
 }
 static int waitEditorKey(int promptMode){
  int k;while(!quitting){
-  int refresh=!rpcDepth&&!closePromptActive?autoConnectTick():0;
-  (void)promptMode;
+  int online=linkOnline;
+  if(promptMode==1&&!rpcDepth&&!closePromptActive)autoConnectTick();
+  int refresh=online!=linkOnline;
   k=keyEvent();if(k)return k;
   if(refresh)return UI_LINK_REFRESH;
   OS_InnerWait_ms(10);
@@ -508,7 +498,7 @@ static void phoneSetup(void){
  WFrame r;uint8_t action=1;int tick,k;char network[32],password[13];
  if(!linkOnline&&!checkedRpc(W_HELLO,0,0,&r))return;
  if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De Atom reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];}
- if(atomMajor<11){message("Atom-update nodig","Installeren via telefoon vereist Atom-firmware V11. Werk eerst de Atom bij. De bestaande instellingen blijven behouden.");return;}
+ if(atomMajor<11){message("Atom-update nodig","Werk de Atom bij met de meegeleverde firmware om via je telefoon in te stellen. De bestaande instellingen blijven behouden.");return;}
  if(!checkedRpc(W_SETUP,&action,1,&r)||r.len!=17)return;
  settingsEpoch++;tick=RTC_GetTicks();
  while(!quitting){
@@ -569,21 +559,21 @@ static void helpAndDevice(void){
  int selected=0,k,i;WFrame reply;
  const char *names[]={"Snel beginnen","Over deze app","Wifi en sleutel wissen"};
  while(!quitting){
-  clear("Hulp en apparaat");
+  clear("Hulp en versie");
   for(i=0;i<3;i++){int y=56+i*34;rounded(8,y-4,368,28,i==selected?C_RAISED:C_PANEL);printAt(18,y,names[i],i==selected?C_MINT:C_TEXT);glyph(362,y,'>',C_MUTED);}
   printAt(12,175,"EXE of →: openen · EXIT: terug",C_MUTED);footer("Open","","","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)message("Snel beginnen","1. Open Wifi en account en volg de stappen op je telefoon.\n2. Kies een model.\n3. Typ je vraag en druk op Stuur.\n\nEXIT gaat terug. MENU vraagt om afsluiten.\n\nJe gebruikt je eigen OpenAI API-tegoed. Een ChatGPT-abonnement bevat dit niet.");
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 15.0\n\nJe chats staan op je rekenmachine. Je wifi en sleutel staan op de Atom.\n\nEen internetverbinding en eigen API-tegoed zijn nodig. AI kan fouten maken; controleer de uitleg.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 16.0\n\nJe chats staan op je rekenmachine. Je wifi en sleutel staan op de Atom.\n\nEen internetverbinding en eigen API-tegoed zijn nodig. AI kan fouten maken; controleer de uitleg.");
   if(selected==2&&confirm("Wifi en API-sleutel van de Atom wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Stel Wifi en account opnieuw in om verder te gaan.");}
   }
  }
 }
 static void paintSettings(int selected){
- int i,index=modelChoiceIndex(publicModel);const char *names[]={"Wifi en account","Model","Verbinding","Scherm en bediening","Hulp en apparaat"};
+ int i,index=modelChoiceIndex(publicModel);const char *names[]={"Wifi en account","Model","Verbinding","Scherm en bediening","Hulp en versie"};
  const char *values[]={publicSSID[0]?publicSSID:"Instellen",index>=0?modelChoices[index].label:publicModel[0]?"Zelf ingesteld":"Kies een model",linkOnline?"Verbonden":"Verbroken","Aanpassen","Openen"};
  clear("Instellingen");
  for(i=0;i<5;i++){
@@ -597,7 +587,7 @@ static void settings(void){
  int selected=0,k;uint8_t configured[4]={0};
  if(!settingsKnown&&linkOnline)refreshSettings(configured);
  while(!quitting){
-  paintSettings(selected);k=waitKey();
+  paintSettings(selected);k=waitEditorKey(1);
   if(k==UI_LINK_REFRESH){if(linkOnline&&!settingsKnown)refreshSettings(configured);continue;}
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<4)selected++;
@@ -630,7 +620,7 @@ static void diagnose(void){
    OS_InnerWait_ms(60);
   }
   if(quitting)return;
-  if(!successes){linkOnline=0;linkMisses=3;if(!failureSince)failureSince=RTC_GetTicks();}
+  if(!successes){while(linkMisses<3)linkFailed();linkOnline=0;}
   if(successes==checked&&successes&&(retries>beforeRetries||errors>beforeErrors))successes--;
   while(!quitting){
    paintDiagnosis(!linkOnline?0:successes,checked);k=waitKey();
@@ -678,10 +668,8 @@ static void readAnswer(int contextWasDropped){
 
 #include "chats.h"
 static void paintLoading(int phase){
- static const int dots[8][2]={{0,-56},{40,-40},{56,0},{40,40},{0,56},{-40,40},{-56,0},{-40,-40}};
- int i;clear("ChatGPT");drawLogo(152,64,80,C_MINT);
- for(i=0;i<8;i++)rounded(190+dots[i][0],102+dots[i][1],5,5,i==(phase%8)?C_MINT:C_LINE);
- printAt(24,175,"EXIT: annuleren · MENU: afsluiten",C_MUTED);footer("Annuleer","","","","","");show();
+ static const unsigned short pulse[8]={0x7737,0x87b8,0x9fda,0xb7fc,0xc7fd,0xb7fc,0x9fda,0x87b8};
+ clear("ChatGPT");drawLogo(152,68,80,pulse[phase%8]);show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
 static void askWork(void){
@@ -723,7 +711,7 @@ static void beginSession(void){
  quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
- linkMisses=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
+ linkMisses=0;settingsKnown=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();

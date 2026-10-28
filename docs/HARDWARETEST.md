@@ -262,3 +262,13 @@ getallen of protocolwaarden tonen. Controleer echte antwoorden met = en
 wiskundige tekens, de laadanimatie en annuleren zonder dubbele betaalde vraag.
 De tests voor TX-drukte, gedeelde deel-frame-parser en herstel met cooldown
 zitten in hosttests; die vervangen geen test met echte voeding/GND/draden.
+
+## V16 — V13 als verbindingsbasis
+
+Volg UPGRADE-V16.md. Test veel toetsen, twintig MENU/heropeningen en andere Casio-apps.
+Laat Instellingen minstens 30 seconden stilstaan; gewone heartbeatberichten mogen
+geen flikkeren of selectiesprongen geven. Test iedere rij met EXE/rechts, EXIT/links
+terug, MENU → Blijven in een bevestiging, Atom uit/aan en de drie-miss herstelroute.
+Controleer met een echte vraag het pulserende logo zonder statuslijst/knoppenbalk,
+annuleren met EXIT/F1 en leesbare =-tekens zonder gewijzigde opslag.
+De versie hoort alleen bij Instellingen → Hulp en versie → Over deze app.

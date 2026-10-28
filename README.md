@@ -1,31 +1,30 @@
-# ChatGPT V15.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V16.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-**Vanaf V11 t/m V14: vervang alleen `dist/ChatGPT.g3a`. Atom blijft V11.0.**
-Zie [UPGRADE-V15.md](UPGRADE-V15.md), [kopersgids](docs/V15-STARTGIDS.md) en
-[demonstratieplan](docs/V15-TIKTOK.md).
+**Vanaf V11 t/m V15: vervang alleen `dist/ChatGPT.g3a`. De Atom blijft V11.0.**
+Zie [UPGRADE-V16.md](UPGRADE-V16.md) en [de korte gebruikersgids](docs/V16-STARTGIDS.md).
 
-V15 vereenvoudigt de app voor kopers:
+V16 herneemt de verbindingsafhandeling en fysieke toetsdecoder van V13,
+met de gewenste verbeteringen aan de interface:
 
-- Rechtsboven alleen **Verbonden** of **Verbroken**: contact met de module.
-- Vijf duidelijke instellingen: Wifi en account, Model, Verbinding, Scherm en
-  bediening, Hulp en apparaat. Open elke pijl met EXE, pijl rechts of F1 Open.
-- Verbindingscontrole in gewone taal, zonder technische cijfers of instellingen.
-- Tijdens versturen een geanimeerd ChatGPT-logo, zonder technische statuslijst.
-- Geen ruimtepercentage. F3 opent Chats; er is geen aparte =-knop meer.
-- Gewone en Unicode-varianten van = worden leesbaar getoond in antwoorden.
-  De originele tekst blijft ongewijzigd in opslag en gesprekscontext.
-- Eén ontvangstparser voor achtergrond- en gewone antwoorden; tijdelijke
-  verzenddrukte en korte stiltes sluiten de poort niet meer automatisch.
+- Rechtsboven **Verbonden** of **Verbroken**: contact met de module.
+- Tijdens wachten alleen een pulserend ChatGPT-logo onder de vaste bovenbalk.
+  EXIT of F1 annuleert; een al verstuurde aanvraag kan nog kosten maken.
+- Leesbare `=`-tekens in antwoorden; oorspronkelijke tekst blijft bewaard.
+- Vijf duidelijke instellingen, openen met EXE, pijl rechts of F1 Open.
+- De versie staat alleen onder Instellingen → Hulp en versie → Over deze app.
+- Geen ruimtemeter, technische voortgangslijst of aparte =-knop. F3 opent Chats.
+- Geen schermhertekening voor ieder achtergrondbericht; alleen een echte
+  statusverandering werkt de status van het invoer-/instellingenmenu bij.
 
 EXIT blijft binnen de app. Alleen MENU vraagt om afsluiten; Blijven bewaart je
-concept. Je eigen OpenAI API-account, betaald tegoed en wifi blijven nodig.
-Modelkeuze heeft indicatieve relatieve kosten; geen vast bedrag per vraag.
+concept. Eigen OpenAI API-tegoed en wifi blijven nodig. De drie modellen hebben
+indicatieve relatieve kosten, zonder gegarandeerde prijs per vraag.
 
-[De V15-schermen](docs/design/V15-actual-screens.png) en
-[de verticale preview met laadanimatie](docs/design/V15-tiktok-preview.mp4)
-komen uit de echte UI-renderer in hosttests, niet uit een fysieke opname.
-**Validatie:** dertien ASan/UBSan-testgroepen, SH4-build en 40 menuheropeningen.
-Fysieke V15-werking, montage en API-toegang moeten vóór verkoop nog worden getest.
+[De V16-schermen](docs/design/V16-actual-screens.png) komen uit de werkelijke
+UI-renderer in hosttests. [Ontwerp en bediening](docs/V16-ONTWERP.md) beschrijft
+de gemaakte keuzes. Dertien ASan/UBSan-testgroepen en de SH4-build slagen,
+inclusief 40 gesimuleerde menuheropeningen. Fysieke werking moet op jouw hardware
+worden gecontroleerd; de preview is geen apparaatfoto.
 
 ## Windows: installeren
 

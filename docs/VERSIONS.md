@@ -260,3 +260,14 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Achtergrondcontroles op meer schermen, afgeschermd tijdens foreground-RPC/modal.
 - Atom V11 en fysieke toetsdecoder/native-menu-route blijven ongewijzigd.
 - Dertien testgroepen en 40 menucycli; fysieke V15-duurtest/API-test nog nodig.
+
+## V16.0 — V13-verbinding met opgeruimde interface
+
+- Herstelde V13 UART-retries, aparte heartbeat-parser en drie-miss herstel.
+- Geen V15 herstel-cooldown, TX-wachtlus of achtergrondverkeer in ieder dialoogvenster.
+- Alleen bij gewijzigde verbindingsstatus het invoer-/instellingenmenu hertekenen.
+- V15-instellingen behouden; appversie uitsluitend onder Hulp en versie.
+- Pulserend laadlogo zonder voortgangstekst/knoppenbalk; antwoorden met leesbare =.
+- Geneste bevestiging wordt hersteld na MENU → Blijven; sessiecache wordt gewist bij heropenen.
+- Atom-firmware V11 ongewijzigd; dertien hosttestgroepen en SH4-build.
+- Geen fysieke duurtest of betaalde API-test uitgevoerd in deze omgeving.

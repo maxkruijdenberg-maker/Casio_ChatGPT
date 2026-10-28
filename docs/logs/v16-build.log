@@ -1,0 +1,5 @@
+SH4 Casio build: PASS
+Script: bash tools/build-casio.sh
+Atom not rebuilt: identical to v11.0.0
+ChatGPT.g3a bytes: 77716
+SHA256: 0ca9eb104ecf6111b75680d359a265db43cf7506fc7737f0a2b1c4b443a88844

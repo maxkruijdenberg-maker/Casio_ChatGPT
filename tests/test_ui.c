@@ -9,6 +9,7 @@
 #include "../atom/ChatGPTAtom/upload.h"
 static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216],startupSnapshot[384*216];
 static unsigned short *deviceFramebuffer=framebuffer;
+static int emulateQuestion=0,emulatedStatus=0,verifyLogoOnly=0,logoFrames=0;
 static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initKeys=0;
 static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
@@ -62,6 +63,11 @@ static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
 void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
+ if(verifyLogoOnly&&loadingActive&&!closePromptActive){
+  for(int y=160;y<216;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
+  logoFrames++;
+ }
+
  assert(colorMode==1&&statusMode==3);assert(dma[0]>=0&&dma[1]<384&&dma[2]>=0&&dma[3]<216);
  for(int y=dma[2];y<=dma[3];y++)memcpy(lcd+y*384+dma[0],deviceFramebuffer+y*384+dma[0],(dma[1]-dma[0]+1)*sizeof(unsigned short));fullCopies++;
  assert(!memcmp(lcd,deviceFramebuffer,sizeof(lcd)));
@@ -136,6 +142,12 @@ int Serial_Write(const unsigned char*p,int n){
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
+ case W_ALLOC:assert(emulateQuestion);r.len=5;w_put32(r.data+1,1234);break;
+ case W_ASK:assert(emulateQuestion&&w_get32(f.data)==1234);break;
+ case W_STATUS:
+  if(!emulateQuestion){r.data[0]=E_REQUEST;break;}
+  r.len=10;r.data[1]=emulatedStatus<4?S_WIFI+emulatedStatus++:S_READY;
+  w_put16(r.data+3,(uint16_t)strlen(servedAnswer));w_put32(r.data+6,1234);break;
  case W_READ:{
   if(!servedAnswer){r.data[0]=E_REQUEST;break;}
   size_t offset=w_get16(f.data),length=strlen(servedAnswer);assert(offset<=length);size_t amount=length-offset;
@@ -265,7 +277,7 @@ static void testUARTRecovery(void){
  assert(ensureSerial()&&serialOpen&&osSerialOpen&&serialCloses==closed+1&&serialOpens==opened+1);
  osSerialOpen=0;assert(ensureSerial()&&serialOpen&&osSerialOpen&&serialOpens==opened+2);
  /* A driver write failure is recovered using exactly the same RPC sequence. */
- const int quiet[32]={0};SCRIPT(quiet);writeFailures=1;openFailures=0;expectSameWrite=1;
+ const int quiet[32]={0};SCRIPT(quiet);writeFailures=1;openFailures=1;expectSameWrite=1;
  assert(rpc(W_INFO,0,0,&r,0)==1&&writeFailures==0&&osSerialOpen&&!expectSameWrite&&!openFailures);
  /* Failed opens retry in the background in <1s, without typing a Test command. */
  cleanup();autoProbeStarted=0;openFailures=1;linkOnline=0;linkKnown=0;linkMisses=0;
@@ -275,11 +287,11 @@ static void testUARTRecovery(void){
  /* A single lost heartbeat must leave a healthy UART open and not mark offline. */
  connected=0;autoProbeStarted=0;Serial_ClearRX();assert(autoConnectTick()&&autoProbeActive);
  closed=serialCloses;timeTicks+=1201;assert(autoConnectTick()&&linkOnline&&osSerialOpen&&linkMisses==1&&serialCloses==closed);
- /* Confirmed silence changes status, but must not close a working driver. */
+ /* Confirmed loss requires three missed checks, then exactly one driver reset. */
  for(int miss=2;miss<=3;miss++){
   assert(autoConnectTick()&&autoProbeActive);timeTicks+=1201;assert(autoConnectTick()&&linkMisses==miss);
  }
- assert(!linkOnline&&osSerialOpen&&serialCloses==closed);
+ assert(!linkOnline&&!osSerialOpen&&serialCloses==closed+1);
  connected=1;assert(autoConnectTick()&&autoProbeActive&&osSerialOpen);assert(autoConnectTick()&&linkOnline&&!linkMisses);
  /* Slow metadata (800ms each) must not close a working port or flash Offline. */
  int quietSlow[2048]={0};SCRIPT(quietSlow);replyDelay=800;closed=serialCloses;
@@ -376,7 +388,7 @@ static void testV14NavigationAndModels(void){
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
 }
 
-static void testV15BuyerInterface(void){
+static void testV16BuyerInterface(void){
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];WFrame reply;
  connected=1;replyDelay=0;quitting=0;loadingActive=0;linkOnline=0;settingsKnown=0;atomMajor=11;fakeAtomMajor=11;
  /* Right arrow opens every buyer row. EXE uses the same action. */
@@ -386,29 +398,23 @@ static void testV15BuyerInterface(void){
  int hello=requestCount[W_HELLO];const int diagRight[]={37,0,37,0,27,0,47,0,47};SCRIPT(diagRight);settings();assert(requestCount[W_HELLO]>=hello+3);
  const int screenRight[]={37,0,37,0,37,0,27,0,47,0,47};SCRIPT(screenRight);settings();
  const int helpRight[]={37,0,37,0,37,0,37,0,27,0,27,0,47,0,47,0,47};SCRIPT(helpRight);settings();
- /* Short queue congestion does not close/reopen the driver. */
- assert(ensureSerial());int closes=serialCloses,opens=serialOpens;
- const int quiet[512]={0};SCRIPT(quiet);writeFailures=3;expectSameWrite=1;
- assert(rpc(W_INFO,0,0,&reply,0)==1&&!expectSameWrite&&serialCloses==closes&&serialOpens==opens);
- /* A real OS-port loss still recovers using the identical request bytes. */
- SCRIPT(quiet);writeFailures=1;dropPortOnWriteFailure=1;openFailures=1;expectSameWrite=1;
- assert(rpc(W_INFO,0,0,&reply,0)==1&&!expectSameWrite&&!openFailures&&osSerialOpen);
- /* Preserve a half-read heartbeat across a foreground handoff: no fake CRC error. */
- Serial_ClearRX();memset(&parser,0,sizeof(parser));autoProbeActive=1;autoProbeSeq=201;autoProbeAt=timeTicks;
- WFrame late={0};late.type=W_HELLO|0x80;late.seq=201;late.len=5;late.data[1]=1;
- unsigned char bytes[WIRE_ENCODED];size_t n=w_encode(&late,bytes),cut=n/2;
- memcpy(rx,bytes,cut);rxAt=0;rxEnd=cut;replyReadyAt=timeTicks;int beforeErrors=errors;
- autoConnectTick();assert(parser.n>0&&autoProbeActive);
- rxAt=0;rxEnd=n-cut;memcpy(rx,bytes+cut,n-cut);
- SCRIPT(quiet);assert(rpc(W_INFO,0,0,&reply,0)==1&&errors==beforeErrors&&!parser.n);
- /* Sustained absence gets one delayed repair, never a reset loop. */
- connected=0;autoProbeStarted=0;linkMisses=0;failureSince=0;repairStarted=0;Serial_ClearRX();
- closes=serialCloses;
- for(int miss=0;miss<3;miss++){autoConnectTick();timeTicks+=1201;autoConnectTick();}
- assert(!linkOnline&&serialCloses==closes);
- timeTicks+=15001;autoConnectTick();timeTicks+=1201;autoConnectTick();assert(serialCloses==closes+1);
- autoConnectTick();timeTicks+=1201;autoConnectTick();assert(serialCloses==closes+1);
+ /* V13 transport policy: a single missed probe keeps the port, three
+  * confirmed misses reset once. Shared UI changes must not add paid requests. */
+ assert(ensureSerial());int closes=serialCloses;Serial_ClearRX();
+ connected=0;linkMisses=0;autoProbeStarted=0;
+ for(int miss=1;miss<=3;miss++){autoConnectTick();timeTicks+=1201;autoConnectTick();assert(linkMisses==miss);}
+ assert(!linkOnline&&serialCloses==closes+1);
  connected=1;autoConnectTick();autoConnectTick();assert(linkOnline&&!linkMisses);
+ const int quiet[512]={0};
+ /* Two heartbeat intervals on an idle settings page cause no full repaint.
+  * Selection stays on Model, then Right still opens the same row. */
+ settingsKnown=1;linkOnline=1;autoProbeStarted=0;autoProbeActive=0;
+ int idle[1008]={37};idle[1001]=27;idle[1003]=47;idle[1005]=47;
+ script(idle,1006);keyAdvanceMs=25;int frames=fullCopies;
+ settings();keyAdvanceMs=0;assert(fullCopies-frames==4);
+ /* MENU -> Blijven inside another confirmation restores that confirmation. */
+ const int nested[]={0,0,0,48,0,0,0,69,0,0,0,79};SCRIPT(nested);
+ assert(confirm("Deze wijziging opslaan?")&&!quitting&&!closePromptActive);
  /* Received answers are rendered compatibly, never rewritten in history. */
  servedAnswer="𝑥 − 2 ＝ 4; x ≠ 3";SCRIPT(quiet);assert(fetchAnswer((unsigned)strlen(servedAnswer)));strcpy(lastQuestion,"Los op");activeChatSlot=-1;
  const int back[]={47};SCRIPT(back);readAnswer(0);
@@ -419,6 +425,15 @@ static void testV15BuyerInterface(void){
  replyDelay=1000;const int cancelLoader[]={79};SCRIPT(cancelLoader);loadingActive=1;loadingAt=timeTicks;
  assert(rpc(W_STATUS,0,0,&reply,1)==-2&&!quitting);loadingActive=0;replyDelay=0;Serial_ClearRX();
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
+ /* Full simulated question through WIFI/TIME/MODEL/API to the answer.
+  * No network/API is called: the host emulates only UART replies. */
+ int waitAnswer[200]={0};waitAnswer[199]=47;SCRIPT(waitAnswer);
+ connected=1;fakeAtomMajor=11;libraryReady=1;activeChatSlot=-1;unsavedReply=0;contextDirty=1;
+ strcpy(prompt,"Wat is 23+42?");servedAnswer="23 + 42 ＝ 65";
+ emulateQuestion=verifyLogoOnly=1;emulatedStatus=logoFrames=0;int beforeAsk=requestCount[W_ASK];
+ ask();assert(!loadingActive&&logoFrames>4&&emulatedStatus==4&&requestCount[W_ASK]==beforeAsk+1);
+ assert(!strcmp(displayedAnswer,"23 + 42 = 65")&&!strcmp(answer,servedAnswer)&&!unsavedReply);
+ emulateQuestion=verifyLogoOnly=0;servedAnswer=0;
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
 }
 
@@ -482,7 +497,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV15BuyerInterface();
+ testMenuFailures();testV14NavigationAndModels();testV16BuyerInterface();
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -504,6 +519,6 @@ int main(int argc,char **argv){
   connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V15 buyer settings with Right/EXE, customer-only diagnosis, persistent UART on missed replies, transient TX backpressure without driver reset, shared partial-frame handoff, answer equality rendering with originals preserved, animated logo and cancellation without paid requests; V14 MENU-only modal exit and cancellation preserving drafts/UART, root EXIT stays, SHIFT/symbol equality input, all model presets saved without paid requests, legacy model cancellation, single Settings diagnosis; actual Casio editor with host device stubs: phone setup start/stop/old firmware guard/physical MENU stop without paid requests, ALPHA lock, one-shot SHIFT math, atomic function tokens, automatic first capital, exact secret case, masked display, digit toggle, UTF-8 cursor/deletion, offline settings, secret read restrictions, saved model editing, answer paging, offline sidebar, saved turn navigation/deletion, full question reading, no-POST context restore and full-screen corner test, persistent scale/pan settings, cancel/reset/no-space handling and UART recovery from OS-open/local-closed and OS-closed/local-open states, write failure and failed open, 800ms delayed metadata without closing UART, three-miss status hysteresis with no reset on short silence, cooldown-limited repair on prolonged failure, automatic settings reconnect and continuous typing with delayed heartbeat ACK and no UART close, no saved closing-dialog flash across forty sessions through the resolved native SaveAndOpenMainMenu and timer/key-wait fallback, strict injection-after-wait ordering, stale events, held keys, OS-owned UART preserved across MENU/re-entry, no residual quit callback while selecting eight other icons per session, allocation/start/interruption failures without dropped UART or leaked timer, changed VRAM/DMA and the LCD frame.");
+ puts("PASS: V16 V13 transport recovery and raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, logo-only animated waiting/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

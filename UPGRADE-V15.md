@@ -1,3 +1,5 @@
+> Nieuwste versie: [UPGRADE-V16.md](UPGRADE-V16.md). Dit document beschrijft V15.
+
 # V15 — eenvoudiger voor kopers
 
 ## Installeren vanaf V11, V12, V13 of V14
