@@ -486,15 +486,18 @@ static void buildConversation(void){
  if(chatLiveTurn>=0){if(!loadConversationTurn(chatLiveTurn)||!conversation_add(&chatTimeline,chatLiveTurn,field,displayedAnswer,43))chatReadError=1;}
  chatTimelineReady=1;storageClose();
 }
+#define CHAT_TEXT_TOP 40
 static int conversationRows(const char *buf){int rows=composerRows(buf);return rows>3?3:rows;}
 static void paintConversation(int visible){
  buildConversation();if(visible<1)return;
  chatScroll=chatFollowTail?conversation_tail(&chatTimeline,visible):conversation_clamp(&chatTimeline,chatScroll,visible);
  for(int row=0;row<visible;){
   ConversationLine line;if(!conversation_line(&chatTimeline,chatScroll+row,&line))break;
-  int y=54+row*14;
-  if(line.part==0)printAt(12,y,"Jij",C_PURPLE);
-  else if(line.part==2)printAt(12,y,"ChatGPT",C_MINT);
+  int y=CHAT_TEXT_TOP+row*14;
+  if(line.part==0){
+   rounded(10,y,64,14,C_PURPLE_SOFT);ellipse(21,y+4,2,2,C_PURPLE);rounded(17,y+8,9,4,C_PURPLE);printAt(34,y,"Jij",C_TEXT);
+  }
+  else if(line.part==2){rounded(10,y,96,14,C_BLUE_SOFT);drawLogo(15,y+1,12);printAt(34,y,"ChatGPT",C_TEXT);}
   else if(line.part==1||line.part==3){
    int take=1;ConversationLine next;
    while(row+take<visible&&conversation_line(&chatTimeline,chatScroll+row+take,&next)&&next.turn==line.turn&&next.part==line.part&&next.row==line.row+take)take++;
@@ -503,7 +506,7 @@ static void paintConversation(int visible){
   }
   row++;
  }
- scrollbar(376,54,visible*14,chatScroll,visible,chatTimeline.total);storageClose();
+ scrollbar(376,CHAT_TEXT_TOP,visible*14,chatScroll,visible,chatTimeline.total);storageClose();
 }
 static int composerRows(const char *buf){
  int row,col;cursorPosition(buf,strlen(buf),&row,&col);row++;return row>ROWS?ROWS:row;
@@ -511,12 +514,13 @@ static int composerRows(const char *buf){
 static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *title,int secret,int promptMode,
  int letters,int upper,int shifted,int firstLetter,int first){
  int row,col,top=52,left=12,visible=ROWS;char label[100];cursorPosition(buf,cursor,&row,&col);
- clear(title);rounded(8,35,152,15,C_RAISED);
- sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
+ clear(title);
+ sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");
+ if(promptMode!=1||!hasConversation()){rounded(8,35,152,15,C_RAISED);printAt(12,35,label,C_MUTED);}
  (void)cap;
  if(promptMode==1){
   visible=hasConversation()?conversationRows(buf):composerRows(buf);top=167-visible*14;left=16;
-  if(hasConversation())paintConversation((top-6-54)/14);
+  if(hasConversation())paintConversation((top-6-CHAT_TEXT_TOP)/14);
   else if(visible<=2){
    abstractLogo(192,76,48,-1);
    centered(117,activeChatSlot>=0?"Wat wil je nog weten?":"Waar kan ik je mee helpen?",C_TEXT);
@@ -532,7 +536,8 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPageAt(buf,first,secret,left,top,visible);}
  {int x=left+col*8,y=top+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<172)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw",unsavedReply?"Bewaar":"Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
- printAt(8,175,promptMode==1?(chatReadError?"Een deel van je chat is niet leesbaar.":hasConversation()?"↑↓ gesprek · ←→ cursor":"OPTN: chats · MENU: afsluiten"):"DEL: wissen · Pijlen: cursor · EXIT: terug",chatReadError&&promptMode==1?C_RED:C_MUTED);show();
+ printAt(8,175,promptMode==1?(chatReadError?"Een deel van je chat is niet leesbaar.":hasConversation()?"↑↓ gesprek · ←→ cursor":"OPTN: chats · MENU: afsluiten"):"DEL: wissen · Pijlen: cursor · EXIT: terug",chatReadError&&promptMode==1?C_RED:C_MUTED);
+ if(promptMode==1&&hasConversation()&&!chatReadError){sprintf(label,"%s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",shifted?" S":"");printAt(320,175,label,C_MUTED);}show();
 }
 static void prepareMenuSnapshot(void){
  int known=linkKnown,online=linkOnline,seen=linkSeen,active=autoProbeActive;
@@ -566,8 +571,8 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(k==44){u_delete(buf,&cursor);if(!buf[0])firstLetter=autoCapital;continue;}
   if(k==KEY_PRGM_ACON){if(confirm("Dit invoerveld helemaal wissen?")){erase(buf,cap);cursor=0;firstLetter=autoCapital;}continue;}
   if(promptMode==1&&hasConversation()&&(k==KEY_PRGM_UP||k==KEY_PRGM_DOWN)){
-   buildConversation();int max=conversation_tail(&chatTimeline,(167-visible*14-6-54)/14);
-   chatScroll=conversation_clamp(&chatTimeline,chatScroll+(k==KEY_PRGM_UP?-1:1),(167-visible*14-6-54)/14);chatFollowTail=chatScroll==max;continue;
+   buildConversation();int max=conversation_tail(&chatTimeline,(167-visible*14-6-CHAT_TEXT_TOP)/14);
+   chatScroll=conversation_clamp(&chatTimeline,chatScroll+(k==KEY_PRGM_UP?-1:1),(167-visible*14-6-CHAT_TEXT_TOP)/14);chatFollowTail=chatScroll==max;continue;
   }
   if(k==KEY_PRGM_UP){int i;for(i=0;i<COLS&&cursor;i++)cursor=u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_DOWN){int i;for(i=0;i<COLS&&cursor<strlen(buf);i++)cursor=u_next(buf,cursor);continue;}
@@ -777,7 +782,7 @@ static int fetchModels(void){
  return ok;
 }
 static void paintModels(int selected){
- int i,first=(selected/5)*5,count=choiceCount();char id[256],label[80];clear("Model kiezen");
+ int i,count=choiceCount(),first=selected-2;char id[256],label[80];if(first>count-5)first=count-5;if(first<0)first=0;clear("Model kiezen");
  sprintf(label,"%d chatmodellen · %s",count,modelAccountChecked?"jouw account":"vaste lijst");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
@@ -787,7 +792,7 @@ static void paintModels(int selected){
  }
  if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
  printAt(14,177,!count?"Je huidige keuze blijft bewaard.":modelAccountChecked?"Toegang gevonden in je account.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
- footer(count?"Kies":"","Account","Vorig",count?"Info":"","Volgend","Terug");show();
+ scrollbar(378,58,114,first,5,count);footer(count?"Kies":"","Account","",count?"Info":"","","Terug");show();
 }
 static int modelPicker(void){
  int selected=0,k;char id[256],details[1024];
@@ -798,8 +803,6 @@ static int modelPicker(void){
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;
   if(k==KEY_PRGM_DOWN&&selected<count-1)selected++;
-  if(k==KEY_PRGM_F5&&count){selected+=5;if(selected>=count)selected=count-1;}
-  if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
   if(k==KEY_PRGM_F2){
    if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];}}
    if(atomMajor<22||(atomMajor==22&&atomMinor<3))message("Atom bijwerken","Werk ook de Atom bij naar V22.3 met de meegeleverde firmware. Deze versie controleert modellen zonder de grote accountlijst te bewaren. Wifi en sleutel blijven bewaard.");
@@ -827,7 +830,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.5\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.6\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }

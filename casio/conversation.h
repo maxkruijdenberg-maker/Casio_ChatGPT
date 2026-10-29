@@ -11,6 +11,7 @@ typedef struct {
  ConversationEntry entries[CONVERSATION_CAPACITY];
 } ConversationTimeline;
 /* part: 0 Jij label, 1 question text, 2 ChatGPT label, 3 answer text, 4 blank.
+ * Part 4 separates question/answer and consecutive pairs.
  * Text row indexes are relative to the respective wrapped message. */
 typedef struct {int turn,part,row;} ConversationLine;
 static void conversation_init(ConversationTimeline *timeline){
@@ -21,7 +22,7 @@ static int conversation_add(ConversationTimeline *timeline,int turn,const char *
  if(timeline->count>=CONVERSATION_CAPACITY||turn<0||!question||!answer||width<1)return 0;
  entry=&timeline->entries[timeline->count];entry->turn=turn;entry->start=timeline->total;
  entry->qLines=line_count(question,width);entry->aLines=line_count(answer,width);
- timeline->total+=entry->qLines+entry->aLines+3;timeline->count++;return 1;
+ timeline->total+=entry->qLines+entry->aLines+4;timeline->count++;return 1;
 }
 static int conversation_line(const ConversationTimeline *timeline,int index,ConversationLine *line){
  int i,row;
@@ -29,12 +30,13 @@ static int conversation_line(const ConversationTimeline *timeline,int index,Conv
  for(i=0;i<timeline->count;i++){
   const ConversationEntry *entry=&timeline->entries[i];
   row=index-entry->start;
-  if(row<0||row>=entry->qLines+entry->aLines+3)continue;
+  if(row<0||row>=entry->qLines+entry->aLines+4)continue;
   line->turn=entry->turn;line->row=0;
   if(row==0)line->part=0;
   else if(row<=entry->qLines){line->part=1;line->row=row-1;}
-  else if(row==entry->qLines+1)line->part=2;
-  else if(row<=entry->qLines+entry->aLines+1){line->part=3;line->row=row-entry->qLines-2;}
+  else if(row==entry->qLines+1)line->part=4;
+  else if(row==entry->qLines+2)line->part=2;
+  else if(row<=entry->qLines+entry->aLines+2){line->part=3;line->row=row-entry->qLines-3;}
   else line->part=4;
   return 1;
  }

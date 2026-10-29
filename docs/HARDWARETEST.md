@@ -382,3 +382,11 @@ ALPHA/hoofdletterstand behouden na versturen. Alleen 152 bytes tijdlijnmetadata,
 geen samengeplakte chattekst; live antwoordbuffers blijven intact bij scrollen.
 Atom, opslagformaat en native menuhelpers ongewijzigd. Test gesprekcontinuatie,
 concepten, oude chats, grens van acht paren, opslagfout en heropenen op echte hardware.
+
+
+## V22.6 — modelpijlen en chatopmaak
+
+Modelkeuze: geen Vorig/Volgend, geen F3/F5-paginering; schuivende selectie en
+scrollbalk. Chat: rolbadges met pictogram, extra witregel na vraag, invoerstand
+rechtsonder. Historie begint op y40 zodat de extra ruimte niet ten koste gaat
+van een zichtbare regel. Atom, opslag, menuhelpers en math-rendering ongewijzigd.

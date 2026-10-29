@@ -473,8 +473,8 @@ static void testAccountModels(void){
  char id[256];assert(!strcmp(choiceId(2,id),"gpt-6.1-terra"));
  strcpy(publicModel,"gpt-6-astra");strcpy(storedModel,publicModel);
  const int select[]={37,0,37,0,27};SCRIPT(select);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-terra"));
- const int pageForward[]={39,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-5.4-mini"));
- const int pageBack[]={59,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-sol"));
+ const int pageForward[]={39,0,59,0,37,0,37,0,37,0,37,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-5.4-mini"));
+ const int pageBack[]={28,0,28,0,28,0,28,0,28,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-sol"));
  /* Information never applies a model or dispatches a paid question. */
  int writes=requestCount[W_APPLY];const int info[]={49,0,47,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
  char details[1024];modelDetails(1,details,sizeof(details));
@@ -536,7 +536,7 @@ static void testUnifiedConversation(void){
  int up[201],down[201];for(int i=0;i<100;i++){up[i*2]=28;up[i*2+1]=0;down[i*2]=37;down[i*2+1]=0;}up[200]=down[200]=47;
  strcpy(prompt,"Bewaar mijn concept");connected=0;int contexts=requestCount[W_CONTEXT];SCRIPT(up);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);
  assert(chatScroll==0&&!strcmp(prompt,"Bewaar mijn concept")&&!strcmp(lastQuestion,"Cb")&&!strcmp(answer,"Tweede vervolgantwoord.")&&activeChatSlot==slot&&viewTurn==4);
- SCRIPT(down);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==conversation_tail(&chatTimeline,6)&&requestCount[W_ASK]==paid+2&&requestCount[W_CONTEXT]==contexts&&!strcmp(prompt,"Bewaar mijn concept"));
+ SCRIPT(down);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==conversation_tail(&chatTimeline,7)&&requestCount[W_ASK]==paid+2&&requestCount[W_CONTEXT]==contexts&&!strcmp(prompt,"Bewaar mijn concept"));
  connected=1;prompt[0]=0;unsavedReply=1;strcpy(lastQuestion,"Nog niet bewaard");strcpy(answer,"Een lokaal antwoord.");
  const int savePending[]={59,0,47};SCRIPT(savePending);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);
  assert(!unsavedReply&&savedChats[slot].turns==6&&activeChatSlot==slot&&requestCount[W_ASK]==paid+2);
@@ -583,7 +583,7 @@ int main(int argc,char **argv){
  const int chooseChat[]={37,0,31};SCRIPT(chooseChat);assert(chatSidebar()==1&&activeChatSlot==0&&viewTurn==1);
  int scrollUp[101],scrollDown[101];for(int i=0;i<50;i++){scrollUp[i*2]=28;scrollUp[i*2+1]=0;scrollDown[i*2]=37;scrollDown[i*2+1]=0;}scrollUp[100]=scrollDown[100]=47;
  SCRIPT(scrollUp);readAnswer(0);assert(chatScroll==0&&viewTurn==1&&!strcmp(lastQuestion,"Volgende vraag"));
- SCRIPT(scrollDown);readAnswer(0);assert(chatScroll==conversation_tail(&chatTimeline,6)&&viewTurn==1&&!strcmp(answer,"Antwoord twee"));
+ SCRIPT(scrollDown);readAnswer(0);assert(chatScroll==conversation_tail(&chatTimeline,7)&&viewTurn==1&&!strcmp(answer,"Antwoord twee"));
  assert(beforeOpen==requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO]);
  const int questionView[]={78,0,47,0,47};SCRIPT(questionView);readAnswer(0);
  SCRIPT(leave);screenTest();assert(framebuffer[0]==C_MINT&&framebuffer[384*216-1]==C_MINT);
@@ -674,6 +674,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }
