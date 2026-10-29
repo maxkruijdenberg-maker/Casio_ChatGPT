@@ -162,7 +162,7 @@ int Serial_Write(const unsigned char*p,int n){
   if(amount>WIRE_MAX-1)amount=WIRE_MAX-1;r.len=amount+1;memcpy(r.data+1,servedAnswer+offset,amount);break;
  }
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
- case W_DEVICE:r.len=8;r.data[1]=fakeAtomMajor;r.data[2]=0;r.data[3]=15;w_put32(r.data+4,fakeBoot);break;
+ case W_DEVICE:r.len=8;r.data[1]=fakeAtomMajor;r.data[2]=3;r.data[3]=15;w_put32(r.data+4,fakeBoot);break;
  case W_SETUP:
   assert(f.len==1);fakePortal=f.data[0]==1?1:f.data[0]==2?0:fakePortal;
   r.len=17;r.data[1]=fakePortal;w_put16(r.data+3,0x1234);if(fakePortal)memcpy(r.data+5,"EXAMPLE23456",12);break;
@@ -448,7 +448,7 @@ static void testV17BuyerInterface(void){
 }
 
 static void testAccountModels(void){
- connected=1;fakeAtomMajor=atomMajor=20;modelsLoading=1;remoteModelCount=0;loadingActive=0;
+ connected=1;fakeAtomMajor=atomMajor=22;atomMinor=3;modelsLoading=1;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];
  int quiet[300]={0};
  /* Merely opening the fixed list must not contact the model endpoint. */
@@ -486,6 +486,10 @@ static void testAccountModels(void){
   * EXE, F1, Right, Info and page navigation are safe with zero entries. */
  servedModels="gpt-image-1\nwhisper-1\n";SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==2&&choiceCount()==0);
  writes=requestCount[W_APPLY];const int empty[]={31,0,79,0,27,0,49,0,39,0,59,0,47};SCRIPT(empty);assert(!modelPicker()&&requestCount[W_APPLY]==writes&&!strcmp(storedModel,"gpt-6-astra"));
+ /* A successful account check can return zero accessible maintained models.
+  * That stays empty, rather than falling back to unchecked fixed choices. */
+ servedModels="";SCRIPT(quiet);assert(fetchModels()&&modelAccountChecked&&!remoteModelCount&&choiceCount()==0);
+ SCRIPT(empty);assert(!modelPicker()&&!strcmp(storedModel,"gpt-6-astra"));
  /* Long IDs survive transport but aren't presented as supported models. */
  char longList[202];memcpy(longList,"gpt-",4);memset(longList+4,'a',196);longList[200]='\n';longList[201]=0;servedModels=longList;
  SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==1&&choiceCount()==0);
@@ -609,7 +613,7 @@ int main(int argc,char **argv){
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
   SCRIPT(leave);helpAndDevice();snprintf(path,sizeof(path),"%s/help.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
-  remoteModelCount=0;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  remoteModelCount=0;modelAccountChecked=0;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
   modelCheckFailed=1;paintModels(1);snprintf(path,sizeof(path),"%s/models-unchecked.ppm",argv[2]);dumpFrame(path);modelCheckFailed=0;
   strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(1);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
@@ -620,6 +624,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

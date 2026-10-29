@@ -539,13 +539,13 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
 }
 static char publicSSID[33],publicModel[256];
 static unsigned settingsEpoch=0;
-#define REMOTE_MODELS_CAP 65536
+#define REMOTE_MODELS_CAP 4096
 static char *remoteModels=0;
 static unsigned short modelOffsets[1024];
-static int remoteModelCount=0,modelCheckFailed=0;
-static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;modelCheckFailed=0;}
+static int remoteModelCount=0,modelAccountChecked=0,modelCheckFailed=0;
+static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;modelAccountChecked=0;modelCheckFailed=0;}
 static int fetchModels(void);
-static int atomMajor=0,settingsKnown=0;
+static int atomMajor=0,atomMinor=0,settingsKnown=0;
 static int readPublic(int target,char*out,size_t cap){
  uint8_t b[3];size_t at=0,total=0;WFrame r;out[0]=0;
  do {
@@ -561,7 +561,7 @@ static int refreshSettings(uint8_t flags[4]){
  WFrame r;clear("Instellingen");printAt(12,72,"Instellingen ophalen...",C_MUTED);show();
  if(rpc(W_INFO,0,0,&r,0)!=1||r.len<5)return 0;
  settingsKnown=1;memcpy(flags,r.data+1,4);if(!atomMajor)atomMajor=1;
- if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];
+ if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];
   if(r.data[3]&1){if(!readPublic(1,publicSSID,sizeof(publicSSID)))publicSSID[0]=0;
    if(!readPublic(4,publicModel,sizeof(publicModel)))publicModel[0]=0;}
  }
@@ -607,7 +607,7 @@ static void screenSettings(void){
 static void phoneSetup(void){
  WFrame r;uint8_t action=1;int tick,k;char network[32],password[13];
  if(!linkOnline&&!checkedRpc(W_HELLO,0,0,&r))return;
- if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De Atom reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];}
+ if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De Atom reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];atomMinor=r.data[2];}
  if(atomMajor<11){message("Atom-update nodig","Werk de Atom bij met de meegeleverde firmware om via je telefoon in te stellen. De bestaande instellingen blijven behouden.");return;}
  if(!checkedRpc(W_SETUP,&action,1,&r)||r.len!=17)return;
  settingsEpoch++;tick=RTC_GetTicks();
@@ -636,7 +636,7 @@ static void phoneSetup(void){
 /* Keep the transport catalogue intact; expose only maintained text-chat aliases.
  * Zero compatible entries is an empty account view, never an unverified fallback. */
 static int accountHasModel(const char *id){
- if(!remoteModelCount)return 1;
+ if(!modelAccountChecked)return 1;
  for(int i=0;i<remoteModelCount;i++){
   const char *p=remoteModels+modelOffsets[i];size_t n=strlen(id);
   if(!strncmp(p,id,n)&&p[n]=='\n')return 1;
@@ -653,7 +653,7 @@ static const char *choiceId(int index,char out[256]){
 }
 static void modelDetails(int preset,char *out,size_t cap){
  const ModelChoice *m=&modelChoices[preset];
- const char *access=remoteModelCount?"Dit model staat in je account. Dat garandeert nog geen geslaagde chatvraag.":"Toegang met jouw sleutel is nog niet gecontroleerd.";
+ const char *access=modelAccountChecked?"Dit model staat in je account. Dat garandeert nog geen geslaagde chatvraag.":"Toegang met jouw sleutel is nog niet gecontroleerd.";
  const char *format="%s\n\n%s\n\n%s\n\nKosten: %s. Bekijk de API-prijzen bij OpenAI.\n\n%s\nAPI-naam: %s";
  /* The device SDK has sprintf, not snprintf. Bound all six fixed-source fields
   * before formatting; format length overestimates the substitution overhead. */
@@ -661,13 +661,13 @@ static void modelDetails(int preset,char *out,size_t cap){
  sprintf(out,format,m->label,m->description,m->advice,m->cost,access,m->id);
 }
 static int parseModelList(unsigned total){
- unsigned at=0,n=0,start=0;int count=0;remoteModelCount=0;
- if(!remoteModels||!total||total>=REMOTE_MODELS_CAP)return 0;
+ unsigned at=0,n=0,start=0;int count=0;remoteModelCount=0;modelAccountChecked=0;
+ if(!remoteModels||total>=REMOTE_MODELS_CAP)return 0;
  while(at<total){unsigned char c=remoteModels[at++];
   if(c=='\n'){if(!n||count>=1024)return 0;modelOffsets[count++]=(unsigned short)start;start=at;n=0;}
   else if(c<33||c>126||++n>255)return 0;
  }
- if(n||!count)return 0;remoteModels[total]=0;remoteModelCount=count;return 1;
+ if(n||(total&&!count))return 0;remoteModels[total]=0;remoteModelCount=count;modelAccountChecked=1;return 1;
 }
 static int modelFetchCancelled=0,modelFetchError=0;
 static int modelRpc(const uint8_t *b,size_t n,WFrame *r){
@@ -685,9 +685,9 @@ static int fetchModelsWork(void){
  }
  if(quitting)return 0;
  if(r.data[1]!=2){modelFetchError=r.data[2];return 0;}
- total=w_get16(r.data+3);if(!remoteModels||!total||total>=REMOTE_MODELS_CAP)return 0;
+ total=w_get16(r.data+3);if(!remoteModels||total>=REMOTE_MODELS_CAP)return 0;
  /* Do not retain partial lists after a failed refresh. */
- remoteModelCount=0;
+ remoteModelCount=0;modelAccountChecked=0;
  while(pos<total&&!quitting){
   b[0]=2;w_put16(b+1,(uint16_t)pos);
   if(modelRpc(b,3,&r)!=1||r.len<2||pos+r.len-1>total)return 0;
@@ -706,12 +706,12 @@ static const char *modelCheckReason(int error){
  }
 }
 static int fetchModels(void){
- int ok;modelFetchCancelled=modelFetchError=0;remoteModelCount=0;modelCheckFailed=0;
+ int ok;modelFetchCancelled=modelFetchError=0;remoteModelCount=0;modelAccountChecked=0;modelCheckFailed=0;
  if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){modelCheckFailed=1;message("Account niet gecontroleerd","Er is onvoldoende vrij geheugen. Je ziet de vaste modelkeuzes; je huidige model blijft bewaard.");return 0;}}
  loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
  ok=fetchModelsWork();loadingActive=0;
  if(!ok){
-  remoteModelCount=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
+  remoteModelCount=0;modelAccountChecked=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
   if(!quitting&&!modelFetchCancelled){
    char reason[512];const char *why=modelCheckReason(modelFetchError);
    sprintf(reason,"%s\n\nJe ziet de vaste modelkeuzes, niet je accountlijst. Je huidige model blijft bewaard. F2 Account probeert opnieuw.",why);
@@ -722,7 +722,7 @@ static int fetchModels(void){
 }
 static void paintModels(int selected){
  int i,first=(selected/5)*5,count=choiceCount();char id[256],label[80];clear("Model kiezen");
- sprintf(label,"%d chatmodellen · %s",count,remoteModelCount?"jouw account":"vaste lijst");printAt(14,38,label,C_MUTED);
+ sprintf(label,"%d chatmodellen · %s",count,modelAccountChecked?"jouw account":"vaste lijst");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
@@ -730,7 +730,7 @@ static void paintModels(int selected){
   if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
  }
  if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
- printAt(14,177,!count?"Je huidige keuze blijft bewaard.":remoteModelCount?"Toegang gevonden in je account.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
+ printAt(14,177,!count?"Je huidige keuze blijft bewaard.":modelAccountChecked?"Toegang gevonden in je account.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
  footer(count?"Kies":"","Account","Vorig",count?"Info":"","Volgend","Terug");show();
 }
 static int modelPicker(void){
@@ -745,8 +745,8 @@ static int modelPicker(void){
   if(k==KEY_PRGM_F5&&count){selected+=5;if(selected>=count)selected=count-1;}
   if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
   if(k==KEY_PRGM_F2){
-   if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
-   if(atomMajor<20)message("Atom bijwerken","Upload de meegeleverde Atom-firmware om alleen passende modellen uit jouw account te tonen. Wifi en sleutel blijven bewaard.");
+   if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];}}
+   if(atomMajor<22||(atomMajor==22&&atomMinor<3))message("Atom bijwerken","Werk ook de Atom bij naar V22.3 met de meegeleverde firmware. Deze versie controleert modellen zonder de grote accountlijst te bewaren. Wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
    selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
    continue;
@@ -771,9 +771,9 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.2\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.3\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
-   if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
+   if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
  }
 }
@@ -816,7 +816,7 @@ static void settings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
   if(k==KEY_PRGM_F5){helpAndDevice();continue;}
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
-  if(selected==0){phoneSetup();remoteModelCount=0;if(!quitting)refreshSettings(configured);}
+  if(selected==0){phoneSetup();remoteModelCount=0;modelAccountChecked=0;if(!quitting)refreshSettings(configured);}
   if(selected==1)modelPicker();
   if(selected==2)helpAndDevice();
   if(selected==3){deviceSettings();if(!settingsKnown&&linkOnline)refreshSettings(configured);}
@@ -931,7 +931,7 @@ static void beginSession(void){
  quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
- linkMisses=0;settingsKnown=0;remoteModelCount=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
+ linkMisses=0;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomMinor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();

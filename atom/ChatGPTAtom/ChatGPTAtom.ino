@@ -1,4 +1,4 @@
-/* ChatGPT V22.2 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V22.3 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
@@ -20,8 +20,7 @@
 #include "ledger.h"
 #include "trust.h"
 #include "hardware.h"
-#include "model_catalog.h"
-#include "catalog_response.h"
+#include "model_probe.h"
 static const size_t QUESTION_MAX=1024, ANSWER_MAX=8192, HISTORY_MAX=12288, BODY_MAX=32768;
 HardwareSerial Calc(1);
 Preferences prefs;
@@ -54,13 +53,6 @@ class LimitedBody: public Stream {
   if(n>BODY_MAX-body.length()){overflow=true;return 0;}
   if(!body.concat((const char*)p,n)){overflow=true;return 0;}return n;
  }
- int available() override{return 0;}int read() override{return -1;}int peek() override{return -1;}
-};
-/* HTTPClient removes chunk framing before writing to this bounded sink. */
-class CatalogBodySink: public Stream {
- public: CatalogBodyBuffer<String> received;
- size_t write(uint8_t x) override{return received.write(&x,1);}
- size_t write(const uint8_t *p,size_t n) override{return received.write(p,n);}
  int available() override{return 0;}int read() override{return -1;}int peek() override{return -1;}
 };
 static uint8_t httpError(int code){
@@ -146,7 +138,7 @@ static void runApi(void*){performApi();vTaskDelete(nullptr);}
 
 /* Model discovery is free GET work on a separate task, never a completion. */
 static void performCatalog(){
- String ssid,pass,key;bool dirty;uint8_t error=E_NONE;String result;
+ String ssid,pass,key;bool dirty;uint8_t error=E_NONE;String result;uint32_t catalogStarted=millis();
  {Lock l;ssid=cfg[0];pass=cfg[1];key=cfg[2];dirty=wifiDirty;wifiDirty=false;}
  do {
   if(!ssid.length()||!key.length()){error=E_CONFIG;break;}
@@ -157,26 +149,20 @@ static void performCatalog(){
   if(time(nullptr)<1767225600)configTime(0,0,"pool.ntp.org","time.google.com");
   at=millis();while(time(nullptr)<1767225600&&millis()-at<15000)delay(30);
   if(time(nullptr)<1767225600){error=E_TIME;break;}
-  WiFiClientSecure tls;tls.setCACert(ROOT_CA);tls.setHandshakeTimeout(12);tls.setTimeout(20000);
-  HTTPClient http;http.setAcceptEncoding("identity");http.setConnectTimeout(12000);http.setTimeout(20000);http.setReuse(false);
-  if(!http.begin(tls,"https://api.openai.com/v1/models")){error=E_TLS;break;}
-  http.addHeader("Accept","application/json");http.addHeader("Authorization","Bearer "+key);
-  int code=http.GET();if(code!=200){error=httpError(code);http.end();break;}
-  if(http.getSize()>CATALOG_HTTP_MAX){http.end();error=E_BIG;break;}
-  CatalogBodySink incoming;int copied=http.writeToStream(&incoming);
-  /* Free TLS/HTTP buffers before parsing and allocating sorted output. */
-  http.end();tls.stop();
-  if(incoming.received.noMemory){error=E_MEMORY;break;}
-  if(incoming.received.overflow){error=E_BIG;break;}
-  if(copied<0){error=httpError(copied);break;}
-  JsonDocument document;
-  error=catalog_response(incoming.received.text,document);incoming.received.text=String();
+  WiFiClientSecure tls;tls.setCACert(ROOT_CA);tls.setHandshakeTimeout(5);tls.setTimeout(5000);
+  HTTPClient http;http.setConnectTimeout(5000);http.setTimeout(5000);http.setReuse(false);
+  char found[MODEL_PROBE_BYTES];
+  error=probe_model_choices([&](const char *id)->ModelProbeResult{
+   if(millis()-catalogStarted>=60000)return {false,E_TIMEOUT};
+   if(!http.begin(tls,String("https://api.openai.com/v1/models/")+id))return {false,E_TLS};
+   http.addHeader("Authorization","Bearer "+key);
+   int code=http.GET();
+   /* Status alone checks metadata access. Do not allocate or parse the body. */
+   http.end();tls.stop();
+   return code<0?ModelProbeResult{false,httpError(code)}:model_probe_status(code);
+  },found,sizeof(found));
   if(error)break;
-  char *buffer=(char*)malloc(CATALOG_MAX);if(!buffer){error=E_MEMORY;break;}
-  int count=catalog_text(document.as<JsonVariantConst>(),buffer,CATALOG_MAX);document.clear();
-  if(count>0){result=buffer;if(result.length()!=strlen(buffer))error=E_MEMORY;}
-  else error=E_JSON;
-  free(buffer);
+  result=found;if(result.length()!=strlen(found))error=E_MEMORY;
  }while(false);
  {Lock l;catalogError=error;catalogState=error?3:2;if(!error)catalog=std::move(result);catalogRunning=false;}
 }
@@ -287,7 +273,7 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=22;out.data[2]=2;out.data[3]=63;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=22;out.data[2]=3;out.data[3]=63;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}

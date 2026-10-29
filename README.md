@@ -1,23 +1,20 @@
-# ChatGPT V22.2 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.3 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.2-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF-handleiding](docs/Handleiding-V22.2.pdf) · [Offline handleiding](docs/Handleiding-V22.2.html)
+[Installatiepakket](dist/ChatGPT-V22.3-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.3.pdf) · [Offline handleiding](docs/Handleiding-V22.3.html)
 
-**Werk zowel de Atom als de Casio-app bij.** De oude Atom-firmware leest de
-accountlijst rechtstreeks uit de netwerkstream. V22.2 gebruikt de HTTP-library
-om overdrachtsblokken te verwerken voordat de JSON-reader de modellenlijst leest.
-Alleen ChatGPT.g3a vervangen verhelpt dat probleem niet. Laat volledig wissen uit
-en CGPT3 staan. Zie [UPGRADE-V22.2.md](UPGRADE-V22.2.md).
+**Werk ook de Atom bij, zonder volledig wissen.** Vervang daarna ChatGPT.g3a,
+laat CGPT3 staan en herstart de Casio. Zie [UPGRADE-V22.3.md](UPGRADE-V22.3.md).
 
-- F2 Account: gedecodeerde HTTP-body, ID-filtering en veilige grootte-/geheugengrenzen.
-- Melding over de modellenlijst bij accountproblemen; niet over een chatantwoord.
-- Geen dubbele Vraag-knop; F3 Bewaar alleen als lokaal opslaan is mislukt.
-- Vaste modelkeuzes, Info en de paarsblauwe planeet blijven behouden.
-- Betaalde vragen, tokenbudget, ledger, native menu, UART en opslag ongewijzigd.
+F2 Account controleert uitsluitend de elf aangeboden modellen met afzonderlijke
+metadata-GETs. Geen volledige accountrespons of JSON-document in het geheugen.
+Maximaal 256 bytes voor de modelnamen; 4 KiB Casio-buffer in plaats van 64 KiB.
+Een fout publiceert geen gedeeltelijke lijst. Nul toegankelijke namen blijft een
+lege, gecontroleerde lijst. De app vereist de nieuwe Atom voor deze controle.
 
-[Schermen](docs/design/V22.2-actual-screens.png) · [Modelbronnen](docs/V22.2-MODELLEN.md).
-Geen live API-account of echte hardware beschikbaar in de bouwomgeving. Zie de
-[vrijgavecontrole](docs/V22.2-CONTROLE-VOOR-VERKOOP.md) voor ieder samengesteld apparaat.
+Geen wijzigingen aan betaalde vragen, tokenbudget, ledger, UART, native menu of
+chats. De paarsblauwe planeet en Info blijven; de dubbele Vraag-knop blijft weg.
+Er is geen live API-account of fysieke Casio/Atom getest in de bouwomgeving.
 
 ## Windows: installeren
 

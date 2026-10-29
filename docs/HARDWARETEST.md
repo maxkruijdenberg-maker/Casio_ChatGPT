@@ -356,3 +356,11 @@ wijziging betaalde completion-functie, tokenlimiet, ledger, UART of native menu.
 De broncode van ESP32 HTTPClient 3.3.0 bevestigt dat writeToStream chunked encoding
 verwerkt. De echte foutrespons van de gebruiker en een live API-account waren
 niet beschikbaar; succes op echt apparaat moet na beide updates worden gecontroleerd.
+
+
+## V22.3 — geheugenarme accountcontrole
+
+Alleen elf metadata-GETs, geen responsebody/JSON/grote accountlijst in RAM.
+256-byte resultaat, Casio-buffer 4 KiB, nulresultaat expliciet gecontroleerd,
+fouten wissen de hele lijst. Atom V22.3 en Casio-app vereist; betaald verzoek,
+UART, opslag en native menu ongewijzigd. Test F2 op het echte apparaat na beide updates.

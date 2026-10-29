@@ -11,7 +11,7 @@ expected='f552fcffcf774520e946121704b5fbbf7ba986e8'
 assert hashlib.sha256(source).hexdigest()=='d2a74c51d4ee5cf1f782fc753c3db15d49cb19f8c3d04cadc4b76775b6ba4167', 'Official source hash differs'
 text=source.decode()
 registered,deprecated=text.split('Deprecated values:',1)
-ids=re.findall(r'\{"[^"]+","([^"]+)"',(root/'casio/models.h').read_text())
+ids=re.findall(r'\{"[^"]+","([^"]+)"',(root/'atom/ChatGPTAtom/model_choices.h').read_text())
 assert len(ids)==11 and len(set(ids))==len(ids)
 for id in ids:
  assert '"'+id+'"' in registered, ('Not registered',id)
