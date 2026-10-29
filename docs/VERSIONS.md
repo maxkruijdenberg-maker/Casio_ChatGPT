@@ -356,3 +356,14 @@ misleidende fallback na laadfout. Oude/gedeeltelijke accountgegevens worden
 niet als succes getoond. Paarsblauwe planeet en compactere laad-/modelschermen.
 Atom, native menu, UART, toetsen en opslag ongewijzigd. Controleer de fout- en
 succesroute op echt apparaat volgens V22.1-CONTROLE-VOOR-VERKOOP.md.
+
+
+## V22.2 — 29 oktober 2026
+
+Atom-firmware en Casio-update nodig. Accountmetadata via gedecodeerde HTTP-body
+in plaats van raw getStream; gefilterde JSON en begrensd ontvangen. Accountspecifieke
+foutteksten. Dubbele Vraag-knop verwijderd, Bewaar bij opslagfout behouden. Geen
+wijziging betaalde completion-functie, tokenlimiet, ledger, UART of native menu.
+De broncode van ESP32 HTTPClient 3.3.0 bevestigt dat writeToStream chunked encoding
+verwerkt. De echte foutrespons van de gebruiker en een live API-account waren
+niet beschikbaar; succes op echt apparaat moet na beide updates worden gecontroleerd.

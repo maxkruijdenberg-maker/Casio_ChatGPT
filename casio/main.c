@@ -695,6 +695,16 @@ static int fetchModelsWork(void){
  }
  return !quitting&&parseModelList(total);
 }
+static const char *modelCheckReason(int error){
+ switch(error){
+ case E_JSON:return atomMajor<22?"De modellenlijst van je account kon niet worden gelezen. Werk ook de Atom bij met de meegeleverde firmware.":"De modellenlijst van je account is onvolledig of heeft een onverwacht formaat. Controleer internet en probeer later opnieuw.";
+ case E_BIG:return "De modellenlijst van je account is te groot voor dit apparaat.";
+ case E_MEMORY:return "Er is onvoldoende vrij geheugen om de accountlijst te verwerken.";
+ case E_TIMEOUT:return "Het ophalen van de accountlijst duurde te lang. Controleer je internetverbinding.";
+ case E_MODEL:return "OpenAI kon de modellenlijst van je account niet leveren.";
+ default:return error>0&&error<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[error]:"Controleer wifi en je API-account.";
+ }
+}
 static int fetchModels(void){
  int ok;modelFetchCancelled=modelFetchError=0;remoteModelCount=0;modelCheckFailed=0;
  if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){modelCheckFailed=1;message("Account niet gecontroleerd","Er is onvoldoende vrij geheugen. Je ziet de vaste modelkeuzes; je huidige model blijft bewaard.");return 0;}}
@@ -703,7 +713,7 @@ static int fetchModels(void){
  if(!ok){
   remoteModelCount=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
   if(!quitting&&!modelFetchCancelled){
-   char reason[512];const char *why=modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer wifi en je API-account.";
+   char reason[512];const char *why=modelCheckReason(modelFetchError);
    sprintf(reason,"%s\n\nJe ziet de vaste modelkeuzes, niet je accountlijst. Je huidige model blijft bewaard. F2 Account probeert opnieuw.",why);
    message("Account niet gecontroleerd",reason);
   }
@@ -761,7 +771,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.2\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -859,14 +869,14 @@ static void readAnswer(int contextWasDropped){
   if(activeChatSlot>=0&&savedChats[activeChatSlot].used){sprintf(position,"%d/%d",viewTurn+1,savedChats[activeChatSlot].turns);printAt(288,71,position,C_MUTED);}
   paragraph(displayedAnswer,first,12,91,43,6);scrollbar(376,91,84,first,6,lines);
   printAt(8,176,unsavedReply?"Nog niet opgeslagen · F3: bewaren":contextWasDropped?"Oudste API-context gewist":activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Oud bericht · F1 vervolgt laatste":"SHIFT: vraag · OPTN: chats",unsavedReply?C_RED:C_MUTED);
-  footer("Verder","Nieuw",unsavedReply?"Bewaar":"Vraag","Chats",viewTurn>0?"Vorig":"",activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Volgend":"Instel");show();k=waitKey();
+  footer("Verder","Nieuw",unsavedReply?"Bewaar":"","Chats",viewTurn>0?"Vorig":"",activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Volgend":"Instel");show();k=waitKey();
   if(k==KEY_PRGM_F1){prompt[0]=0;return;}
   if(k==KEY_PRGM_EXIT)return;
   if(k==KEY_PRGM_SHIFT){message("Jouw vraag",lastQuestion);continue;}
   if(k==KEY_PRGM_UP&&first>0)first--;if(k==KEY_PRGM_DOWN&&first<max)first++;
   if(k==KEY_PRGM_LEFT){first-=6;if(first<0)first=0;}if(k==KEY_PRGM_RIGHT){first+=6;if(first>max)first=max;}
   if(k==KEY_PRGM_F2&&canLeaveReply()){newLocalChat();return;}
-  if(k==KEY_PRGM_F3){if(unsavedReply)saveReply();else message("Jouw vraag",lastQuestion);}
+  if(k==KEY_PRGM_F3&&unsavedReply)saveReply();
   if(k==KEY_PRGM_F4||k==KEY_PRGM_OPTN){int changed=chatSidebar();if(changed==2)return;if(changed)first=0;}
   if(k==KEY_PRGM_F5&&viewTurn>0&&!unsavedReply){if(loadChatPair(activeChatSlot,viewTurn-1))first=0;}
   if(k==KEY_PRGM_F6){

@@ -1,24 +1,17 @@
-# ChatGPT voor Casio — V22.1
+# ChatGPT voor Casio — V22.2
 
-Nieuwe modelkeuze: Instellingen → Model, F4 Info voor keuzehulp, F2 Account om toegang te controleren.
-Kies na bijwerken zelf een actueel model; je oude keuze blijft bewaard.
+Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
+docs/Handleiding-V22.2.pdf of docs/Handleiding-V22.2.html.
 
-Pak de ZIP volledig uit en open **START-HIER.html**.
-Je kunt ook **docs/Handleiding-V22.1.pdf** of **docs/Handleiding-V22.1.html** openen
-in je browser. Beide werken offline na het uitpakken.
+**Werk deze keer ook de Atom bij.** Alleen ChatGPT.g3a vervangen is onvoldoende
+voor de accountlijstfix. Upload de volledige Atom-map met alle .h-bestanden of
+gebruik de meegeleverde firmware volgens de handleiding. Laat volledig wissen uit.
+Installeer daarna dist/ChatGPT.g3a op de Casio en herstart die eenmaal.
+Laat CGPT3 staan om chats en scherminstellingen te behouden.
 
-- Heb je de Atom-update uit V20.1 al gedaan? Vervang dan alleen
-  `ChatGPT.g3a` op de Casio door `dist/ChatGPT.g3a` en herstart de Casio.
-- Heb je die Atom-update nog niet gedaan of weet je het niet? Volg de complete
-  installatie in de handleiding. Laat volledig wissen uitgeschakeld.
-- Laat de map `CGPT3` staan om chats en scherminstellingen te behouden.
+V22.2 verbetert het ontvangen van de accountlijst, maakt foutmeldingen specifiek
+en verwijdert de dubbele Vraag-knop. F2 Account controleert de modelnamen in je
+account; F4 Info geeft keuzehulp. Opvragen/Info/kiezen versturen geen betaalde chat.
 
-Het overzichtelijke klantpakket staat in **dist/ChatGPT-V22.1-installatie.zip**.
-Daarin staan alleen de huidige bestanden en handleidingen, zonder oude versiegidsen.
-
-Je hebt eigen OpenAI-API-toegang, betaald API-tegoed en wifi nodig.
-Een ChatGPT-abonnement bevat geen API-tegoed. Deel je API-sleutel niet met een verkoper.
-
-Voor de verkoper: **docs/V22.1-CONTROLE-VOOR-VERKOOP.md** bevat de controles die
-nog op echte hardware moeten worden uitgevoerd. De softwaretests zijn geslaagd;
-dit is geen verklaring dat ieder samengesteld apparaat al is getest.
+Je gebruikt eigen OpenAI-API-toegang, tegoed en wifi. Deel je sleutel niet met de
+verkoper. Fysieke controles: docs/V22.2-CONTROLE-VOOR-VERKOOP.md.

@@ -1,25 +1,23 @@
-# ChatGPT V22.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.2 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.1-installatie.zip) ·
-[START-HIER](START-HIER.md) · [PDF-handleiding](docs/Handleiding-V22.1.pdf) ·
-[Offline handleiding](docs/Handleiding-V22.1.html)
+[Installatiepakket](dist/ChatGPT-V22.2-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF-handleiding](docs/Handleiding-V22.2.pdf) · [Offline handleiding](docs/Handleiding-V22.2.html)
 
-- Modelkeuze opent direct met elf vaste, actuele chatnamen.
-- **F2 Account** controleert welke daarvan jouw API-account aanbiedt.
-- Bij een mislukte controle staan vaste keuzes en ongecontroleerde toegang expliciet vermeld.
-- Geen gedeeltelijke/verouderde accountlijst die als geslaagde controle wordt getoond.
-- Eén paarsblauwe logostijl in de app; grote planeet op begin- en laadscherm.
-- Laadscherm zonder dubbele teksten; modelinformatie compacter.
+**Werk zowel de Atom als de Casio-app bij.** De oude Atom-firmware leest de
+accountlijst rechtstreeks uit de netwerkstream. V22.2 gebruikt de HTTP-library
+om overdrachtsblokken te verwerken voordat de JSON-reader de modellenlijst leest.
+Alleen ChatGPT.g3a vervangen verhelpt dat probleem niet. Laat volledig wissen uit
+en CGPT3 staan. Zie [UPGRADE-V22.2.md](UPGRADE-V22.2.md).
 
-[Werkelijke UI-renders](docs/design/V22.1-actual-screens.png) ·
-[Modelcontrole en bronnen](docs/V22.1-MODELLEN.md) · [Bijwerken](UPGRADE-V22.1.md)
+- F2 Account: gedecodeerde HTTP-body, ID-filtering en veilige grootte-/geheugengrenzen.
+- Melding over de modellenlijst bij accountproblemen; niet over een chatantwoord.
+- Geen dubbele Vraag-knop; F3 Bewaar alleen als lokaal opslaan is mislukt.
+- Vaste modelkeuzes, Info en de paarsblauwe planeet blijven behouden.
+- Betaalde vragen, tokenbudget, ledger, native menu, UART en opslag ongewijzigd.
 
-**Atom V20.1 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
-en herstart de Casio. Atom, UART, toetsen, native menu en opslag zijn ongewijzigd.
-De accountcontrole bevestigt namen, geen geslaagde betaalde completion of prijs.
-
-De screenshots gebruiken voorbeeldgegevens. Voor echte apparaten blijft de
-[vrijgavecontrole](docs/V22.1-CONTROLE-VOOR-VERKOOP.md) van toepassing.
+[Schermen](docs/design/V22.2-actual-screens.png) · [Modelbronnen](docs/V22.2-MODELLEN.md).
+Geen live API-account of echte hardware beschikbaar in de bouwomgeving. Zie de
+[vrijgavecontrole](docs/V22.2-CONTROLE-VOOR-VERKOOP.md) voor ieder samengesteld apparaat.
 
 ## Windows: installeren
 

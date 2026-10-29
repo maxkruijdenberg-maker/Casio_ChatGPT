@@ -387,10 +387,11 @@ static void testV14NavigationAndModels(void){
  const int pickerCancel[]={37,0,48,0,0,0,69,0,0,0,79,0,47};SCRIPT(pickerCancel);
  assert(modelPicker()&&!strcmp(storedModel,modelChoices[1].id)&&!quitting);
  const int explain[]={49,0,47,0,47};SCRIPT(explain);assert(!modelPicker());
- /* Exactly one diagnostics entry lives in Settings. Normal answer F3
-  * opens the question without issuing diagnosis/network requests. */
+ /* Normal F3 is unused: no duplicate Vraag button or modal; SHIFT still
+  * opens the full question. Neither route does diagnosis/network requests. */
  strcpy(lastQuestion,"23 + 42 = ?");strcpy(answer,"23 + 42 = 65");activeChatSlot=-1;
- devices=requestCount[W_DEVICE];const int fullQuestion[]={59,0,47,0,47};SCRIPT(fullQuestion);readAnswer(0);
+ devices=requestCount[W_DEVICE];const int idleF3[]={59,0,47};SCRIPT(idleF3);readAnswer(0);
+ const int fullQuestion[]={78,0,47,0,47};SCRIPT(fullQuestion);readAnswer(0);
  assert(requestCount[W_DEVICE]==devices);
  int hellosBefore=requestCount[W_HELLO];const int diagSettings[]={37,0,37,0,27,0,37,0,37,0,37,0,27,0,47,0,47,0,47};SCRIPT(diagSettings);settings();assert(requestCount[W_HELLO]>hellosBefore);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
@@ -470,7 +471,8 @@ static void testAccountModels(void){
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
  /* Server error never leaves a partial/cached account list marked available.
   * The fixed choices remain explicit, without changing the model or paying. */
- modelServerError=E_CONFIG;int failedWrites=requestCount[W_APPLY];const int dismissFailure[]={47};SCRIPT(dismissFailure);
+ assert(!strstr(modelCheckReason(E_JSON),"Antwoord")&&strstr(modelCheckReason(E_JSON),"modellenlijst"));
+ modelServerError=E_JSON;int failedWrites=requestCount[W_APPLY];const int dismissFailure[]={47};SCRIPT(dismissFailure);
  assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT&&requestCount[W_APPLY]==failedWrites);
  assert(!strcmp(storedModel,"gpt-6.1-sol"));modelServerError=0;SCRIPT(quiet);assert(fetchModels()&&!modelCheckFailed&&remoteModelCount==8);
  int readFailureKeys[200]={0};readFailureKeys[199]=47;modelReadError=E_CONFIG;SCRIPT(readFailureKeys);assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT);modelReadError=0;
@@ -618,6 +620,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

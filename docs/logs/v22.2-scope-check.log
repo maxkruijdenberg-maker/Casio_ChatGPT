@@ -1,0 +1,4 @@
+PASS 17 native menu, keyboard, storage, model choices, hardware, ledger, phone, protocol, config, upload and completion-parser files byte-identical to v22.1.0.
+PASS complete paid performApi function unchanged, including 1200-token limit and no automatic POST retry.
+PASS Atom device version 22.2 and Casio version 22.2.
+Physical device and actual account response unavailable; no live API test performed.
