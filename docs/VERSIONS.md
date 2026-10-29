@@ -293,3 +293,12 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Consistente kaders rond functieknoppen en kleurrijke accenten in Chats/Hulp.
 - Alleen visuele wijzigingen; Atom-broncode en firmware bytegelijk aan V17.
 - Casio-build, veertien hosttestgroepen en 40 gesimuleerde menuheropeningen.
+
+## V19.0 — abstract motief en expliciete statuskleuren
+
+- Abstract orbitmotief op begin- en laadscherm, met rustige lila/mintaccenten.
+- Minder schaduwen en knopkaders; primaire actie en geselecteerde rij blijven zichtbaar.
+- Verbonden: groene tekst/stip/badge. Verbroken: rode tekst/stip/badge.
+- Statusbetekenis, transport en bediening ongewijzigd. Atom blijft bytegelijk aan V17.
+- Integer-renderer voor abstracte vormen; geen nieuwe timer, ISR of hardwareconfiguratie.
+- Veertien softwaretestgroepen met beide statuskleuren en 40 gesimuleerde menucycli.

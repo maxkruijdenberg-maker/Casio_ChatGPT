@@ -524,6 +524,13 @@ int main(int argc,char **argv){
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();
+ /* Status remains understandable through text as well as green/red ink. */
+ linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0;
+ for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
+ assert(greenInk>20&&!redInk);
+ linkOnline=0;clear("ChatGPT");greenInk=redInk=0;
+ for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
+ assert(redInk>20&&!greenInk);linkOnline=1;
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -546,9 +553,10 @@ int main(int argc,char **argv){
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
   loadingPurpose=0;for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
   paintLoading(0);snprintf(path,sizeof(path),"%s/loading.ppm",argv[2]);dumpFrame(path);
-  connected=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
+  linkOnline=1;paintSettings(0);snprintf(path,sizeof(path),"%s/online.ppm",argv[2]);dumpFrame(path);
+  linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V18 colored cards and centered captions; light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V19 abstract identity, green/red status badges and centered captions; light UI and V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

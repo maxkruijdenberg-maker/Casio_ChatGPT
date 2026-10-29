@@ -290,3 +290,10 @@ Vanaf V17 alleen de .g3a vervangen. Controleer gecentreerde teksten, selectieran
 in alle lijsten, de vier accentkleuren, kleine pictogrammen en functietoetskadertjes.
 Test laadtekst bij vragen én modellen ophalen, annuleren, aangepaste schermschaal
 en menuheropenen. De softwaretests vervangen geen visuele controle op een echte Casio.
+
+## V19 — abstract ontwerp en groene/rode status
+
+Vanaf V17/V18 alleen de .g3a vervangen. Controleer leesbaarheid van groene en rode
+statustekst, Atom uit/aan op invoer/Instellingen, het abstracte begin-/laadmotief,
+selectieranden, functietoetsen en aangepaste schermschaal. Herhaal de gewone vraag-,
+toets- en MENU/heropenchecks. De status blijft modulecontact, geen internetgarantie.

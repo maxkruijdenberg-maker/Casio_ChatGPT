@@ -109,10 +109,11 @@ static int keyEvent(void){
 }
 static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
-enum {C_BG=0xf7be,C_PANEL=0xffff,C_RAISED=0xdf7c,C_TEXT=0x1925,
+enum {C_BG=0xf7bf,C_PANEL=0xffff,C_RAISED=0xdf7c,C_TEXT=0x1925,
  C_MUTED=0x5b8d,C_LINE=0xe73c,C_MINT=0x03ce,C_RED=0xb166,
  C_BLUE=0x2b39,C_PURPLE=0x7255,C_GOLD=0x9be2,C_SHADOW=0xe71c,
- C_BLUE_SOFT=0xe75f,C_PURPLE_SOFT=0xef1f,C_GOLD_SOFT=0xffba};
+ C_BLUE_SOFT=0xe75f,C_PURPLE_SOFT=0xef1f,C_GOLD_SOFT=0xffba,
+ C_GREEN=0x1b66,C_GREEN_SOFT=0xe7bc,C_STATUS_RED=0xc145,C_RED_SOFT=0xff3c};
 static int linkKnown=0,linkOnline=0,linkSeen=0,linkMisses=0;
 static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;}
 static void linkFailed(void){
@@ -139,11 +140,10 @@ static void rounded(int x,int y,int w,int h,unsigned short color){
   rect(x+inset,y+row,w-2*inset,1,color);
  }
 }
-/* One card language across all selectable lists: shadow, colored focus ring,
+/* One card language across all selectable lists: quiet surfaces, colored focus ring,
  * tinted interior. Geometry stays inside the native 384x216 canvas. */
 static void choiceCard(int x,int y,int w,int h,int selected,unsigned short accent,unsigned short tint){
- rounded(x+1,y+2,w,h,C_SHADOW);
- rounded(x,y,w,h,selected?accent:C_LINE);
+ rounded(x,y,w,h,selected?accent:C_PANEL);
  rounded(x+1+(selected!=0),y+1+(selected!=0),w-2-2*(selected!=0),h-2-2*(selected!=0),selected?tint:C_PANEL);
 }
 static void drawLogo(int x,int y,int size,unsigned short color){
@@ -152,6 +152,27 @@ static void drawLogo(int x,int y,int size,unsigned short color){
  for(i=0;i<source*source;i++)if(bits[i/8]&(1<<(7-i%8))){
   int sx=i%source,sy=i/source;rect(x+sx*size/source,y+sy*size/source,(sx+1)*size/source-sx*size/source,(sy+1)*size/source-sy*size/source,color);
  }
+}
+/* Abstract orbit motif, painted with integer-only primitives. No timers,
+ * driver state or input handling are involved in these visual accents. */
+static void ellipse(int cx,int cy,int rx,int ry,unsigned short color){
+ int y,x;long bound=(long)rx*rx*ry*ry;
+ for(y=-ry;y<=ry;y++){
+  x=rx;while(x>0&&(long)x*x*ry*ry+(long)y*y*rx*rx>bound)x--;
+  rect(cx-x,cy+y,2*x+1,1,color);
+ }
+}
+static void abstractLogo(int cx,int cy,int size,int phase){
+ static const int orbit[8][2]={{0,-39},{43,-27},{58,0},{43,27},{0,39},{-43,27},{-58,0},{-43,-27}};
+ int radius=size/2;
+ ellipse(cx-12,cy-3,radius+28,17,C_PURPLE_SOFT);
+ ellipse(cx-12,cy-3,radius+23,12,C_BG);
+ ellipse(cx+12,cy+3,radius+18,22,C_RAISED);
+ ellipse(cx+12,cy+3,radius+13,17,C_BG);
+ ellipse(cx,cy,radius+7,radius+7,C_PANEL);
+ drawLogo(cx-radius,cy-radius,size,C_MINT);
+ if(phase>=0){int i=phase%8;rounded(cx+orbit[i][0]-2,cy+orbit[i][1]-2,5,5,C_PURPLE);}
+ else {rounded(cx-58,cy-17,4,4,C_PURPLE);rounded(cx+55,cy+17,4,4,C_MINT);}
 }
 static int glyphIndex(uint32_t cp){size_t i;for(i=0;i<FONT_COUNT;i++)if(font_glyphs[i].code==cp)return (int)i;return -1;}
 static void glyph(int x,int y,uint32_t cp,unsigned short color){
@@ -183,12 +204,13 @@ static void settingIcon(int x,int y,int type,unsigned short color){
 static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
- drawLogo(8,4,24,C_MINT);clipped(40,9,name,29,C_TEXT);
- rect(0,30,384,2,C_LINE);rect(8,30,40,2,C_MINT);
+ drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
+ rect(0,31,384,1,C_LINE);
  {
   const char *status=linkOnline?"Verbonden":"Verbroken";
-  rounded(292,9,5,5,linkOnline?C_MINT:C_RED);
-  printAt(306,7,status,C_MUTED);
+  unsigned short color=linkOnline?C_GREEN:C_STATUS_RED;
+  rounded(286,6,92,21,linkOnline?C_GREEN_SOFT:C_RED_SOFT);
+  rounded(292,13,5,5,color);printAt(302,9,status,color);
  }
 }
 static void configureDisplay(void){
@@ -208,7 +230,7 @@ static void footer(const char *a,const char*b,const char*c,const char*d,const ch
  rect(0,192,384,24,C_PANEL);rect(0,192,384,1,C_LINE);
  for(i=0;i<6;i++){
   int n=(int)strlen(p[i]),step=n>7?7:8,j;unsigned short color=C_TEXT;
-  if(n>8)n=8;if(n){rounded(i*64+3,195,58,19,i==5?C_BLUE:C_LINE);rounded(i*64+4,196,56,17,C_PANEL);}
+  if(n>8)n=8;if(i==5&&n)color=C_PURPLE;
   if(i==0&&(!strcmp(a,"Stuur")||!strcmp(a,"Opslaan")||!strcmp(a,"Verder")||!strcmp(a,"Kies")||!strcmp(a,"Open")||!strcmp(a,"Opnieuw"))){rounded(3,195,58,19,C_MINT);color=C_BG;}
   for(j=0;j<n;j++)glyph(i*64+32-n*step/2+j*step,197,(unsigned char)p[i][j],color);
  }
@@ -395,13 +417,12 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  clear(title);rounded(8,35,152,15,C_RAISED);
  sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
  (void)cap;
- choiceCard(6,50,368,120,0,C_MINT,C_RAISED);
  if(promptMode==1&&!buf[0]){
-  rounded(160,54,64,48,C_RAISED);drawLogo(172,58,40,C_MINT);
-  centered(107,activeChatSlot>=0?"We gaan verder.":"Waar wil je hulp bij?",C_TEXT);
-  centered(128,activeChatSlot>=0?"Vraag door, op jouw tempo.":"Een goed idee begint met een vraag.",C_MUTED);
-  centered(149,"Typ je vraag en kies Stuur.",C_MINT);
- }else textPage(buf,first,secret);
+  abstractLogo(192,79,40,-1);
+  centered(112,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Maak ruimte voor je vraag.",C_TEXT);
+  centered(133,activeChatSlot>=0?"Vraag verder. Blijf nieuwsgierig.":"Van snelle vraag naar helder inzicht.",C_MUTED);
+  centered(155,"Typ je vraag. Stuur met F1.",C_MINT);
+ }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPage(buf,first,secret);}
  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw","Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
  printAt(8,175,promptMode==1?"OPTN: chats · MENU: afsluiten":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();
@@ -648,7 +669,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 18.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 19.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -765,11 +786,8 @@ static void readAnswer(int contextWasDropped){
 
 #include "chats.h"
 static void paintLoading(int phase){
- static const int orbit[8][2]={{0,-43},{30,-30},{43,0},{30,30},{0,43},{-30,30},{-43,0},{-30,-30}};
- int i;clear("ChatGPT");choiceCard(136,40,112,98,0,C_MINT,C_RAISED);
- rounded(151,53,82,72,C_RAISED);drawLogo(160,57,64,C_MINT);
- for(i=0;i<8;i++){int active=(phase%8)==i;rounded(190+orbit[i][0],87+orbit[i][1],active?6:3,active?6:3,active?C_BLUE:C_LINE);}
- centered(147,loadingPurpose?"Jouw modellen, op een rij.":"Even voor je aan de slag.",C_TEXT);
+ clear("ChatGPT");abstractLogo(192,88,56,phase);
+ centered(147,loadingPurpose?"Jouw volgende keuze.":"Van vraag naar inzicht.",C_TEXT);
  centered(167,loadingPurpose?"Je modellen worden opgehaald.":"Je vraag wordt verwerkt.",C_MUTED);
  centered(196,"EXIT of F1: annuleren",C_MINT);show();
 }

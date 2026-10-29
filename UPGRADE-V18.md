@@ -1,3 +1,5 @@
+> Nieuwste versie: [UPGRADE-V19.md](UPGRADE-V19.md). Vanaf V17/V18 alleen de Casio-app vervangen.
+
 # V18 — kleurrijkere afwerking
 
 ## Installeren vanaf V17

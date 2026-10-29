@@ -1,26 +1,29 @@
-# ChatGPT V18.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V19.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-V18 verfijnt de lichte V17-interface met meer kleur, duidelijke selectieranden,
-zachte schaduwen en gecentreerde teksten onder de logo's.
+V19 geeft de lichte interface een abstractere uitstraling: zachte lila- en
+mintaccenten, een rustig orbitmotief rond het logo en duidelijke primaire acties.
+Gekleurde selectieranden blijven; onnodige schaduwen en functietoetskaders vervallen.
 
-- Teal voor Wifi, blauw voor Model, paars voor Hulp en goud voor Meer.
-- Gekleurde pictogrammen, afgeronde kaarten en een zichtbare rand om je selectie.
-- Gecentreerd beginscherm met een korte uitnodiging om je vraag te typen.
-- Laadlogo met bewegend accent en een passende zin voor vragen of modellen ophalen.
-- Knoppen onderaan met een kader, een duidelijke Stuur-knop en Terug in blauw.
+- **Verbonden in groen**, **Verbroken in rood**, met tekst en een lichte statusbadge.
+- Een gecentreerd beginscherm met een heldere uitnodiging om te typen.
+- Abstract laadlogo met een bewegend accent, een korte uitleg en annuleren met EXIT/F1.
+- Vaste kleuren voor Wifi, Model, Hulp en Meer; de geselecteerde kaart valt op.
+- Stuur blijft de primaire actie; Chats en Instellingen zijn direct bereikbaar.
 
-**Vanaf V17 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
-Laat `CGPT3` staan. Vanaf V16 of ouder moet de Atom nog naar de meegeleverde V17-firmware.
-Zie [UPGRADE-V18.md](UPGRADE-V18.md) en de [gebruikersgids](docs/V18-STARTGIDS.md).
+**Vanaf V17 of V18 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
+Laat `CGPT3` staan. Vanaf V16 of ouder is de Atom-update uit UPGRADE-V17.md nodig.
+Zie [UPGRADE-V19.md](UPGRADE-V19.md) en de [gebruikersgids](docs/V19-STARTGIDS.md).
 
-[De V18-schermen](docs/design/V18-actual-screens.png) en
-[de laadanimatie](docs/design/V18-loading.gif) komen uit de echte UI-renderer
-in hosttests; de modellenlijst gebruikt voorbeelddata.
+[De V19-schermen](docs/design/V19-actual-screens.png),
+[de rode statusbadge](docs/design/V19-offline.png) en
+[de laadanimatie](docs/design/V19-loading.gif) komen uit de echte UI-renderer
+in hosttests. De modellenlijst gebruikt voorbeelddata.
 
-De vier instellingen, modellen uit je API-account, Hulp, =-weergave en MENU/EXIT
-werken zoals in V17. De verbindingslogica, pins, baudrate en opslag blijven gelijk.
-Niet ieder model uit de accountlijst ondersteunt de Chat Completions API van deze app.
-Er zijn veertien ASan/UBSan-testgroepen en een Casio-build; fysieke controle blijft nodig.
+Bediening, verbinding, accountmodellen, Hulp, opslag en =-weergave blijven zoals
+in V18. De status is het laatst gecontroleerde contact met de Atom, geen bewijs
+van internet of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte
+Chat Completions API. Veertien softwaretestgroepen en de Casio-build worden
+gecontroleerd; echte hardware en gebruikersonderzoek zijn hier niet beschikbaar.
 
 ## Windows: installeren
 
