@@ -1,31 +1,25 @@
-# ChatGPT V22 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-Begin bij **[START-HIER.md](START-HIER.md)**, de
-[PDF-handleiding](docs/Handleiding-V22.pdf) of de
-[offline HTML-handleiding](docs/Handleiding-V22.html).
+[Installatiepakket](dist/ChatGPT-V22.1-installatie.zip) ·
+[START-HIER](START-HIER.md) · [PDF-handleiding](docs/Handleiding-V22.1.pdf) ·
+[Offline handleiding](docs/Handleiding-V22.1.html)
 
-V22 maakt de modelkeuze overzichtelijk:
+- Modelkeuze opent direct met elf vaste, actuele chatnamen.
+- **F2 Account** controleert welke daarvan jouw API-account aanbiedt.
+- Bij een mislukte controle staan vaste keuzes en ongecontroleerde toegang expliciet vermeld.
+- Geen gedeeltelijke/verouderde accountlijst die als geslaagde controle wordt getoond.
+- Eén paarsblauwe logostijl in de app; grote planeet op begin- en laadscherm.
+- Laadscherm zonder dubbele teksten; modelinformatie compacter.
 
-- Elf actuele tekst-chatkeuzes met gewone namen, zoals **GPT-6.1 Sol**.
-- Met Atom V20.1 alleen de passende modellen die in jouw API-account staan.
-- Geen uitgefaseerde modellen, datumkopieën, beeld-, audio- of videomodellen.
-- **F4 Info** geeft gebruiksadvies en legt snelheid, kosten en toegang uit.
-- **F2 Vernieuw** haalt accountmetadata op zonder betaalde chatvraag.
-- Bestaande modelkeuze blijft bewaard; kies na bijwerken zelf een actuele optie.
-
-[Download het installatiepakket](dist/ChatGPT-V22-installatie.zip).
-[Modelbronnen en selectiebeleid](docs/V22-MODELLEN.md) ·
-[Schermen uit de echte UI-renderer](docs/design/V22-actual-screens.png).
-Voorbeeldgegevens en softwareweergaven zijn geen foto's van echte hardware.
+[Werkelijke UI-renders](docs/design/V22.1-actual-screens.png) ·
+[Modelcontrole en bronnen](docs/V22.1-MODELLEN.md) · [Bijwerken](UPGRADE-V22.1.md)
 
 **Atom V20.1 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
-en herstart de Casio. De Atom-code en firmware zijn bytegelijk aan V20.1.
-Anders: volg de volledige installatie. Zie [UPGRADE-V22.md](UPGRADE-V22.md).
+en herstart de Casio. Atom, UART, toetsen, native menu en opslag zijn ongewijzigd.
+De accountcontrole bevestigt namen, geen geslaagde betaalde completion of prijs.
 
-De donkere interface, groeiende chatbalk, het mint-lila logo en de groene/rode
-status blijven behouden. De accountlijst bevestigt modelnamen, geen succesvolle
-live chat of actuele prijs. Zie de [vrijgavecontrole](docs/V22-CONTROLE-VOOR-VERKOOP.md)
-voor controles op ieder echt apparaat.
+De screenshots gebruiken voorbeeldgegevens. Voor echte apparaten blijft de
+[vrijgavecontrole](docs/V22.1-CONTROLE-VOOR-VERKOOP.md) van toepassing.
 
 ## Windows: installeren
 

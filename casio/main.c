@@ -14,7 +14,6 @@
 #include "native_menu_device.h"
 #include "keyboard_raw.h"
 #include "models.h"
-#include "../atom/ChatGPTAtom/model_kind.h"
 #include "answer_text.h"
 #include <stdint.h>
 #include <stddef.h>
@@ -38,7 +37,7 @@ static int rpcDepth=0;
 static int autoConnectTick(void);
 static void animateLoading(void);
 static void paintLoading(int phase);
-static int loadingActive=0,loadingPhase=0,loadingAt=0,loadingPurpose=0;
+static int loadingActive=0,loadingPhase=0,loadingAt=0;
 static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
 static uint8_t seq=0;
@@ -169,7 +168,7 @@ static unsigned short mix565(unsigned short front,unsigned short back,int alpha)
  int b=((front&31)*alpha+(back&31)*(15-alpha)+7)/15;
  return (unsigned short)((r<<11)|(g<<5)|b);
 }
-static void logoPaint(int x,int y,int size,unsigned short color,int gradient){
+static void logoPaint(int x,int y,int size){
  if(!viewReady)applyView(view_default());
  int source=size==16?16:size==24?24:size==40?40:size==48?48:size==56?56:64;
  const uint8_t *bits=source==16?logo_aa16:source==24?logo_aa24:source==40?logo_aa40:source==48?logo_aa48:source==56?logo_aa56:logo_aa64;
@@ -178,13 +177,13 @@ static void logoPaint(int x,int y,int size,unsigned short color,int gradient){
   int index=(py*source/size)*source+px*source/size;
   int a=(bits[index/2]>>(index%2?0:4))&15;ViewRect r;
   if(a&&view_rect(&viewMap,x+px,y+py,1,1,&r)){
-   unsigned short ink=gradient?mix565(C_PURPLE,C_MINT,py*15/(size>1?size-1:1)):color;
+   unsigned short ink=mix565(C_PURPLE,C_BLUE,py*15/(size>1?size-1:1));
    unsigned short background=vram[r.y*384+r.x];
    physicalRect(r.x,r.y,r.w,r.h,mix565(ink,background,a));
   }
  }
 }
-static void drawLogo(int x,int y,int size,unsigned short color){logoPaint(x,y,size,color,0);}
+static void drawLogo(int x,int y,int size){logoPaint(x,y,size);}
 /* Abstract orbit motif, painted with integer-only primitives. No timers,
  * driver state or input handling are involved in these visual accents. */
 static void ellipse(int cx,int cy,int rx,int ry,unsigned short color){
@@ -213,13 +212,13 @@ static void abstractLogo(int cx,int cy,int size,int phase){
  if(phase>=0){
   int n;for(n=0;n<2;n++){
    int i=(phase+4*n)%8,x=rx*orbit[i][0]/1024,y=ry*orbit[i][1]/1024-x/4;
-   rounded(cx+x-2,cy+y-2,n?3:5,n?3:5,n?C_MINT:C_PURPLE);
+   rounded(cx+x-2,cy+y-2,n?3:5,n?3:5,n?C_BLUE:C_PURPLE);
   }
  }
  ellipse(cx,cy,radius+10,radius+10,C_PURPLE_SOFT);
  ellipse(cx,cy,radius+8,radius+8,C_BLUE_SOFT);
  ellipse(cx,cy,radius+6,radius+6,C_PANEL);
- logoPaint(cx-radius,cy-radius,size,C_MINT,1);
+ logoPaint(cx-radius,cy-radius,size);
 }
 static int glyphIndex(uint32_t cp){size_t i;for(i=0;i<FONT_COUNT;i++)if(font_glyphs[i].code==cp)return (int)i;return -1;}
 static void glyph(int x,int y,uint32_t cp,unsigned short color){
@@ -251,7 +250,7 @@ static void settingIcon(int x,int y,int type,unsigned short color){
 static void clear(const char *title){
  const char *name=title;if(!strncmp(title,"ChatGPT - ",10))name=title+10;
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
- drawLogo(8,4,24,C_TEXT);clipped(40,9,name,29,C_TEXT);
+ drawLogo(8,4,24);clipped(40,9,name,29,C_TEXT);
  rect(0,31,384,1,C_LINE);
  {
   const char *status=linkOnline?"Verbonden":"Verbroken";
@@ -543,8 +542,8 @@ static unsigned settingsEpoch=0;
 #define REMOTE_MODELS_CAP 65536
 static char *remoteModels=0;
 static unsigned short modelOffsets[1024];
-static int remoteModelCount=0;
-static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;}
+static int remoteModelCount=0,modelCheckFailed=0;
+static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;modelCheckFailed=0;}
 static int fetchModels(void);
 static int atomMajor=0,settingsKnown=0;
 static int readPublic(int target,char*out,size_t cap){
@@ -655,7 +654,7 @@ static const char *choiceId(int index,char out[256]){
 static void modelDetails(int preset,char *out,size_t cap){
  const ModelChoice *m=&modelChoices[preset];
  const char *access=remoteModelCount?"Dit model staat in je account. Dat garandeert nog geen geslaagde chatvraag.":"Toegang met jouw sleutel is nog niet gecontroleerd.";
- const char *format="%s\n\nPast bij: %s\n\nKeuzehulp: %s\n\nSnelheid: hangt af van je vraag en de dienst.\nKosten: %s. Bekijk de actuele API-prijzen bij OpenAI.\n\n%s\nAPI-naam: %s";
+ const char *format="%s\n\n%s\n\n%s\n\nKosten: %s. Bekijk de API-prijzen bij OpenAI.\n\n%s\nAPI-naam: %s";
  /* The device SDK has sprintf, not snprintf. Bound all six fixed-source fields
   * before formatting; format length overestimates the substitution overhead. */
  if(cap<=strlen(format)+strlen(m->label)+strlen(m->description)+strlen(m->advice)+strlen(m->cost)+strlen(access)+strlen(m->id)){if(cap)out[0]=0;return;}
@@ -697,16 +696,23 @@ static int fetchModelsWork(void){
  return !quitting&&parseModelList(total);
 }
 static int fetchModels(void){
- int ok;modelFetchCancelled=modelFetchError=0;
- if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){message("Onvoldoende geheugen","De modellenlijst kon niet worden geladen. Je huidige model en chats blijven behouden.");return 0;}}
- loadingPurpose=1;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
+ int ok;modelFetchCancelled=modelFetchError=0;remoteModelCount=0;modelCheckFailed=0;
+ if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){modelCheckFailed=1;message("Account niet gecontroleerd","Er is onvoldoende vrij geheugen. Je ziet de vaste modelkeuzes; je huidige model blijft bewaard.");return 0;}}
+ loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
  ok=fetchModelsWork();loadingActive=0;
- if(!ok&&!quitting&&!modelFetchCancelled)message("Modellen niet geladen",modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer Wifi en account en probeer opnieuw. Je huidige model is niet gewijzigd.");
+ if(!ok){
+  remoteModelCount=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
+  if(!quitting&&!modelFetchCancelled){
+   char reason[512];const char *why=modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer wifi en je API-account.";
+   sprintf(reason,"%s\n\nJe ziet de vaste modelkeuzes, niet je accountlijst. Je huidige model blijft bewaard. F2 Account probeert opnieuw.",why);
+   message("Account niet gecontroleerd",reason);
+  }
+ }
  return ok;
 }
 static void paintModels(int selected){
  int i,first=(selected/5)*5,count=choiceCount();char id[256],label[80];clear("Model kiezen");
- sprintf(label,"%d chatmodellen · %s",count,remoteModelCount?"jouw account":"keuzelijst");printAt(14,38,label,C_MUTED);
+ sprintf(label,"%d chatmodellen · %s",count,remoteModelCount?"jouw account":"vaste lijst");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
@@ -714,13 +720,11 @@ static void paintModels(int selected){
   if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
  }
  if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
- printAt(14,177,count?"F4 Info helpt je kiezen":"Je huidige keuze blijft bewaard.",C_MUTED);
- footer(count?"Kies":"","Vernieuw","Vorig",count?"Info":"","Volgend","Terug");show();
+ printAt(14,177,!count?"Je huidige keuze blijft bewaard.":remoteModelCount?"Toegang gevonden in je account.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
+ footer(count?"Kies":"","Account","Vorig",count?"Info":"","Volgend","Terug");show();
 }
 static int modelPicker(void){
  int selected=0,k;char id[256],details[1024];
- if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
- if(atomMajor>=20&&!remoteModelCount&&!fetchModels()&&modelFetchCancelled)return 0;
  for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
  while(!quitting){
   int count=choiceCount();if(selected>=count)selected=0;
@@ -731,6 +735,7 @@ static int modelPicker(void){
   if(k==KEY_PRGM_F5&&count){selected+=5;if(selected>=count)selected=count-1;}
   if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
   if(k==KEY_PRGM_F2){
+   if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
    if(atomMajor<20)message("Atom bijwerken","Upload de meegeleverde Atom-firmware om alleen passende modellen uit jouw account te tonen. Wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
    selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
@@ -756,7 +761,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -818,7 +823,7 @@ static void paintDiagnosis(int successes,int checked){
 static void diagnose(void){
  int k,successes,checked,i,beforeRetries,beforeErrors;WFrame reply;
  do {
-  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");rounded(160,53,64,58,C_RAISED);drawLogo(172,61,40,C_MINT);centered(127,"Even controleren...",C_TEXT);centered(149,"We kijken of alles goed is aangesloten.",C_MUTED);show();
+  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");rounded(160,53,64,58,C_RAISED);drawLogo(172,61,40);centered(127,"Even controleren...",C_TEXT);centered(149,"We kijken of alles goed is aangesloten.",C_MUTED);show();
   for(i=0;i<3&&!quitting;i++){
    int result=rpc(W_HELLO,0,0,&reply,1);if(quitting||result==-2)return;checked++;
    if(result==1&&reply.len>=2&&reply.data[1]==1)successes++;else if(!successes)break;
@@ -850,7 +855,7 @@ static void readAnswer(int contextWasDropped){
   if(!answer_display(answer,displayedAnswer,sizeof(displayedAnswer)))strcpy(displayedAnswer,answer);
   lines=line_count(displayedAnswer,43);max=scroll_limit(lines,6);
   clear("ChatGPT");rounded(8,37,368,26,C_RAISED);clipped(16,43,lastQuestion,44,C_TEXT);
-  drawLogo(12,70,16,C_TEXT);printAt(36,71,"ChatGPT",C_MINT);
+  drawLogo(12,70,16);printAt(36,71,"ChatGPT",C_MINT);
   if(activeChatSlot>=0&&savedChats[activeChatSlot].used){sprintf(position,"%d/%d",viewTurn+1,savedChats[activeChatSlot].turns);printAt(288,71,position,C_MUTED);}
   paragraph(displayedAnswer,first,12,91,43,6);scrollbar(376,91,84,first,6,lines);
   printAt(8,176,unsavedReply?"Nog niet opgeslagen · F3: bewaren":contextWasDropped?"Oudste API-context gewist":activeChatSlot>=0&&viewTurn+1<savedChats[activeChatSlot].turns?"Oud bericht · F1 vervolgt laatste":"SHIFT: vraag · OPTN: chats",unsavedReply?C_RED:C_MUTED);
@@ -873,9 +878,7 @@ static void readAnswer(int contextWasDropped){
 
 #include "chats.h"
 static void paintLoading(int phase){
- clear("ChatGPT");abstractLogo(192,88,56,phase);
- centered(147,loadingPurpose?"Jouw volgende keuze.":"Van vraag naar inzicht.",C_TEXT);
- centered(167,loadingPurpose?"Je modellen worden opgehaald.":"Je vraag wordt verwerkt.",C_MUTED);
+ clear("ChatGPT");abstractLogo(192,108,56,phase);
  centered(196,"EXIT of F1: annuleren",C_MINT);show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
@@ -907,7 +910,7 @@ static void askWork(void){
  }
 }
 static void ask(void){
- loadingPurpose=0;loadingActive=prompt[0]!=0;loadingPhase=0;loadingAt=RTC_GetTicks();if(loadingActive)paintLoading(0);
+ loadingActive=prompt[0]!=0;loadingPhase=0;loadingAt=RTC_GetTicks();if(loadingActive)paintLoading(0);
  askWork();loadingActive=0;
 }
 /* Fresh state after a cold launch or a return from native GetKey/MENU. */

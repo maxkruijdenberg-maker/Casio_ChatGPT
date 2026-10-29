@@ -66,7 +66,7 @@ static int chatSidebar(void){
    int y=39+i*16;if(i==selected){rounded(4,y-1,158,16,C_PURPLE);rounded(5,y,156,14,C_PURPLE_SOFT);}
    clipped(9,y,i==0?"+ Nieuw gesprek":savedChats[map[i-1]].damaged?"Beschadigd":savedChats[map[i-1]].title,18,i==selected?C_MINT:C_TEXT);
   }
-  rounded(236,49,64,58,C_PURPLE_SOFT);drawLogo(248,57,40,C_PURPLE);printAt(228,115,"Jouw chats",C_TEXT);printAt(208,137,"Lokaal bewaard",C_MUTED);
+  rounded(236,49,64,58,C_PURPLE_SOFT);drawLogo(248,57,40);printAt(228,115,"Jouw chats",C_TEXT);printAt(208,137,"Lokaal bewaard",C_MUTED);
   printAt(184,157,"Ook zonder wifi",C_MUTED);footer("Open","Wis","Nieuw","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<count)selected++;

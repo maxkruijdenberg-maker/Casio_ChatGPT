@@ -336,3 +336,12 @@ Actuele onderhouden chatmodellen met gewone namen, gefilterd op accountmetadata,
 F4 Info met keuzehulp, F2 Vernieuw en veilige lege lijsten. Atom V20.1 blijft
 ongewijzigd. Zie V22-MODELLEN.md en V22-CONTROLE-VOOR-VERKOOP.md. Geen live
 API-toegang of fysieke Casio/Atom in deze bouwomgeving getest.
+
+
+## V22.1 — 29 oktober 2026
+
+Directe vaste modelkeuzes, expliciete optionele F2 Account-controle, geen
+misleidende fallback na laadfout. Oude/gedeeltelijke accountgegevens worden
+niet als succes getoond. Paarsblauwe planeet en compactere laad-/modelschermen.
+Atom, native menu, UART, toetsen en opslag ongewijzigd. Controleer de fout- en
+succesroute op echt apparaat volgens V22.1-CONTROLE-VOOR-VERKOOP.md.
