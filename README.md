@@ -1,30 +1,31 @@
-# ChatGPT V21.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-Begin bij **[START-HIER.md](START-HIER.md)** of de
-[PDF-handleiding](docs/Handleiding-V21.1.pdf). De handleiding is ook als
-[offline HTML](docs/Handleiding-V21.1.html) beschikbaar.
+Begin bij **[START-HIER.md](START-HIER.md)**, de
+[PDF-handleiding](docs/Handleiding-V22.pdf) of de
+[offline HTML-handleiding](docs/Handleiding-V22.html).
 
-V21.1 verfijnt de donkere interface met een gewone chatbalk:
+V22 maakt de modelkeuze overzichtelijk:
 
-- **Stuur een bericht** staat alleen als tijdelijke tekst in een leeg invoerveld.
-- De invoer groeit omhoog tot acht regels en krimpt bij wissen.
-- Logo, kop, invoer, cursor en functietoetsen hebben vaste, afgestemde hoogtes.
-- Een rond groen bolletje bij Verbonden en een rood bolletje bij Verbroken.
-- De symmetrische planeetring, het mint-lila logo en de volledige accountlijst blijven.
+- Elf actuele tekst-chatkeuzes met gewone namen, zoals **GPT-6.1 Sol**.
+- Met Atom V20.1 alleen de passende modellen die in jouw API-account staan.
+- Geen uitgefaseerde modellen, datumkopieën, beeld-, audio- of videomodellen.
+- **F4 Info** geeft gebruiksadvies en legt snelheid, kosten en toegang uit.
+- **F2 Vernieuw** haalt accountmetadata op zonder betaalde chatvraag.
+- Bestaande modelkeuze blijft bewaard; kies na bijwerken zelf een actuele optie.
 
-Het klantpakket staat in [dist/ChatGPT-V21.1-installatie.zip](dist/ChatGPT-V21.1-installatie.zip),
-met alleen de huidige bestanden, broncode, licenties en handleidingen.
-[De schermen](docs/design/V21.1-actual-screens.png) zijn echte UI-hostrenders;
-modellen/accountgegevens daarin zijn voorbeelddata.
+[Download het installatiepakket](dist/ChatGPT-V22-installatie.zip).
+[Modelbronnen en selectiebeleid](docs/V22-MODELLEN.md) ·
+[Schermen uit de echte UI-renderer](docs/design/V22-actual-screens.png).
+Voorbeeldgegevens en softwareweergaven zijn geen foto's van echte hardware.
 
-**Atom V20.1 al geïnstalleerd?** Vervang alleen `dist/ChatGPT.g3a`, laat `CGPT3`
-staan en herstart de Casio. De Atom-broncode en firmware zijn bytegelijk aan V20.1.
-Zo niet: volg de volledige installatie in de handleiding. Zie [UPGRADE-V21.1.md](UPGRADE-V21.1.md).
+**Atom V20.1 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
+en herstart de Casio. De Atom-code en firmware zijn bytegelijk aan V20.1.
+Anders: volg de volledige installatie. Zie [UPGRADE-V22.md](UPGRADE-V22.md).
 
-De Casio-build en veertien ASan/UBSan-groepen controleren de software. Controle
-op echte hardware, live wifi/API-toegang en montage blijft noodzakelijk voordat
-een apparaat voor verkoop wordt vrijgegeven. Gebruik de
-[controlelijst voor de verkoper](docs/V21.1-CONTROLE-VOOR-VERKOOP.md).
+De donkere interface, groeiende chatbalk, het mint-lila logo en de groene/rode
+status blijven behouden. De accountlijst bevestigt modelnamen, geen succesvolle
+live chat of actuele prijs. Zie de [vrijgavecontrole](docs/V22-CONTROLE-VOOR-VERKOOP.md)
+voor controles op ieder echt apparaat.
 
 ## Windows: installeren
 
@@ -49,7 +50,7 @@ een apparaat voor verkoop wordt vrijgegeven. Gebruik de
 12. Open **F6 Instel → Wifi en account → EXE of pijl rechts**. Verbind je telefoon met het netwerk
     en wachtwoord op de Casio. Open **http://192.168.4.1**, vul je 2,4GHz-wifi in
     en plak je volledige OpenAI API-sleutel. Laat de Casio open tot de wifi-status
-    verschijnt. Het model blijft je bestaande keuze (standaard `gpt-4.1-mini`).
+    verschijnt. Kies daarna via Instellingen → Model een actuele chatkeuze; een oude modelinstelling wordt niet automatisch vervangen.
 13. Typ een korte vraag en druk F1. De eerste verbinding synchroniseert ook
     de klok voor certificaatcontrole. Zie `docs/HARDWARETEST.md` voor de tests.
 

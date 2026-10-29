@@ -339,3 +339,11 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Klant-ZIP met alleen actuele bestanden en licenties; geen oude versiegidsen of ontwikkellogs.
 - Casio-build en veertien softwaretestgroepen; Atom bytegelijk aan V20.1.
 - Fysieke montage, duurtest en live API-toegang niet gecertificeerd vanuit deze omgeving.
+
+
+## V22 — 29 oktober 2026
+
+Actuele onderhouden chatmodellen met gewone namen, gefilterd op accountmetadata,
+F4 Info met keuzehulp, F2 Vernieuw en veilige lege lijsten. Atom V20.1 blijft
+ongewijzigd. Zie V22-MODELLEN.md en V22-CONTROLE-VOOR-VERKOOP.md. Geen live
+API-toegang of fysieke Casio/Atom in deze bouwomgeving getest.

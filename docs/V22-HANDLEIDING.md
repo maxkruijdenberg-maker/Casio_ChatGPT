@@ -1,0 +1,204 @@
+# ChatGPT voor Casio fx-CG50
+
+## V22 — installatie en gebruik
+
+Een donkere chat-app met een meegroeiend invoerveld. Groen bolletje betekent
+Verbonden; rood bolletje betekent Verbroken. De woorden blijven erbij staan.
+De status gaat over contact met de Atom, niet over internet of je API-tegoed.
+
+## Wat je nodig hebt
+
+- Een Casio fx-CG50 met de aangesloten originele M5Stack Atom Lite en voeding.
+- Wifi op 2,4 GHz, via een router of een andere telefoon als hotspot.
+- Je eigen OpenAI-API-account, API-sleutel en betaald API-tegoed.
+- Voor installeren: een Windows-computer en USB-kabels voor Casio en Atom.
+
+Een ChatGPT-abonnement geeft geen API-tegoed. Beheer je sleutel en facturatie
+zelf op https://platform.openai.com. Deel je sleutel niet met een verkoper.
+
+## Bestaande installatie bijwerken
+
+Heb je de Atom-update van V20.1 al gedaan? De Atom-firmware in dit pakket is
+hetzelfde. Vervang dan alleen de Casio-app volgens het volgende onderdeel.
+Laat CGPT3 staan: daarin staan je chats en scherminstellingen.
+
+Heb je de Atom-update van V20.1 nog niet gedaan of weet je het niet? Werk eerst
+de Atom bij. De volledige installatie hieronder bewaart normaal je bestaande
+wifi, API-sleutel en model zolang je volledig wissen uitgeschakeld laat.
+
+## Casio-app installeren
+
+1. Pak de volledige ZIP uit naar een gewone map in Windows.
+2. Verbind de Casio via zijn USB met Windows en kies USB Flash / USB-opslag.
+3. Kopieer dist/ChatGPT.g3a naar de hoofdmap van het Casio-station. Vervang het
+   bestaande bestand; bewaar geen tweede kopie zoals ChatGPT (1).g3a.
+4. Laat de map CGPT3 staan als je chats wilt behouden.
+5. Werp het station veilig uit en ontkoppel de Casio-USB.
+6. Herstart de Casio eenmaal. Open MENU en kies ChatGPT.
+7. Instellingen → Meer → Over deze app toont Versie 22.
+
+De Atom houdt tijdens gebruik zijn eigen voeding. De Casio gebruikt zijn eigen
+batterijen. De handleiding gaat uit van een correct geassembleerd apparaat.
+
+## Atom installeren of bijwerken met Arduino IDE
+
+1. Haal de USB-voeding van de Atom los. Ontkoppel tijdelijk de Casio TX/RX-draden
+   van de Atom. Noteer de bestaande aansluitingen zodat je ze juist terugplaatst.
+2. Sluit de Atom via USB op Windows aan. Installeer Arduino IDE 2.x.
+3. Voeg bij Voorkeuren de extra Boardbeheer-URL toe:
+   https://espressif.github.io/arduino-esp32/package_esp32_index.json
+4. Installeer esp32 by Espressif Systems 3.3.0 in Boardbeheer.
+5. Installeer ArduinoJson by Benoit Blanchon 7.4.2 in Bibliotheekbeheer.
+6. Open atom/ChatGPTAtom/ChatGPTAtom.ino. Laat alle .h-bestanden ernaast staan.
+   Alleen het .ino-bestand kopiëren is niet voldoende.
+7. Kies board M5Atom voor de originele ESP32, de juiste COM-poort en snelheid 115200.
+   Gebruik geen M5AtomS3. Laat Erase All Flash / volledig wissen uitgeschakeld.
+8. Klik Upload. Na Hard resetting via RTS pin... is uploaden klaar; je hoeft
+   niet te wachten totdat die tekst verdwijnt.
+9. Sluit Serial Monitor, haal de USB los en herstel de eerder gecontroleerde
+   TX/RX-aansluitingen. Geef de Atom opnieuw USB-voeding.
+10. Installeer daarna de Casio-app zoals hierboven.
+
+Wie liever de voorgebouwde firmware gebruikt, kan Python met esptool 5.0.0
+installeren en vanuit de uitgepakte map uitvoeren: py tools/flash_windows.py COM5.
+Vervang COM5 door de juiste poort in Apparaatbeheer. Ook hiervoor blijven TX/RX
+los tijdens flashen. Gebruik geen erase-flash-opdracht.
+
+## Wifi en API-sleutel instellen via je telefoon
+
+1. Open ChatGPT op de Casio en druk F6 Instel.
+2. Kies Wifi en account en druk EXE of pijl rechts.
+3. Verbind je telefoon met het wifi-netwerk en wachtwoord op de Casio.
+4. Blijf verbonden als je telefoon zegt dat dit netwerk geen internet heeft.
+5. Open http://192.168.4.1 in de browser van je telefoon.
+6. Vul je eigen wifi-naam en wachtwoord in en plak je volledige API-sleutel.
+7. Kies Opslaan en verbinden en kijk op de Casio of verbinding lukt.
+8. Ga terug naar Instellingen en kies Model.
+
+De installatietelefoon kan niet tegelijk zelf de benodigde wifi-hotspot zijn.
+Gebruik een router of een hotspot op een andere telefoon. De opgeslagen sleutel
+wordt niet teruggelezen op het Casio-scherm.
+
+## Een bericht sturen
+
+Stuur een bericht is tijdelijke tekst in de lege chatbalk. Zodra je typt,
+verdwijnt die tekst. De balk groeit omhoog bij langere berichten en krimpt
+weer bij wissen. De tijdelijke tekst wordt nooit als jouw vraag verstuurd.
+
+ALPHA zet letters vast aan of uit. De eerste gewone letter wordt automatisch
+hoofdletter. F5 wisselt hoofdletters. SHIFT gebruikt een keer een gele wiskundefunctie.
+F4 Tekens geeft extra tekens, waaronder =. DEL wist de vorige letter.
+De pijlen verplaatsen de cursor. AC kan de hele invoer na bevestiging wissen.
+
+Druk F1 Stuur of EXE om je bericht te versturen. Het bewegende logo betekent
+dat de vraag wordt verwerkt. EXIT of F1 annuleert het wachten. Een al verstuurde
+API-vraag kan nog kosten maken; stuur niet meteen opnieuw bij een onzekere uitkomst.
+
+## Antwoorden en chats
+
+Omhoog/omlaag scrolt een regel; links/rechts een pagina. F1 Verder opent de
+invoer voor een vervolgvraag. F3 Vraag toont de volledige vraag bij een antwoord.
+Als opslaan is mislukt, staat daar Bewaar om opnieuw lokaal te proberen.
+
+F3 Chats opent vanuit de invoer je lokale chats; OPTN werkt ook.
+Bij een antwoord opent F4 Chats de lijst. Acht gesprekken met elk maximaal
+acht vraag/antwoordparen kunnen lokaal worden bewaard. Oude chats zijn offline
+leesbaar; nieuwe antwoorden vereisen internet en API-toegang.
+
+Nieuw begint een nieuw gesprek. Bij mogelijk verlies van ongestuurde invoer
+vraagt de app om bevestiging. Chats worden normaal automatisch opgeslagen.
+AI kan fouten maken: controleer belangrijke antwoorden.
+
+## Modellen kiezen
+
+Instellingen → Model toont herkenbare namen zoals GPT-6 Astra en GPT-6.1 Sol.
+De app biedt elf onderhouden tekst-chatkeuzes. Beeld-, audio-, video-, oudere
+uitgefaseerde en dubbele datumversies staan niet meer tussen de keuzes.
+
+Met Atom V20.1 of nieuwer wordt de accountlijst automatisch opgehaald. Alleen
+onderhouden chatkeuzes waarvan de exacte API-naam in jouw account staat, worden
+getoond. Dat controleert de aangeboden namen, niet of iedere vraag zal slagen.
+Als je account geen passende keuze bevat, blijft de lijst leeg en je bestaande
+instelling bewaard. Controleer je account of kies F2 Vernieuw.
+
+Omhoog/omlaag kiest een regel. F3 Vorig en F5 Volgend bladeren vijf regels.
+F4 Info vertelt bij welke vragen het model past en geeft keuzeadvies. Scroll
+met de pijlen om de hele uitleg te lezen; EXIT gaat terug naar dezelfde regel.
+Dit advies is een hulpmiddel van deze app, geen benchmark of prestatiegarantie.
+Snelheid hangt af van je vraag en de dienst. Onbevestigde prijzen worden niet
+als tarief getoond. Controleer prijzen op https://openai.com/api/pricing/.
+
+EXE, rechts of F1 Kies slaat de keuze op. Actief markeert je huidige model.
+F2 Vernieuw haalt de accountlijst opnieuw op. Ophalen, Info openen en kiezen
+versturen geen betaalde chatvraag. De app verstuurt pas een vraag als jij Stuur kiest.
+
+Kan de accountlijst niet worden opgehaald, dan krijg je een melding. Zonder
+beschikbare accountlijst toont de app de elf ingebouwde keuzes; Info vermeldt
+expliciet dat toegang nog niet is gecontroleerd. Met een oude Atom moet je
+bijwerken voor deze accountcontrole. Je bestaande model wordt nooit stilzwijgend
+vervangen. Gebruikte je een oudere standaardkeuze zoals GPT-4.1 Mini, kies dan
+zelf een actueel model voordat je weer een vraag verstuurt.
+
+De keuzelijst bevat GPT-6 Astra, GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Sol,
+GPT-6 Luna, GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5.4
+en GPT-5.4 Mini. De namen zijn gecontroleerd op 29 oktober 2026 in de officiële
+OpenAI-SDK, inclusief de uitfaseringsmeldingen. Toegang en tarieven kunnen wijzigen.
+
+## Terug en afsluiten
+
+EXIT gaat terug binnen de app en sluit die niet af. Alleen MENU vraagt om
+ChatGPT af te sluiten. Blijven of EXIT bewaart je concept. Bij echt afsluiten
+wordt ongestuurde invoer gewist; opgeslagen chats blijven staan.
+
+## Instellingen en hulp
+
+- Wifi en account: installatie via telefoon.
+- Model: actuele chatkeuzes, uitleg en vernieuwen.
+- Hulp: starten, typen/toetsen, antwoorden/kosten en verbinding controleren.
+- Meer: scherm aanpassen, appversie en wifi/sleutel wissen.
+
+Bij een pijl naar rechts werken EXE, rechts en F1 Open. EXIT of links gaat
+terug in lijsten. Bij Scherm aanpassen wijzigen links/rechts de geselecteerde
+waarde; EXE/F1 slaat op en EXIT annuleert de wijziging.
+
+## Als iets niet lukt
+
+Verbroken: controleer of de Atom voeding krijgt en goed is aangesloten. Open
+Instellingen → Hulp → Verbinding controleren. De app probeert opnieuw contact.
+Een groene status bewijst niet dat wifi, internet en API-tegoed werken.
+
+Wifi verbinden mislukt: controleer netwerknaam, wachtwoord en 2,4GHz-wifi.
+Verbind de installatietelefoon niet tegelijk als de hotspot die je wilt gebruiken.
+
+Geen API-toegang of tegoed: controleer je sleutel, projectrechten en facturatie
+in je OpenAI-account. Een ChatGPT-abonnement is geen API-tegoed.
+
+Model geeft een fout: kies een ander beschikbaar tekstmodel. Accountmetadata alleen garandeert geen geslaagde chatvraag. Controleer ook
+je rechten en tegoed. De app probeert niet automatisch een andere betaalde route.
+
+Vraag lijkt vast te staan: annuleer het wachten. De aanvraag kan al verstuurd
+zijn. De app vraagt niet automatisch opnieuw betaald; controleer de uitkomst
+voordat je zelf nogmaals verstuurt.
+
+Opslaan mislukt: gebruik Bewaar in het antwoordscherm of controleer vrije
+Casio-opslag. Verstuur dezelfde vraag niet opnieuw om een opslagprobleem op te lossen.
+
+Een System ERROR of herhaalbaar vastlopen is geen normale werking. Noteer wat
+je deed en de fouttekst, en laat het apparaat door de maker controleren.
+
+## Gegevens en overdracht
+
+Chats staan op de Casio in CGPT3. Wifi en API-sleutel staan op de Atom zonder
+flashversleuteling. Vragen en recente gesprekscontext gaan bij gebruik naar OpenAI.
+
+Wifi en sleutel wissen onder Meer verwijdert geen chats en geen OpenAI-account.
+Het herstelt ook de standaardmodelkeuze. Verwijder je chats afzonderlijk via Chats.
+Wis persoonlijke gegevens vóór overdracht en trek een niet meer gebruikte
+API-sleutel eventueel in via je OpenAI-account. Zet je sleutel nooit in broncode,
+een openbare foto of een bericht aan een verkoper.
+
+## Over dit pakket
+
+V22 bevat de Casio-app en dezelfde Atom-firmware als V20.1. De voorbeeldschermen
+zijn softwareweergaven met voorbeeldgegevens. Het is een onafhankelijk project.
+De licentie- en bronvermeldingen zijn meegeleverd in docs.

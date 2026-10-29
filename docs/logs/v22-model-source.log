@@ -1,0 +1,14 @@
+PASS current non-deprecated ChatModel alias: gpt-6-astra
+PASS current non-deprecated ChatModel alias: gpt-6.1-sol
+PASS current non-deprecated ChatModel alias: gpt-6.1-terra
+PASS current non-deprecated ChatModel alias: gpt-6-sol
+PASS current non-deprecated ChatModel alias: gpt-6-luna
+PASS current non-deprecated ChatModel alias: gpt-5.6-sol
+PASS current non-deprecated ChatModel alias: gpt-5.6-terra
+PASS current non-deprecated ChatModel alias: gpt-5.6-luna
+PASS current non-deprecated ChatModel alias: gpt-5.5
+PASS current non-deprecated ChatModel alias: gpt-5.4
+PASS current non-deprecated ChatModel alias: gpt-5.4-mini
+Official openai-python revision: f552fcffcf774520e946121704b5fbbf7ba986e8
+SHA-256: d2a74c51d4ee5cf1f782fc753c3db15d49cb19f8c3d04cadc4b76775b6ba4167
+No live completion, performance or price verification is implied.

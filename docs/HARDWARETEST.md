@@ -328,3 +328,11 @@ Volg docs/V21.1-CONTROLE-VOOR-VERKOOP.md per apparaat. Controleer placeholder,
 bolletjes. Open PDF en HTML offline op Windows en loop de installatie met het
 klantpakket door. Bewaar CGPT3 en bestaande Atom-configuratie. Softwaretests
 vervangen deze echte controles niet.
+
+
+## V22 — 29 oktober 2026
+
+Actuele onderhouden chatmodellen met gewone namen, gefilterd op accountmetadata,
+F4 Info met keuzehulp, F2 Vernieuw en veilige lege lijsten. Atom V20.1 blijft
+ongewijzigd. Zie V22-MODELLEN.md en V22-CONTROLE-VOOR-VERKOOP.md. Geen live
+API-toegang of fysieke Casio/Atom in deze bouwomgeving getest.

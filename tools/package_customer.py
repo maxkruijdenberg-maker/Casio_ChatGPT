@@ -13,7 +13,7 @@ for name in list(manifest)+['sha256.json']:add(Path('dist')/name)
 for folder in ['atom','casio']:
  for p in (root/folder).rglob('*'):
   if p.is_file() and not any(part in {'build','__pycache__'} for part in p.relative_to(root).parts):add(p.relative_to(root))
-for name in [f'docs/Handleiding-V{version}.pdf',f'docs/Handleiding-V{version}.html',f'docs/V{version}-HANDLEIDING.md',f'docs/V{version}-CONTROLE-VOOR-VERKOOP.md',f'UPGRADE-V{version}.md','docs/LOGO-SOURCE.md','START-HIER.html','tools/flash_windows.py','tools/build-casio.ps1']:
+for name in [f'docs/Handleiding-V{version}.pdf',f'docs/Handleiding-V{version}.html',f'docs/V{version}-HANDLEIDING.md',f'docs/V{version}-CONTROLE-VOOR-VERKOOP.md',f'UPGRADE-V{version}.md','docs/LOGO-SOURCE.md',f'docs/V{version}-MODELLEN.md','START-HIER.html','tools/flash_windows.py','tools/build-casio.ps1']:
  add(Path(name))
 for p in (root/'docs').glob('*LICENSE*'):add(p.relative_to(root))
 start=(root/'START-HIER.md').read_text()

@@ -1,0 +1,5 @@
+V22 package and unchanged-component verification
+PASS 25 Atom source/firmware, native menu, keyboard, storage and menu-icon files unchanged from v21.1.0
+PASS customer ZIP integrity, 5 exact binary hashes, source headers, offline manual links, PDF, model-source notes, no historical guides or developer logs
+PASS installation ZIP sidecar SHA-256
+No physical hardware, live API account, benchmark or current pricing test performed.

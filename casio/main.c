@@ -634,10 +634,32 @@ static void phoneSetup(void){
  }
  {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
 }
-static int choiceCount(void){return remoteModelCount?remoteModelCount:MODEL_COUNT;}
+/* Keep the transport catalogue intact; expose only maintained text-chat aliases.
+ * Zero compatible entries is an empty account view, never an unverified fallback. */
+static int accountHasModel(const char *id){
+ if(!remoteModelCount)return 1;
+ for(int i=0;i<remoteModelCount;i++){
+  const char *p=remoteModels+modelOffsets[i];size_t n=strlen(id);
+  if(!strncmp(p,id,n)&&p[n]=='\n')return 1;
+ }
+ return 0;
+}
+static int choiceCount(void){int n=0;for(int i=0;i<MODEL_COUNT;i++)n+=accountHasModel(modelChoices[i].id);return n;}
+static int choicePreset(int index){
+ for(int i=0;i<MODEL_COUNT;i++)if(accountHasModel(modelChoices[i].id)&&index--==0)return i;
+ return -1;
+}
 static const char *choiceId(int index,char out[256]){
- if(!remoteModelCount)return modelChoices[index].id;
- size_t at=modelOffsets[index],n=0;while(remoteModels[at]&&remoteModels[at]!='\n'&&n<255)out[n++]=remoteModels[at++];out[n]=0;return out;
+ (void)out;int i=choicePreset(index);return i>=0?modelChoices[i].id:"";
+}
+static void modelDetails(int preset,char *out,size_t cap){
+ const ModelChoice *m=&modelChoices[preset];
+ const char *access=remoteModelCount?"Dit model staat in je account. Dat garandeert nog geen geslaagde chatvraag.":"Toegang met jouw sleutel is nog niet gecontroleerd.";
+ const char *format="%s\n\nPast bij: %s\n\nKeuzehulp: %s\n\nSnelheid: hangt af van je vraag en de dienst.\nKosten: %s. Bekijk de actuele API-prijzen bij OpenAI.\n\n%s\nAPI-naam: %s";
+ /* The device SDK has sprintf, not snprintf. Bound all six fixed-source fields
+  * before formatting; format length overestimates the substitution overhead. */
+ if(cap<=strlen(format)+strlen(m->label)+strlen(m->description)+strlen(m->advice)+strlen(m->cost)+strlen(access)+strlen(m->id)){if(cap)out[0]=0;return;}
+ sprintf(out,format,m->label,m->description,m->advice,m->cost,access,m->id);
 }
 static int parseModelList(unsigned total){
  unsigned at=0,n=0,start=0;int count=0;remoteModelCount=0;
@@ -683,46 +705,41 @@ static int fetchModels(void){
  return ok;
 }
 static void paintModels(int selected){
- int i,first=(selected/5)*5,count=choiceCount();char id[256],label[64];clear("Jouw modellen");
- sprintf(label,"%d modellen · %s",count,remoteModelCount?(atomMajor>=20?"volledig account":"oude accountlijst"):"standaardlijst");printAt(14,38,label,C_MUTED);
+ int i,first=(selected/5)*5,count=choiceCount();char id[256],label[80];clear("Model kiezen");
+ sprintf(label,"%d chatmodellen · %s",count,remoteModelCount?"jouw account":"keuzelijst");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
-  clipped(18,y,name,33,i==selected?C_BLUE:C_TEXT);printAt(302,y,model_kind_label(model_kind(name)),C_MUTED);
-  if(!strcmp(publicModel,name))rounded(362,y+4,5,5,C_MINT);
+  clipped(18,y,modelDisplayName(name),33,i==selected?C_BLUE:C_TEXT);
+  if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
  }
- printAt(14,177,"↑↓ kiezen · EXE opslaan",C_MUTED);
- footer(model_kind(choiceId(selected,id))>=1&&model_kind(choiceId(selected,id))<=6?"Info":"Kies",remoteModelCount?"Basis":"Account","Vorig","Info","Volgend","Terug");show();
+ if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
+ printAt(14,177,count?"F4 Info helpt je kiezen":"Je huidige keuze blijft bewaard.",C_MUTED);
+ footer(count?"Kies":"","Vernieuw","Vorig",count?"Info":"","Volgend","Terug");show();
 }
 static int modelPicker(void){
- int selected=0,k;char id[256],details[768];
+ int selected=0,k;char id[256],details[1024];
  if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
  if(atomMajor>=20&&!remoteModelCount&&!fetchModels()&&modelFetchCancelled)return 0;
  for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
  while(!quitting){
-  if(selected>=choiceCount())selected=0;
+  int count=choiceCount();if(selected>=count)selected=0;
   paintModels(selected);k=waitEditorKey(1);if(quitting)return 0;
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;
-  if(k==KEY_PRGM_DOWN&&selected<choiceCount()-1)selected++;
-  if(k==KEY_PRGM_F5){selected+=5;if(selected>=choiceCount())selected=choiceCount()-1;}
+  if(k==KEY_PRGM_DOWN&&selected<count-1)selected++;
+  if(k==KEY_PRGM_F5&&count){selected+=5;if(selected>=count)selected=count-1;}
   if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
   if(k==KEY_PRGM_F2){
-   if(remoteModelCount){remoteModelCount=0;}
-   else if(atomMajor<20)message("Atom bijwerken","Upload de meegeleverde Atom-firmware voor de volledige accountlijst zonder chatfilter. Je wifi en sleutel blijven bewaard.");
+   if(atomMajor<20)message("Atom bijwerken","Upload de meegeleverde Atom-firmware om alleen passende modellen uit jouw account te tonen. Wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
    selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
    continue;
   }
-  if(k==KEY_PRGM_F4){
-   const char *name=choiceId(selected,id);int preset=modelChoiceIndex(name);
-   sprintf(details,"%s\nType: %s\n\n%s\n\n%s",name,model_kind_label(model_kind(name)),preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Controleer actuele API-prijzen. De beschikbaarheid hangt af van je account; dat wordt bij je vraag gecontroleerd.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
-   message("Over dit model",details);
-  }
-  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){
-   const char *name=choiceId(selected,id);int kind=model_kind(name);
-   if(kind>=1&&kind<=6){message("Geen tekst-chatmodel","Dit model staat wel in de volledige accountlijst, maar gebruikt een andere functie zoals beeld of audio. Deze app verstuurt tekstvragen. Kies daarvoor een chatmodel. Er is geen betaalde vraag verstuurd.");continue;}
-   if(!setting_valid(4,name,strlen(name))){message("Niet instelbaar","De naam staat in de lijst, maar kan niet als chatmodel ingesteld worden. Je bestaande keuze blijft behouden.");continue;}
+  if(k==KEY_PRGM_F4&&count){modelDetails(choicePreset(selected),details,sizeof(details));message("Over dit model",details);}
+  if(count&&(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)){
+   const char *name=choiceId(selected,id);
+   if(!setting_valid(4,name,strlen(name)))continue;
    if(!strcmp(publicModel,name))return 1;
    if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;return 1;}
   }
@@ -739,7 +756,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 21.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -763,7 +780,7 @@ static void helpAndDevice(void){
 }
 static void paintSettings(int selected){
  int i;const char *names[]={"Wifi en account","Model","Hulp","Meer"};
- const char *notes[]={publicSSID[0]?publicSSID:"Instellen via telefoon",publicModel[0]?publicModel:"Kies je model","Zo werkt de app","Scherm en appinformatie"};
+ const char *notes[]={publicSSID[0]?publicSSID:"Instellen via telefoon",publicModel[0]?modelDisplayName(publicModel):"Kies je model","Zo werkt de app","Scherm en appinformatie"};
  clear("Instellingen");
  for(i=0;i<4;i++){
   static const unsigned short accent[4]={C_MINT,C_BLUE,C_PURPLE,C_GOLD};
