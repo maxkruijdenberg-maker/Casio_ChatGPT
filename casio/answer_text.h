@@ -5,7 +5,7 @@
  * Convert Unicode presentation variants without changing mathematical relations. */
 static uint32_t answer_symbol(uint32_t cp){
  switch(cp){
- case 0xff1d:case 0xfe66:return '=';
+ case 0xff1d:case 0xfe66:case 0x207c:case 0x208c:return '=';
  case 0xff0b:return '+';case 0xff0d:case 0x2212:return '-';
  case 0xff0a:return '*';case 0xff0f:return '/';
  case 0xa0:case 0x202f:return ' ';case 0x210e:return 'h';
@@ -23,7 +23,11 @@ static int answer_display(const char *source,char *out,size_t cap){
  while(at<len){
   /* Remove only explicit LaTeX math delimiters, never mathematical operators. */
   if(source[at]=='\\'&&at+1<len&&(source[at+1]=='('||source[at+1]==')'||source[at+1]=='['||source[at+1]==']')){at+=2;continue;}
-  n=u_decode(source+at,len-at,&cp);cp=answer_symbol(cp);m=u_encode(cp,b);
+  n=u_decode(source+at,len-at,&cp);cp=answer_symbol(cp);
+  /* Preserve the count of equal signs in the uncommon double/triple forms.
+   * The font has no native glyphs for these, while ASCII is unambiguous. */
+  if(cp==0x2a75||cp==0x2a76){m=cp==0x2a75?2:3;memcpy(b,"===",m);}
+  else m=u_encode(cp,b);
   if(!m||used+m>=cap){out[0]=0;return 0;}
   memcpy(out+used,b,m);used+=m;at+=n;
  }

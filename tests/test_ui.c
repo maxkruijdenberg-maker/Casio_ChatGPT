@@ -429,6 +429,20 @@ static void testV17BuyerInterface(void){
  servedAnswer="𝑥 − 2 ＝ 4; x ≠ 3";SCRIPT(quiet);assert(fetchAnswer((unsigned)strlen(servedAnswer)));strcpy(lastQuestion,"Los op");activeChatSlot=-1;
  const int back[]={47};SCRIPT(back);readAnswer(0);
  assert(!strcmp(displayedAnswer,"x - 2 = 4; x ≠ 3")&&!strcmp(answer,"𝑥 − 2 ＝ 4; x ≠ 3"));servedAnswer=0;
+ /* Exercise transport, compatibility conversion and real answer pixels.
+  * Equals variants split across UART packets must render as the native '='. */
+ applyView(view_default());servedAnswer="2 + 2 ＝ 4;    3 + 3 ⁼ 6; 4 + 4 ₌ 8";
+ SCRIPT(quiet);assert(fetchAnswer((unsigned)strlen(servedAnswer)));SCRIPT(back);readAnswer(0);
+ const char *equalExpected="2 + 2 = 4;    3 + 3 = 6; 4 + 4 = 8";
+ assert(!strcmp(displayedAnswer,equalExpected)&&!strcmp(answer,servedAnswer));
+ int eq=glyphIndex('=');assert(eq>=0);int equalPixels=0;
+ for(size_t c=0;c<strlen(equalExpected);c++)if(equalExpected[c]=='='){
+  for(int y=0;y<14;y++)for(int x=0;x<8;x++){
+   int ink=(font_glyphs[eq].rows[y]&(1<<(7-x)))!=0;
+   assert(vram[(91+y)*384+12+(int)c*8+x]==(ink?C_TEXT:C_BG));equalPixels+=ink;
+  }
+ }
+ assert(equalPixels>20);servedAnswer=0;
  const int chatsKey[]={59};char input[32]="";SCRIPT(chatsKey);assert(editor(input,sizeof(input),"Vraag",0,1,0,1)==UI_CHATS&&!input[0]);
  /* Loader frames are genuine different rendered states and send no request. */
  paintLoading(0);memcpy(otherFramebuffer,framebuffer,sizeof(framebuffer));paintLoading(1);assert(memcmp(otherFramebuffer,framebuffer,sizeof(framebuffer)));
@@ -586,13 +600,13 @@ int main(int argc,char **argv){
  }
  assert(ringPixels>200);
  assert(modelChoiceIndex("gpt-6-astra")>=0&&modelChoiceIndex("gpt-6.1-sol")>=0&&modelChoiceIndex("gpt-6-luna")>=0);
- /* Status remains understandable through text as well as green/red ink. */
- linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0;
- for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
- assert(greenInk>20&&!redInk&&vram[16*384+294]==C_GREEN);
- linkOnline=0;clear("ChatGPT");greenInk=redInk=0;
- for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
- assert(redInk>20&&!greenInk&&vram[16*384+294]==C_STATUS_RED);linkOnline=1;
+ /* Status text and background stay neutral. Only the round dot is colored. */
+ linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0,neutralInk=0;
+ for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;neutralInk+=framebuffer[y*384+x]==C_TEXT;}
+ assert(!greenInk&&!redInk&&neutralInk>20&&vram[16*384+294]==C_GREEN&&vram[6*384+286]==C_PANEL);
+ linkOnline=0;clear("ChatGPT");greenInk=redInk=neutralInk=0;
+ for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;neutralInk+=framebuffer[y*384+x]==C_TEXT;}
+ assert(!greenInk&&!redInk&&neutralInk>20&&vram[16*384+294]==C_STATUS_RED&&vram[6*384+286]==C_PANEL);linkOnline=1;
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-6.1-sol");strcpy(publicModel,storedModel);
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -604,6 +618,7 @@ int main(int argc,char **argv){
   memset(b,'a',sizeof(b)-1);b[sizeof(b)-1]=0;renderEditor(b,sizeof(b),strlen(b),"ChatGPT",0,1,1,0,0,0,0);snprintf(path,sizeof(path),"%s/input-long.ppm",argv[2]);dumpFrame(path);
   strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
+  strcpy(answer,"23 + 42 ＝ 65\n1 / 3 ≈ 0,333\nx ≠ 3; x ≤ 8; x ≥ 2\nx ≡ y; a ≔ 5");SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/math-answer.ppm",argv[2]);dumpFrame(path);
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
@@ -624,6 +639,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

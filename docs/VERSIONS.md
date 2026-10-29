@@ -375,3 +375,11 @@ Alleen elf metadata-GETs, geen responsebody/JSON/grote accountlijst in RAM.
 256-byte resultaat, Casio-buffer 4 KiB, nulresultaat expliciet gecontroleerd,
 fouten wissen de hele lijst. Atom V22.3 en Casio-app vereist; betaald verzoek,
 UART, opslag en native menu ongewijzigd. Test F2 op het echte apparaat na beide updates.
+
+
+## V22.4 — status en antwoordtekens
+
+Neutrale statuswoorden/achtergrond met gekleurd bolletje. Extra Unicode-gelijktekens
+en native relatieglyphs; betekenis van ongeveer/ongelijk behouden, geen vervanging
+van letterlijke vraagtekens. UI-tests controleren ontvangen gelijktekens tot aan
+de schermpixels. Atom V22.3 en verbindings-/menu-/opslagcode ongewijzigd.

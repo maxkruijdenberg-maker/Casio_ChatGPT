@@ -1,20 +1,19 @@
-# ChatGPT V22.3 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.4 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.3-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.3.pdf) · [Offline handleiding](docs/Handleiding-V22.3.html)
+[Installatiepakket](dist/ChatGPT-V22.4-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.4.pdf) · [Offline handleiding](docs/Handleiding-V22.4.html)
 
-**Werk ook de Atom bij, zonder volledig wissen.** Vervang daarna ChatGPT.g3a,
-laat CGPT3 staan en herstart de Casio. Zie [UPGRADE-V22.3.md](UPGRADE-V22.3.md).
+- Neutrale tekst en achtergrond bij Verbonden/Verbroken; alleen het bolletje groen/rood.
+- Meer gelijktekenvarianten als =; nieuwe glyphs voor ongeveer gelijk en andere relaties.
+- Geen verwisseling van ≈, ≠, ≤, ≥ of echte vraagtekens met =.
+- Echte ontvangen tekst en opgeslagen chats blijven behouden.
 
-F2 Account controleert uitsluitend de elf aangeboden modellen met afzonderlijke
-metadata-GETs. Geen volledige accountrespons of JSON-document in het geheugen.
-Maximaal 256 bytes voor de modelnamen; 4 KiB Casio-buffer in plaats van 64 KiB.
-Een fout publiceert geen gedeeltelijke lijst. Nul toegankelijke namen blijft een
-lege, gecontroleerde lijst. De app vereist de nieuwe Atom voor deze controle.
+**Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
+en herstart de Casio. De Atom-code en firmware zijn bytegelijk aan V22.3.
+[Bijwerken](UPGRADE-V22.4.md) · [Schermen](docs/design/V22.4-actual-screens.png)
 
-Geen wijzigingen aan betaalde vragen, tokenbudget, ledger, UART, native menu of
-chats. De paarsblauwe planeet en Info blijven; de dubbele Vraag-knop blijft weg.
-Er is geen live API-account of fysieke Casio/Atom getest in de bouwomgeving.
+De geheugenarme modelcontrole, betaalde vraagroute, UART, toetsen, native menu en
+opslag zijn ongewijzigd. Geen echte hardware of live API-account in de bouwomgeving getest.
 
 ## Windows: installeren
 
