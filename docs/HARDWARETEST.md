@@ -304,3 +304,10 @@ Vanaf V17 t/m V19 alleen de .g3a vervangen. Controleer leesbaarheid van gewone
 en gedempte tekst, groen/rood, selectieranden en primaire acties in de donkere
 uitvoering. Loop invoer, antwoorden, Hulp, instellingen, laden en menuheropenen
 door en controleer ook je aangepaste schaal/positie.
+
+## V21 — gladder logo en kleurverloop
+
+Vanaf V17 t/m V20 alleen de .g3a vervangen. Controleer het grotere beginlogo,
+het mint-lila verloop, de dubbele rand, kleine bovenbalk-/antwoordlogo's en de
+laadanimatie. Test ook je opgeslagen schaal/positie, annuleren en menuheropenen.
+De donkere modus en statusbetekenis blijven gelijk.

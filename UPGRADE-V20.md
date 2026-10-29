@@ -1,3 +1,5 @@
+> Nieuwste versie: [UPGRADE-V21.md](UPGRADE-V21.md). De donkere modus blijft behouden.
+
 # V20 — donkere uitvoering met verfijnde opmaak
 
 ## Installeren vanaf V17, V18 of V19

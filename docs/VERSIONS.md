@@ -310,3 +310,11 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Verfijnde teksthiërarchie en dubbele accentbeweging rond het laadlogo.
 - Geen nieuwe bediening of instellingen; Atom bytegelijk aan V17.
 - Casio-build en veertien hosttestgroepen met 40 gesimuleerde menucycli.
+
+## V21.0 — verfijnd logo in donkere modus
+
+- Native SVG-rastermaten met 4-bit antialiasing voor grote en kleine logo's.
+- Mint-lila kleurverloop en dubbele rand op begin-/laadscherm.
+- Schermschaal/bounds-aware RGB565 blending; geen nieuwe timers of hardwareconfiguratie.
+- Casio-menu-iconen en volledige Atom-broncode/binaries blijven gelijk.
+- Casio-build en veertien hosttestgroepen, inclusief 40 gesimuleerde menucycli.

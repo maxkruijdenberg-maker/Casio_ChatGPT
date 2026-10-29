@@ -1,0 +1,10 @@
+Casio SH4 build: PASS
+Casio bytes: 85176
+SHA256: f4f623c8a645514d7fede20656a6d30f033591b0433e33fbfac323364328654b
+14 ASan/UBSan groups: PASS
+40 simulated native menu reopens: PASS
+Atom source and four binaries identical to v17.0.0
+Native menu BMP icons unchanged from v20.0.0
+Native 16/24/40/48/56/64 logo masks with 4-bit alpha.
+Dark theme palette unchanged from v20.0.0.
+No physical hardware or live API test.

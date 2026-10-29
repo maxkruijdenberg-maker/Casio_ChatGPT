@@ -1,28 +1,27 @@
-# ChatGPT V20.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V21.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-De donkere uitvoering van V19, met een diepblauwe achtergrond, rustige kaarten,
-mintgroene acties en lila-accenten. Alle tekst-, selectie- en statuskleuren zijn
-mee aangepast; dit is geen omgekeerd licht thema.
+De donkere uitvoering blijft, met een verfijnd ChatGPT-logo:
 
-- Abstract logo en laadanimatie met twee bewegende accenten.
-- Gecentreerde kop en ondertekst, met meer onderscheid tussen beide.
-- Gekleurde selectieranden op donkere, getinte kaarten.
-- Groene Verbonden-badge en rode Verbroken-badge, beide met leesbare tekst.
-- Dezelfde bediening, Hulp, accountmodellen, chats en =-weergave als V19.
+- Gladdere randen op grote én kleine logo's.
+- Een subtiel kleurverloop van mint naar lila op begin- en laadscherm.
+- Een dubbele rand en abstracte accenten rond het grote logo.
+- Een iets groter beginlogo, met voldoende ruimte tot de tekst.
+- Groene Verbonden- en rode Verbroken-badges zoals in V20.
 
-**Vanaf V17 t/m V19 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
+**Vanaf V17 t/m V20 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
 Laat `CGPT3` staan. Vanaf V16 of ouder is de Atom-update uit UPGRADE-V17.md nodig.
-Zie [UPGRADE-V20.md](UPGRADE-V20.md) en [de gebruikersgids](docs/V20-STARTGIDS.md).
+Zie [UPGRADE-V21.md](UPGRADE-V21.md) en [de gebruikersgids](docs/V21-STARTGIDS.md).
 
-[Bekijk de donkere V20-schermen](docs/design/V20-actual-screens.png),
-[de rode statusbadge](docs/design/V20-offline.png) en
-[de laadanimatie](docs/design/V20-loading.gif). Dit zijn renders uit de echte
-UI-hosttests; de modellen zijn voorbeelddata en geen privéaccount.
+[De V21-schermen](docs/design/V21-actual-screens.png) en
+[de laadanimatie](docs/design/V21-loading.gif) komen uit de werkelijke UI-renderer
+in hosttests. De modellenlijst gebruikt voorbeelddata. Het normale Casio-menu-icoon
+houdt zijn bestaande witte basis, zwarte logo en native selectie.
 
-De verbindingsstatus beschrijft lokaal contact met de Atom, geen garantie voor
-internet of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte Chat
-Completions API. Veertien softwaretestgroepen en de Casio-build controleren de
-software; fysieke controle op jouw apparaat blijft nodig.
+Bediening, verbinding, accountmodellen, Hulp, opslag en =-weergave blijven zoals
+in V20. De status beschrijft lokaal contact met de Atom, geen garantie voor internet
+of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte Chat Completions API.
+Veertien softwaretestgroepen en de Casio-build controleren de software; fysieke
+controle van de weergave op jouw apparaat blijft nodig.
 
 ## Windows: installeren
 

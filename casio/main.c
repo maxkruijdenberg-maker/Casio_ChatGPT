@@ -22,7 +22,7 @@
 #include "../atom/ChatGPTAtom/wire.h"
 #include "text.h"
 #include "font.h"
-#include "logo.h"
+#include "logo_aa.h"
 #include "layout.h"
 #include "../atom/ChatGPTAtom/config_validation.h"
 #define COLS 44
@@ -160,13 +160,28 @@ static void choiceCard(int x,int y,int w,int h,int selected,unsigned short accen
  rounded(x,y,w,h,selected?accent:C_PANEL);
  rounded(x+1+(selected!=0),y+1+(selected!=0),w-2-2*(selected!=0),h-2-2*(selected!=0),selected?tint:C_PANEL);
 }
-static void drawLogo(int x,int y,int size,unsigned short color){
- int source=size==16?16:size>=40?40:24,i;
- const uint8_t *bits=source==16?logo16:source==40?logo40:logo24;
- for(i=0;i<source*source;i++)if(bits[i/8]&(1<<(7-i%8))){
-  int sx=i%source,sy=i/source;rect(x+sx*size/source,y+sy*size/source,(sx+1)*size/source-sx*size/source,(sy+1)*size/source-sy*size/source,color);
+static unsigned short mix565(unsigned short front,unsigned short back,int alpha){
+ int r=(((front>>11)&31)*alpha+((back>>11)&31)*(15-alpha)+7)/15;
+ int g=(((front>>5)&63)*alpha+((back>>5)&63)*(15-alpha)+7)/15;
+ int b=((front&31)*alpha+(back&31)*(15-alpha)+7)/15;
+ return (unsigned short)((r<<11)|(g<<5)|b);
+}
+static void logoPaint(int x,int y,int size,unsigned short color,int gradient){
+ if(!viewReady)applyView(view_default());
+ int source=size==16?16:size==24?24:size==40?40:size==48?48:size==56?56:64;
+ const uint8_t *bits=source==16?logo_aa16:source==24?logo_aa24:source==40?logo_aa40:source==48?logo_aa48:source==56?logo_aa56:logo_aa64;
+ int px,py;
+ for(py=0;py<size;py++)for(px=0;px<size;px++){
+  int index=(py*source/size)*source+px*source/size;
+  int a=(bits[index/2]>>(index%2?0:4))&15;ViewRect r;
+  if(a&&view_rect(&viewMap,x+px,y+py,1,1,&r)){
+   unsigned short ink=gradient?mix565(C_PURPLE,C_MINT,py*15/(size>1?size-1:1)):color;
+   unsigned short background=vram[r.y*384+r.x];
+   physicalRect(r.x,r.y,r.w,r.h,mix565(ink,background,a));
+  }
  }
 }
+static void drawLogo(int x,int y,int size,unsigned short color){logoPaint(x,y,size,color,0);}
 /* Abstract orbit motif, painted with integer-only primitives. No timers,
  * driver state or input handling are involved in these visual accents. */
 static void ellipse(int cx,int cy,int rx,int ry,unsigned short color){
@@ -183,8 +198,10 @@ static void abstractLogo(int cx,int cy,int size,int phase){
  ellipse(cx-12,cy-3,radius+23,12,C_BG);
  ellipse(cx+12,cy+3,radius+18,22,C_RAISED);
  ellipse(cx+12,cy+3,radius+13,17,C_BG);
- ellipse(cx,cy,radius+7,radius+7,C_PANEL);
- drawLogo(cx-radius,cy-radius,size,C_MINT);
+ ellipse(cx,cy,radius+10,radius+10,C_PURPLE_SOFT);
+ ellipse(cx,cy,radius+8,radius+8,C_BLUE_SOFT);
+ ellipse(cx,cy,radius+6,radius+6,C_PANEL);
+ logoPaint(cx-radius,cy-radius,size,C_MINT,1);
  if(phase>=0){int i=phase%8,j=(i+4)%8;rounded(cx+orbit[i][0]-2,cy+orbit[i][1]-2,5,5,C_PURPLE);rounded(cx+orbit[j][0]-1,cy+orbit[j][1]-1,3,3,C_MINT);}
  else {rounded(cx-58,cy-17,4,4,C_PURPLE);rounded(cx+55,cy+17,4,4,C_MINT);}
 }
@@ -432,7 +449,7 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
  (void)cap;
  if(promptMode==1&&!buf[0]){
-  abstractLogo(192,79,40,-1);
+  abstractLogo(192,76,48,-1);
   centered(113,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Wat wil je ontdekken?",C_TEXT);
   centered(136,activeChatSlot>=0?"Vraag verder. Blijf nieuwsgierig.":"Een vraag is genoeg om te beginnen.",C_MUTED);
   centered(157,"Typ je vraag. Stuur met F1.",C_MINT);
@@ -683,7 +700,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 20.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 21.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }

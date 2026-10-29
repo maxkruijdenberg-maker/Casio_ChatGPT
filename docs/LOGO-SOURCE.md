@@ -15,3 +15,11 @@ layout or the icons of any other application.
 V3 removes all bitmap text and selection decorations. Both menu bitmaps are
 white with a black logo, leaving the native Casio gray/black label to the OS.
 This fixes the duplicate text; it does not recolor the rest of the system menu.
+
+## V21 in-app refinement
+
+`tools/make_logo_aa.py` generates `casio/logo_aa.h` from the same pinned SVG.
+Native 16/24/40/48/56/64 pixel masks use 4-bit alpha coverage; the Casio renderer
+blends edges over the current RGB565 framebuffer. The large mark receives a
+mint-to-lilac tint and a decorative rim. The underlying knot source and trademark
+attribution remain unchanged. The native-menu BMP icons are not regenerated.
