@@ -457,7 +457,7 @@ static void testV17BuyerInterface(void){
  connected=1;fakeAtomMajor=11;libraryReady=1;activeChatSlot=-1;unsavedReply=0;contextDirty=1;
  strcpy(prompt,"Wat is 23+42?");servedAnswer="23 + 42 ＝ 65";
  emulateQuestion=verifyLogoOnly=1;emulatedStatus=logoFrames=0;int beforeAsk=requestCount[W_ASK];
- ask();renderEditor(prompt,sizeof(prompt),strlen(prompt),"ChatGPT",0,1,0,0,0,1,0);assert(!loadingActive&&logoFrames>4&&emulatedStatus==4&&requestCount[W_ASK]==beforeAsk+1);
+ ask();renderEditor(prompt,sizeof(prompt),strlen(prompt),"ChatGPT",0,1,0,0,1,0);assert(!loadingActive&&logoFrames>4&&emulatedStatus==4&&requestCount[W_ASK]==beforeAsk+1);
  assert(!strcmp(displayedAnswer,"23 + 42 = 65")&&!strcmp(answer,servedAnswer)&&!unsavedReply);
  emulateQuestion=verifyLogoOnly=0;servedAnswer=0;
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
@@ -520,7 +520,7 @@ static void testAccountModels(void){
 static void testUnifiedConversation(void){
  connected=1;quitting=0;loadLibrary();int slot=freeSlot(savedChats);assert(slot>=0);
  for(int i=0;i<3;i++){char q[40],a[80];sprintf(q,"Vraag %d",i+1);sprintf(a,"Antwoord %d\nTweede regel %d",i+1,i+1);assert(lib_append(&disk,slot,&savedChats[slot],q,a,&savedChats[slot]));}
- activeChatSlot=slot;assert(loadChatPair(slot,2));contextDirty=1;prompt[0]=0;chatInputLetters=chatInputUpper=0;chatFollowTail=1;
+ activeChatSlot=slot;assert(loadChatPair(slot,2));contextDirty=1;prompt[0]=0;chatInputLetters=0;chatFollowTail=1;
  int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
  const int firstFollowup[]={77,0,76,0,66,0,79};SCRIPT(firstFollowup);
  assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"Ab")&&chatInputLetters&&activeChatSlot==slot&&savedChats[slot].turns==3);
@@ -551,8 +551,8 @@ static void testSentenceInput(void){
  strcpy(input,"Begin. ");SCRIPT(letters);assert(editor(input,sizeof(input),"Geheim",1,1,1,0)==KEY_PRGM_F1&&!strcmp(input,"Begin. ab"));
  const int midWord[]={38,0,77,0,56,0,79};strcpy(input,"ab");SCRIPT(midWord);
  assert(editor(input,sizeof(input),"Test",0,1,0,1)==KEY_PRGM_F1&&!strcmp(input,"acb"));
- newLocalChat();const int lock[]={49,0,69,0,47,0,66,0,76,0,39,0,49,0,69,0,47,0,66,0,79};SCRIPT(lock);
- assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"BAb")&&!chatInputUpper&&chatInputLetters);
+ newLocalChat();const int noLock[]={77,0,76,0,49,0,69,0,47,0,66,0,39,0,76,0,79};SCRIPT(noLock);
+ assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"Aba")&&chatInputLetters);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);newLocalChat();
 }
 
@@ -560,7 +560,9 @@ int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
  assert(editor(b,sizeof(b),"Test",0,1,0,1)==79);assert(!strcmp(b,"Hello"));
- const int exact[]={77,0,76,0,49,0,69,0,47,0,66,0,49,0,69,0,47,0,56,0,79};b[0]=0;SCRIPT(exact);
+ /* Pick one uppercase B from Tekens; the next typed letter stays lowercase. */
+ int exact[50],exactAt=0;const int prefix[]={77,0,76,0,49,0,37,0,37,0};memcpy(exact,prefix,sizeof(prefix));exactAt=sizeof(prefix)/sizeof(prefix[0]);
+ for(int i=0;i<10;i++){exact[exactAt++]=27;exact[exactAt++]=0;}exact[exactAt++]=79;exact[exactAt++]=0;exact[exactAt++]=56;exact[exactAt++]=0;exact[exactAt++]=79;b[0]=0;script(exact,exactAt);
  assert(editor(b,sizeof(b),"API",1,0,1,0)==79);assert(!strcmp(b,"aBc"));
  /* Secret editor displays '*' in its first content cell. */
  rect(0,0,384,216,C_PANEL);glyph(12,52,'*',C_TEXT);unsigned short expected[14*8];
@@ -621,13 +623,13 @@ int main(int argc,char **argv){
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
- renderEditor(composed,sizeof(composed),0,"ChatGPT",0,1,0,0,0,1,0);assert(!composed[0]);
+ renderEditor(composed,sizeof(composed),0,"ChatGPT",0,1,0,0,1,0);assert(!composed[0]);
  int lengths[]={1,32,33,34,43,44,45,65,66,67,99,175,351,352,1024};
  for(unsigned n=0;n<sizeof(lengths)/sizeof(lengths[0]);n++){
   memset(composed,'a',lengths[n]);composed[lengths[n]]=0;int r,c;cursorPosition(composed,strlen(composed),MESSAGE_COLS,&r,&c);
   int shown=composerRows(composed),firstRow=r>=ROWS?r-ROWS+1:0;assert(shown>=1&&shown<=8);
   assert(167-shown*14-5>=50&&167-shown*14+shown*14+5==172);
-  renderEditor(composed,sizeof(composed),strlen(composed),"ChatGPT",0,1,1,0,0,0,firstRow);
+  renderEditor(composed,sizeof(composed),strlen(composed),"ChatGPT",0,1,1,0,0,firstRow);
  }
  /* Shrinking a scrolled draft must return to the top of its growing field. */
  char shrinking[401];memset(shrinking,'a',400);shrinking[400]=0;int eraseKeys[711],eraseAt=0;
@@ -659,7 +661,7 @@ int main(int argc,char **argv){
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   activeChatSlot=-1;prompt[0]=0;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/home.ppm",argv[2]);dumpFrame(path);snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   activeChatSlot=0;strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
-  memset(b,'a',sizeof(b)-1);b[sizeof(b)-1]=0;renderEditor(b,sizeof(b),strlen(b),"ChatGPT",0,1,1,0,0,0,0);snprintf(path,sizeof(path),"%s/input-long.ppm",argv[2]);dumpFrame(path);
+  memset(b,'a',sizeof(b)-1);b[sizeof(b)-1]=0;renderEditor(b,sizeof(b),strlen(b),"ChatGPT",0,1,1,0,0,0);snprintf(path,sizeof(path),"%s/input-long.ppm",argv[2]);dumpFrame(path);
   strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
   int historyUp[81];for(int i=0;i<40;i++){historyUp[i*2]=28;historyUp[i*2+1]=0;}historyUp[80]=47;
@@ -671,7 +673,7 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
-  int capsPreview=0;const int capsKeys[]={69,0,47};SCRIPT(capsKeys);pickCharacter(0,&capsPreview);assert(capsPreview);snprintf(path,sizeof(path),"%s/caps-lock.ppm",argv[2]);dumpFrame(path);
+  const int characterKeys[]={69,0,47};SCRIPT(characterKeys);pickCharacter(0);snprintf(path,sizeof(path),"%s/characters.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
   if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
@@ -688,6 +690,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.8 inline input controls, sentence capitalization and caps lock in character menu; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.9 no manual caps lock, automatic sentence case and exact secret character selection retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

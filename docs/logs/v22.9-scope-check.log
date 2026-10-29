@@ -1,0 +1,4 @@
+PASS: 22 Atom firmware/source and native helper files byte-identical to v22.8.0.
+Casio V22.9 build: success.
+16 ASan/UBSan test groups passed; detect_leaks=0 for sandbox execution; no LeakSanitizer check.
+No physical hardware or live API tested.

@@ -1,18 +1,18 @@
-# ChatGPT V22.8 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.9 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.8-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.8.pdf) · [Offline handleiding](docs/Handleiding-V22.8.html)
+[Installatiepakket](dist/ChatGPT-V22.9-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.9.pdf) · [Offline handleiding](docs/Handleiding-V22.9.html)
 
 - Geen losse OPTN/MENU-hint; invoerstand ín de berichtenbalk vóór het verstuurpijltje.
-- Automatische hoofdletter na een punt; hoofdletterlock via F4 Tekens → F2.
-- Geen aparte hoofdletterknop meer; tekst en cursor blijven vrij van de bedieningsruimte.
+- Automatische hoofdletter aan het begin van een zin; geen handmatige hoofdletterlock.
+- Alleen de compacte invoerstanden 123, abc en Abc; losse hoofdletters kies je via Tekens.
 - Modelkeuze zonder Vorig/Volgend: de lijst schuift mee met omhoog/omlaag.
 - Afgeronde Jij/ChatGPT-labels met pictogrammen en extra ruimte tussen vraag en antwoord.
 - Eén doorlopend gesprek, directe vervolginvoer en blijvende ALPHA-lock behouden.
 
 **Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
 en herstart de Casio. De Atom-code en firmware zijn ongewijzigd.
-[Bijwerken](UPGRADE-V22.8.md) · [Schermen](docs/design/V22.8-actual-screens.png).
+[Bijwerken](UPGRADE-V22.9.md) · [Schermen](docs/design/V22.9-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
 Geen live API-account of fysieke Casio in de bouwomgeving getest.
@@ -73,25 +73,26 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 |---|---|
 | ALPHA | Lettervergrendeling aan/uit; eenmaal drukken is genoeg |
 | SHIFT | Eenmalige gele functie, bijvoorbeeld sin → asin; nogmaals annuleert SHIFT |
-| F4 → F2 | Hoofdletterlock aan/uit in Tekens |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
 | F2 | Nieuw gesprek; vraagt bevestiging als een concept verloren zou gaan |
 | F3 | Chats openen |
 | F4 | Tekenkeuzescherm; pijlen kiezen, EXE invoegen |
 | F6 | Instellingen |
 | Links/rechts | Cursor naar vorige/volgende volledige letter |
-| Omhoog/omlaag | Cursor ongeveer een schermregel verplaatsen |
+| Omhoog/omlaag | Door de chatgeschiedenis lezen; in nieuwe invoer de cursor verplaatsen |
 | DEL | Vorige letter verwijderen |
 | AC | Invoerveld wissen, na bevestiging |
 | EXIT | Terug/annuleren binnen de app; op het beginscherm blijft je concept staan |
 | MENU | Vraagt om afsluiten; Blijven bewaart de huidige invoer en verbinding |
 
 De letterlabels op de normale toetsen worden gebruikt. Op het scherm staat
-123, abc, ABC of Abc. De eerste gewone letter van een nieuwe vraag wordt een
-hoofdletter; ook na een punt begint een nieuwe zin met een hoofdletter.
-Vaste hoofdletters schakel je via F4 Tekens → F2, gevolgd door EXIT of F6. Instellingen veranderen nooit
-automatisch de letterkast. In het tekenkeuzescherm zijn alle afdrukbare
-ASCII-tekens beschikbaar, inclusief spatie, streepje en underscore voor sleutels.
+123, abc of Abc. ALPHA wisselt tussen cijfers en letters; dit is geen hoofdletterlock.
+De eerste gewone letter van een nieuwe vraag wordt een hoofdletter; ook na . ! ?
+begint een nieuwe zin automatisch met een hoofdletter. Er is geen handmatige
+hoofdletterlock meer, ook niet in Tekens. Een losse hoofdletter kies je via F4 Tekens;
+EXIT of F6 keert terug naar de invoer. In het tekenkeuzescherm staan alle afdrukbare
+ASCII-tekens, inclusief hoofdletters, spatie, streepje en underscore. Geheime velden
+behouden de exact ingevoerde letterkast en krijgen geen automatische hoofdletters.
 De eigen editor gebruikt de rode letterlabels bij ALPHA-lock. In cijferstand
 voeren de wiskundetoetsen functietekst in; SHIFT gebruikt eenmalig de gele
 functie. Bijvoorbeeld sin → `sin(`, SHIFT+sin → `asin(`, SHIFT+x² → `sqrt(`

@@ -418,3 +418,14 @@ cursor/wrapping. Losse OPTN/MENU-hint en F5-hoofdletteractie in de editor verwij
 Tekens via F2; automatische zinshoofdletters alleen voor gewone invoer, niet
 geheime velden. Model-/API-/opslag-/menuhelpers onveranderd. Test lange invoer,
 zinbegin, decimalen, cursor midden woord, lock en exacte geheime letterkast.
+
+
+## V22.9 — automatische hoofdletters zonder handmatige lock
+
+De vaste hoofdletterstand en F2-lock in Tekens zijn verwijderd. ALPHA blijft
+cijfers/letters wisselen; zinshoofdletters blijven automatisch en losse hoofdletters
+zijn via Tekens te kiezen. Geheimen behouden exacte letterkast. Atom V22.3,
+modelkeuze, transport, opslag en native-menuhelpers zijn ongewijzigd.
+Casio-build en zestien ASan/UBSan-testgroepen geslaagd binnen de sandbox met
+ASAN_OPTIONS=detect_leaks=0; de afzonderlijke lekcontrole is niet uitgevoerd.
+Controleer bediening en heropenen op echte hardware vóór levering.

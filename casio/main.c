@@ -437,21 +437,20 @@ static int waitEditorKey(int promptMode){
  }return KEY_PRGM_MENU;
 }
 /* All printable ASCII plus a named Unicode repertoire. API keys use ASCII only. */
-static uint32_t pickCharacter(int asciiOnly,int *upper){
+static uint32_t pickCharacter(int asciiOnly){
  static const char extras[]="éëèêáàâäíïìîóöòôúüùûçñÉËπθαβγδμωφ∞√≤≥≠×÷±∑∫∆→←↑↓²³°€";
  uint32_t choices[180];int count=0,i,sel=0,first=0,k;size_t pos=0,len=strlen(extras);uint32_t cp;
  choices[count++]='=';
  for(i=32;i<=126;i++)if(i!='=')choices[count++]=(uint32_t)i;
  if(!asciiOnly)while(pos<len){pos+=u_decode(extras+pos,len-pos,&cp);choices[count++]=cp;}
  while(!quitting){char label[80];clear("Kies een teken");
-  sprintf(label,"Teken %d van %d",sel+1,count);printAt(8,35,label,C_MUTED);printAt(236,35,*upper?"ABC vast: aan":"ABC vast: uit",C_MUTED);
+  sprintf(label,"Teken %d van %d",sel+1,count);printAt(8,35,label,C_MUTED);
   if(sel<first)first=(sel/12)*12;if(sel>=first+96)first=(sel/12-7)*12;
   for(i=first;i<count&&i<first+96;i++){
    int x=8+((i-first)%12)*30,y=51+((i-first)/12)*15;glyph(x,y,choices[i],i==sel?0x0280:0);
    if(i==sel){int x2;for(x2=x;x2<x+16;x2++)rect(x2,y+14,1,1,C_MINT);}
   }
-  printAt(8,175,"F2: hoofdletters vast aan/uit",C_MUTED);footer("Kies",*upper?"ABC uit":"ABC aan","","","","Terug");show();k=waitKey();
-  if(k==KEY_PRGM_F2){*upper=!*upper;continue;}
+  printAt(8,175,"Pijlen kiezen · EXE invoegen",C_MUTED);footer("Kies","","","","","Terug");show();k=waitKey();
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return choices[sel];if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6)return 0;
   if(k==KEY_PRGM_LEFT&&sel>0)sel--;if(k==KEY_PRGM_RIGHT&&sel<count-1)sel++;
   if(k==KEY_PRGM_UP&&sel>=12)sel-=12;if(k==KEY_PRGM_DOWN&&sel+12<count)sel+=12;
@@ -465,7 +464,7 @@ static int composerRows(const char *buf);
 static char displayedAnswer[ANSWER_MAX+1];
 static ConversationTimeline chatTimeline;
 static int chatTimelineReady=0,chatScroll=0,chatFollowTail=1,chatPaintTurn=-1;
-static int chatLiveTurn=-1,chatReadError=0,chatInputLetters=0,chatInputUpper=0;
+static int chatLiveTurn=-1,chatReadError=0,chatInputLetters=0;
 static int hasConversation(void){return (activeChatSlot>=0&&savedChats[activeChatSlot].used)||(answer[0]&&lastQuestion[0]);}
 static void invalidateConversation(void){chatTimelineReady=0;chatPaintTurn=-1;chatReadError=0;}
 static int loadConversationTurn(int turn){
@@ -514,7 +513,7 @@ static int composerRows(const char *buf){
  int row,col;cursorPosition(buf,strlen(buf),MESSAGE_COLS,&row,&col);row++;return row>ROWS?ROWS:row;
 }
 static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *title,int secret,int promptMode,
- int letters,int upper,int shifted,int firstLetter,int first){
+ int letters,int shifted,int firstLetter,int first){
  int row,col,top=52,left=12,visible=ROWS;char mode[8];cursorPosition(buf,cursor,promptMode==1?MESSAGE_COLS:COLS,&row,&col);
  clear(title);
  (void)cap;
@@ -536,25 +535,25 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  if(promptMode==1){
   if(chatReadError)printAt(8,175,"Een deel van je chat is niet leesbaar.",C_RED);
   /* Reserved control rail: input and caret stop before the mode and send arrow. */
-  sprintf(mode,"%s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",shifted?" S":"");
+  sprintf(mode,"%s%s",letters?(firstLetter?"Abc":"abc"):"123",shifted?" S":"");
   printAt(336-(int)strlen(mode)*8,153,mode,C_MUTED);
   rounded(346,152,20,17,C_RAISED);
   for(int dy=0;dy<4;dy++)rect(355-dy,155+dy,2+dy*2,1,C_MUTED);rect(355,159,2,7,C_MUTED);
  }else {
   printAt(8,175,"DEL wissen · ←→ cursor · EXIT terug",C_MUTED);
-  sprintf(mode,"%s%s",letters?(upper?"ABC":"abc"):"123",shifted?" S":"");
+  sprintf(mode,"%s%s",letters?"abc":"123",shifted?" S":"");
   {int width=(int)strlen(mode)*8+12;rounded(376-width,174,width,15,C_PANEL);printAt(382-width,175,mode,C_MUTED);}
  }show();
 }
 static void prepareMenuSnapshot(void){
  int known=linkKnown,online=linkOnline,seen=linkSeen,active=autoProbeActive;
  linkKnown=1;linkOnline=0;linkSeen=0;autoProbeActive=1;invalidateConversation();
- renderEditor("",PROMPT_MAX+1,0,"ChatGPT",0,1,0,0,0,1,0);
+ renderEditor("",PROMPT_MAX+1,0,"ChatGPT",0,1,0,0,1,0);
  linkKnown=known;linkOnline=online;linkSeen=seen;autoProbeActive=active;
 }
 /* Returns F1/F2/F6/EXIT. Secret input is never revealed or retained on Casio. */
 static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
- size_t cursor=strlen(buf);int keepMode=promptMode==1&&buf==prompt;int letters=keepMode?chatInputLetters:0,upper=keepMode?chatInputUpper:0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
+ size_t cursor=strlen(buf);int keepMode=promptMode==1&&buf==prompt;int letters=keepMode?chatInputLetters:0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
  int columns=promptMode==1?MESSAGE_COLS:COLS;
  if(promptMode==1)invalidateConversation();
  while(!quitting){
@@ -564,7 +563,7 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   int visible=promptMode==1?(hasConversation()?conversationRows(buf):composerRows(buf)):ROWS;
   if(promptMode==1){int endRow,endCol,maxFirst;cursorPosition(buf,strlen(buf),columns,&endRow,&endCol);maxFirst=endRow+1-visible;if(maxFirst<0)maxFirst=0;if(first>maxFirst)first=maxFirst;}
   if(row<first)first=row;if(row>=first+visible)first=row-visible+1;
-  renderEditor(buf,cap,cursor,title,secret,promptMode,letters,upper,shifted,firstLetter,first);
+  renderEditor(buf,cap,cursor,title,secret,promptMode,letters,shifted,firstLetter,first);
   k=waitEditorKey(promptMode);if(quitting)return KEY_PRGM_MENU;if(k==UI_LINK_REFRESH)continue;
   if(k==KEY_PRGM_SHIFT){shifted=!shifted;continue;}
   if(k==KEY_PRGM_ALPHA){letters=!letters;if(keepMode)chatInputLetters=letters;shifted=0;continue;}
@@ -586,9 +585,7 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(k==KEY_PRGM_UP){int i;for(i=0;i<columns&&cursor;i++)cursor=u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_DOWN){int i;for(i=0;i<columns&&cursor<strlen(buf);i++)cursor=u_next(buf,cursor);continue;}
   if(useShift&&k==61)cp='=';
-  else if(k==KEY_PRGM_F4){int wasUpper=upper;cp=(int)pickCharacter(asciiOnly,&upper);
-   if(upper!=wasUpper){letters=1;if(keepMode){chatInputUpper=upper;chatInputLetters=letters;}}
-  }
+  else if(k==KEY_PRGM_F4)cp=(int)pickCharacter(asciiOnly);
   else {
    if(useShift||(!letters&&promptMode==1))token=math_key(k,useShift);
    if(token){
@@ -601,7 +598,7 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
    }
    cp=letters&&!useShift?alpha_key(k):number_key(k);
   }
-  if(upper||firstLetter){if(cp>='a'&&cp<='z')cp-=32;else if(cp>=0xe0&&cp<=0xfe&&cp!=0xf7&&glyphIndex(cp-32)>=0)cp-=32;}
+  if(firstLetter){if(cp>='a'&&cp<='z')cp-=32;else if(cp>=0xe0&&cp<=0xfe&&cp!=0xf7&&glyphIndex(cp-32)>=0)cp-=32;}
   if(!cp){if(k!=KEY_PRGM_F4)message("Teken niet ondersteund","Gebruik F4 Tekens voor speciale tekens en formules.");continue;}
   if(asciiOnly&&(cp<32||cp>126)){message("Ongeldig teken","Dit veld ondersteunt alleen ASCII.");continue;}
   if(glyphIndex((uint32_t)cp)<0){message("Teken niet ondersteund","Dit invoerteken kan niet worden weergegeven.");continue;}
@@ -841,7 +838,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.8\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.9\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -851,7 +848,7 @@ static void helpAndDevice(void){
  int selected=0,k,i;const char *names[]={"Aan de slag","Typen en toetsen","Antwoorden en kosten","Verbinding controleren"};
  const char *body[]={
  "1. Open Wifi en account.\n2. Volg de stappen op je telefoon.\n3. Kies een model.\n4. Typ je vraag en kies Stuur.\n\nJe hebt eigen OpenAI API-tegoed nodig. Een ChatGPT-abonnement bevat dit niet.",
- "ALPHA zet letters aan of uit en blijft actief na versturen. Hoofdletters vast zet je aan of uit via F4 Tekens en daar F2. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens. Links/rechts verplaatst de cursor; omhoog/omlaag leest je gesprek.\n\nEXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
+ "ALPHA zet letters aan of uit en blijft actief na versturen. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens. Links/rechts verplaatst de cursor; omhoog/omlaag leest je gesprek.\n\nEXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
  "Typ onderaan verder in hetzelfde gesprek. Omhoog/omlaag leest eerdere berichten. F1 Stuur of EXE verstuurt je bericht. Chats blijven lokaal op je Casio.\n\nAPI-gebruik kost geld via je eigen account. Controleer prijzen en antwoorden. Een al verstuurde vraag kan ook na annuleren kosten maken."
  };
  while(!quitting){
@@ -974,7 +971,7 @@ static void beginSession(void){
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
  linkMisses=0;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomMinor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
- prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;chatInputLetters=chatInputUpper=0;chatFollowTail=1;invalidateConversation();
+ prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;chatInputLetters=0;chatFollowTail=1;invalidateConversation();
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();
  /* libfxcg/Utilities documents that color mode may need one OS GetKey pass.
