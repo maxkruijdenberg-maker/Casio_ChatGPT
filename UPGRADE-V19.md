@@ -1,3 +1,5 @@
+> Donkere opvolger: [UPGRADE-V20.md](UPGRADE-V20.md). Vanaf V17 t/m V19 alleen de Casio-app vervangen.
+
 # V19 — abstract, rustig en herkenbaar
 
 ## Installeren vanaf V17 of V18

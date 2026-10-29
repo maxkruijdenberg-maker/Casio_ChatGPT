@@ -1,29 +1,28 @@
-# ChatGPT V19.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V20.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-V19 geeft de lichte interface een abstractere uitstraling: zachte lila- en
-mintaccenten, een rustig orbitmotief rond het logo en duidelijke primaire acties.
-Gekleurde selectieranden blijven; onnodige schaduwen en functietoetskaders vervallen.
+De donkere uitvoering van V19, met een diepblauwe achtergrond, rustige kaarten,
+mintgroene acties en lila-accenten. Alle tekst-, selectie- en statuskleuren zijn
+mee aangepast; dit is geen omgekeerd licht thema.
 
-- **Verbonden in groen**, **Verbroken in rood**, met tekst en een lichte statusbadge.
-- Een gecentreerd beginscherm met een heldere uitnodiging om te typen.
-- Abstract laadlogo met een bewegend accent, een korte uitleg en annuleren met EXIT/F1.
-- Vaste kleuren voor Wifi, Model, Hulp en Meer; de geselecteerde kaart valt op.
-- Stuur blijft de primaire actie; Chats en Instellingen zijn direct bereikbaar.
+- Abstract logo en laadanimatie met twee bewegende accenten.
+- Gecentreerde kop en ondertekst, met meer onderscheid tussen beide.
+- Gekleurde selectieranden op donkere, getinte kaarten.
+- Groene Verbonden-badge en rode Verbroken-badge, beide met leesbare tekst.
+- Dezelfde bediening, Hulp, accountmodellen, chats en =-weergave als V19.
 
-**Vanaf V17 of V18 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
+**Vanaf V17 t/m V19 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
 Laat `CGPT3` staan. Vanaf V16 of ouder is de Atom-update uit UPGRADE-V17.md nodig.
-Zie [UPGRADE-V19.md](UPGRADE-V19.md) en de [gebruikersgids](docs/V19-STARTGIDS.md).
+Zie [UPGRADE-V20.md](UPGRADE-V20.md) en [de gebruikersgids](docs/V20-STARTGIDS.md).
 
-[De V19-schermen](docs/design/V19-actual-screens.png),
-[de rode statusbadge](docs/design/V19-offline.png) en
-[de laadanimatie](docs/design/V19-loading.gif) komen uit de echte UI-renderer
-in hosttests. De modellenlijst gebruikt voorbeelddata.
+[Bekijk de donkere V20-schermen](docs/design/V20-actual-screens.png),
+[de rode statusbadge](docs/design/V20-offline.png) en
+[de laadanimatie](docs/design/V20-loading.gif). Dit zijn renders uit de echte
+UI-hosttests; de modellen zijn voorbeelddata en geen privéaccount.
 
-Bediening, verbinding, accountmodellen, Hulp, opslag en =-weergave blijven zoals
-in V18. De status is het laatst gecontroleerde contact met de Atom, geen bewijs
-van internet of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte
-Chat Completions API. Veertien softwaretestgroepen en de Casio-build worden
-gecontroleerd; echte hardware en gebruikersonderzoek zijn hier niet beschikbaar.
+De verbindingsstatus beschrijft lokaal contact met de Atom, geen garantie voor
+internet of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte Chat
+Completions API. Veertien softwaretestgroepen en de Casio-build controleren de
+software; fysieke controle op jouw apparaat blijft nodig.
 
 ## Windows: installeren
 

@@ -302,3 +302,11 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Statusbetekenis, transport en bediening ongewijzigd. Atom blijft bytegelijk aan V17.
 - Integer-renderer voor abstracte vormen; geen nieuwe timer, ISR of hardwareconfiguratie.
 - Veertien softwaretestgroepen met beide statuskleuren en 40 gesimuleerde menucycli.
+
+## V20.0 — donkere uitvoering
+
+- Volledig afgestemde donkere palette: diepblauw, mint, lila en heldere tekst.
+- Gekleurde donkere selectiekaarten en groene/rode statusbadges.
+- Verfijnde teksthiërarchie en dubbele accentbeweging rond het laadlogo.
+- Geen nieuwe bediening of instellingen; Atom bytegelijk aan V17.
+- Casio-build en veertien hosttestgroepen met 40 gesimuleerde menucycli.

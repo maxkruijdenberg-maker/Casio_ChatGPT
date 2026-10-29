@@ -1,0 +1,8 @@
+Casio SH4 build: PASS
+Casio bytes: 81064
+SHA256: 7cda7507918336e0b289ed337f318d631eac1775fd81f6117ae49823cd60a7e3
+Atom source and four binaries: identical to v17.0.0
+14 ASan/UBSan groups: PASS
+40 simulated native menu reopens: PASS
+Dark theme previews are actual host UI renders, not hardware photos.
+No physical hardware or live API test.

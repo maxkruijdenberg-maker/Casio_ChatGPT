@@ -109,11 +109,25 @@ static int keyEvent(void){
 }
 static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
-enum {C_BG=0xf7bf,C_PANEL=0xffff,C_RAISED=0xdf7c,C_TEXT=0x1925,
- C_MUTED=0x5b8d,C_LINE=0xe73c,C_MINT=0x03ce,C_RED=0xb166,
- C_BLUE=0x2b39,C_PURPLE=0x7255,C_GOLD=0x9be2,C_SHADOW=0xe71c,
- C_BLUE_SOFT=0xe75f,C_PURPLE_SOFT=0xef1f,C_GOLD_SOFT=0xffba,
- C_GREEN=0x1b66,C_GREEN_SOFT=0xe7bc,C_STATUS_RED=0xc145,C_RED_SOFT=0xff3c};
+enum {C_BG=0x08a4,
+ C_PANEL=0x1106,
+ C_RAISED=0x19c7,
+ C_TEXT=0xf7bf,
+ C_MUTED=0xa5b9,
+ C_LINE=0x29ca,
+ C_MINT=0x6f18,
+ C_RED=0xfc12,
+ C_BLUE=0x85bf,
+ C_PURPLE=0xc53f,
+ C_GOLD=0xf670,
+ C_SHADOW=0x0862,
+ C_BLUE_SOFT=0x1989,
+ C_PURPLE_SOFT=0x3128,
+ C_GOLD_SOFT=0x39a4,
+ C_GREEN=0x8735,
+ C_GREEN_SOFT=0x11c5,
+ C_STATUS_RED=0xfcb4,
+ C_RED_SOFT=0x4105};
 static int linkKnown=0,linkOnline=0,linkSeen=0,linkMisses=0;
 static void linkSucceeded(void){linkKnown=linkOnline=1;linkSeen=RTC_GetTicks();linkMisses=0;}
 static void linkFailed(void){
@@ -171,7 +185,7 @@ static void abstractLogo(int cx,int cy,int size,int phase){
  ellipse(cx+12,cy+3,radius+13,17,C_BG);
  ellipse(cx,cy,radius+7,radius+7,C_PANEL);
  drawLogo(cx-radius,cy-radius,size,C_MINT);
- if(phase>=0){int i=phase%8;rounded(cx+orbit[i][0]-2,cy+orbit[i][1]-2,5,5,C_PURPLE);}
+ if(phase>=0){int i=phase%8,j=(i+4)%8;rounded(cx+orbit[i][0]-2,cy+orbit[i][1]-2,5,5,C_PURPLE);rounded(cx+orbit[j][0]-1,cy+orbit[j][1]-1,3,3,C_MINT);}
  else {rounded(cx-58,cy-17,4,4,C_PURPLE);rounded(cx+55,cy+17,4,4,C_MINT);}
 }
 static int glyphIndex(uint32_t cp){size_t i;for(i=0;i<FONT_COUNT;i++)if(font_glyphs[i].code==cp)return (int)i;return -1;}
@@ -419,9 +433,9 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  (void)cap;
  if(promptMode==1&&!buf[0]){
   abstractLogo(192,79,40,-1);
-  centered(112,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Maak ruimte voor je vraag.",C_TEXT);
-  centered(133,activeChatSlot>=0?"Vraag verder. Blijf nieuwsgierig.":"Van snelle vraag naar helder inzicht.",C_MUTED);
-  centered(155,"Typ je vraag. Stuur met F1.",C_MINT);
+  centered(113,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Wat wil je ontdekken?",C_TEXT);
+  centered(136,activeChatSlot>=0?"Vraag verder. Blijf nieuwsgierig.":"Een vraag is genoeg om te beginnen.",C_MUTED);
+  centered(157,"Typ je vraag. Stuur met F1.",C_MINT);
  }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPage(buf,first,secret);}
  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw","Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
@@ -669,7 +683,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 19.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 20.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }

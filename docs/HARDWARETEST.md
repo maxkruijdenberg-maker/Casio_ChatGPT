@@ -297,3 +297,10 @@ Vanaf V17/V18 alleen de .g3a vervangen. Controleer leesbaarheid van groene en ro
 statustekst, Atom uit/aan op invoer/Instellingen, het abstracte begin-/laadmotief,
 selectieranden, functietoetsen en aangepaste schermschaal. Herhaal de gewone vraag-,
 toets- en MENU/heropenchecks. De status blijft modulecontact, geen internetgarantie.
+
+## V20 — donker thema
+
+Vanaf V17 t/m V19 alleen de .g3a vervangen. Controleer leesbaarheid van gewone
+en gedempte tekst, groen/rood, selectieranden en primaire acties in de donkere
+uitvoering. Loop invoer, antwoorden, Hulp, instellingen, laden en menuheropenen
+door en controleer ook je aangepaste schaal/positie.
