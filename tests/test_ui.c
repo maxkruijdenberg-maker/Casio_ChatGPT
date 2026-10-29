@@ -59,7 +59,7 @@ static const char *servedAnswer=0;
 static const char *servedModels="gpt-4.1\ngpt-4.1-mini\ngpt-5-mini\no3\nft:gpt-4.1:project:custom\ngpt-next-a\ngpt-next-b\ngpt-next-c\n";
 static int modelsLoading=0,modelRefreshes=0;
 static uint32_t fakeBoot=100;
-static char storedSSID[33]="MijnHotspot",storedModel[81]="gpt-4.1-mini";
+static char storedSSID[33]="MijnHotspot",storedModel[256]="gpt-4.1-mini";
 static Upload fakeUpload;
 static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
 void *GetVRAMAddress(void){return deviceFramebuffer;}
@@ -206,7 +206,7 @@ static void menuReturned(void){
  menuVisible=1;copiesAtMenu=fullCopies;
  /* Switch through unrelated native icons before returning. OS must never
   * retain an add-in callback or file resource. UART is an OS-owned driver. */
- assert(!quitCallback&&serialOpen&&osSerialOpen&&menuTimer==-1);
+ assert(!quitCallback&&serialOpen&&osSerialOpen&&menuTimer==-1&&!remoteModels);
  for(int otherApp=0;otherApp<8;otherApp++){assert(!quitCallback);assert(storageReadHandle<0&&storageWriteHandle<0);}
  nativeMenus++;
  if(nativeMenus==2)assert(!strcmp(prompt,"H"));
@@ -375,7 +375,7 @@ static void testV14NavigationAndModels(void){
  /* Every catalogue model saves through the real chunked config transport. */
  for(int i=0;i<MODEL_COUNT;i++){
   strcpy(publicModel,modelChoices[i].id);strcpy(storedModel,modelChoices[i].id);
-  int other=(i+1)%MODEL_COUNT,keysToPick[20],n=0;
+  int other=(i+1)%MODEL_COUNT,keysToPick[MODEL_COUNT*2+4],n=0;
   for(int step=i;step!=other;step+=step<other?1:-1){keysToPick[n++]=step<other?37:28;keysToPick[n++]=0;}
   keysToPick[n++]=79;keysToPick[n++]=0;keysToPick[n++]=47;
   script(keysToPick,n);assert(modelPicker());assert(!strcmp(storedModel,modelChoices[other].id));
@@ -445,20 +445,33 @@ static void testV17BuyerInterface(void){
 }
 
 static void testAccountModels(void){
- connected=1;fakeAtomMajor=atomMajor=17;modelsLoading=1;remoteModelCount=0;loadingActive=0;
+ connected=1;fakeAtomMajor=atomMajor=20;modelsLoading=1;remoteModelCount=0;loadingActive=0;
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];
  int quiet[300]={0};SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==8&&!loadingActive);
- char id[81];assert(!strcmp(choiceId(2,id),"gpt-5-mini"));
+ char id[256];assert(!strcmp(choiceId(2,id),"gpt-5-mini"));
  strcpy(publicModel,"gpt-4.1");strcpy(storedModel,publicModel);
  const int select[]={37,0,37,0,27};SCRIPT(select);assert(modelPicker()&&!strcmp(storedModel,"gpt-5-mini"));
  const int pageForward[]={39,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-next-c"));
  const int pageBack[]={59,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-5-mini"));
  const int fine[]={37,0,37,0,31};SCRIPT(fine);assert(modelPicker()&&!strcmp(storedModel,"ft:gpt-4.1:project:custom"));
  /* Refresh is GET-only work and does not change the selected config. */
- int refresh[180]={69};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==1&&!strcmp(storedModel,"ft:gpt-4.1:project:custom"));
+ int refresh[180]={69,0,69};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==1&&!strcmp(storedModel,"ft:gpt-4.1:project:custom"));
  strcpy(remoteModels,"gpt-good\nbad name\n");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
  strcpy(remoteModels,"gpt-no-final-newline");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
  modelsLoading=1;const int cancel[]={47};SCRIPT(cancel);assert(!fetchModels()&&!loadingActive&&!remoteModelCount);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
+ /* Full-account list retains non-chat rows; opening one explains the
+  * mismatch without changing the saved chat model or issuing a paid request. */
+ const char *previous=servedModels;servedModels="gpt-image-1\ngpt-6-astra\nwhisper-1\ntext-embedding-3-small\n";
+ SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==4);strcpy(publicModel,"gpt-image-1");
+ int writes=requestCount[W_APPLY];const int imageInfo[]={31,0,47,0,47};SCRIPT(imageInfo);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
+ const int chooseAstra[]={37,0,31};SCRIPT(chooseAstra);assert(modelPicker()&&!strcmp(storedModel,"gpt-6-astra"));
+ /* IDs longer than the old 80-byte limit survive listing, upload and GET. */
+ char longList[202];memcpy(longList,"gpt-",4);memset(longList+4,'a',196);longList[200]='\n';longList[201]=0;servedModels=longList;
+ SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==1);char expectedLong[201];memcpy(expectedLong,longList,200);expectedLong[200]=0;
+ const int chooseLong[]={31};SCRIPT(chooseLong);assert(modelPicker()&&!strcmp(storedModel,expectedLong));
+ char readBack[256];SCRIPT(quiet);assert(readPublic(4,readBack,sizeof(readBack))&&!strcmp(readBack,expectedLong));
+ servedModels=previous;SCRIPT(quiet);endSession();assert(!remoteModels&&!remoteModelCount&&serialOpen);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
  fakeAtomMajor=atomMajor=11;modelsLoading=0;
 }
@@ -524,6 +537,14 @@ int main(int argc,char **argv){
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();
+ /* Both ring halves must match under a half-turn about the same center. */
+ applyView(view_default());clear("ChatGPT");planetRing(192,80,57,14,C_PURPLE);int ringPixels=0;
+ for(int y=-40;y<=40;y++)for(int x=-70;x<=70;x++){
+  assert(vram[(80+y)*384+192+x]==vram[(80-y)*384+192-x]);
+  ringPixels+=vram[(80+y)*384+192+x]==C_PURPLE;
+ }
+ assert(ringPixels>200);
+ assert(modelChoiceIndex("gpt-6-astra")>=0&&modelChoiceIndex("gpt-6.1-sol")>=0&&modelChoiceIndex("gpt-6-luna")>=0);
  /* Status remains understandable through text as well as green/red ink. */
  linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0;
  for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
@@ -546,17 +567,19 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
+  if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
   SCRIPT(leave);helpAndDevice();snprintf(path,sizeof(path),"%s/help.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
-  paintModels(1);snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  remoteModelCount=0;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(0);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
   loadingPurpose=0;for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
   paintLoading(0);snprintf(path,sizeof(path),"%s/loading.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintSettings(0);snprintf(path,sizeof(path),"%s/online.ppm",argv[2]);dumpFrame(path);
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
- storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V21 antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
+ puts("PASS: V20.1 symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

@@ -1,27 +1,34 @@
-# ChatGPT V21.0 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V20.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-De donkere uitvoering blijft, met een verfijnd ChatGPT-logo:
+Donkere modus met een symmetrische, schuine planeetring om het mint-lila logo.
+De zin “Een vraag is genoeg om te beginnen” is verwijderd.
 
-- Gladdere randen op grote én kleine logo's.
-- Een subtiel kleurverloop van mint naar lila op begin- en laadscherm.
-- Een dubbele rand en abstracte accenten rond het grote logo.
-- Een iets groter beginlogo, met voldoende ruimte tot de tekst.
-- Groene Verbonden- en rode Verbroken-badges zoals in V20.
+**De accountlijst toont alle modellen die jouw OpenAI-API-sleutel teruggeeft:**
+geen filter op chat, beeld, audio, video, embeddings, moderatie of onbekende families.
+Bekende typen krijgen een label. Beeld/audio zijn te bekijken, maar de app verstuurt
+tekstvragen: zulke modellen worden niet als chatmodel ingesteld.
 
-**Vanaf V17 t/m V20 vervang je alleen `dist/ChatGPT.g3a`. De Atom blijft V17.0.**
-Laat `CGPT3` staan. Vanaf V16 of ouder is de Atom-update uit UPGRADE-V17.md nodig.
-Zie [UPGRADE-V21.md](UPGRADE-V21.md) en [de gebruikersgids](docs/V21-STARTGIDS.md).
+- Met nieuwe Atom-firmware opent Model automatisch de volledige accountlijst.
+- F2 Basis toont 26 ingebouwde keuzes; F2 Account haalt je eigen volledige lijst op.
+- De basislijst bevat onder meer GPT-6 Astra, GPT-6.1 Sol/Terra en GPT-6 Sol/Luna.
+- Die namen zijn gecontroleerd in de officiële OpenAI-SDK. Dit bewijst geen
+  toegang voor jouw sleutel; de Atom controleert die bij een vraag.
 
-[De V21-schermen](docs/design/V21-actual-screens.png) en
-[de laadanimatie](docs/design/V21-loading.gif) komen uit de werkelijke UI-renderer
-in hosttests. De modellenlijst gebruikt voorbeelddata. Het normale Casio-menu-icoon
-houdt zijn bestaande witte basis, zwarte logo en native selectie.
+**Werk voor deze versie Atom én Casio-app bij.** Behoud wifi/sleutel door volledig
+wissen uitgeschakeld te laten, en laat `CGPT3` staan voor chats en scherminstellingen.
+Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md), [gebruikersgids](docs/V20.1-STARTGIDS.md)
+en [modellen en bronnen](docs/V20.1-MODELLEN.md).
 
-Bediening, verbinding, accountmodellen, Hulp, opslag en =-weergave blijven zoals
-in V20. De status beschrijft lokaal contact met de Atom, geen garantie voor internet
-of API-tegoed. Niet ieder accountmodel ondersteunt de gebruikte Chat Completions API.
-Veertien softwaretestgroepen en de Casio-build controleren de software; fysieke
-controle van de weergave op jouw apparaat blijft nodig.
+[Bekijk het ontwerp](docs/design/V20.1-actual-screens.png),
+[de volledige accountlijst met voorbeelddata](docs/design/V20.1-all-models.png)
+en [de laadanimatie](docs/design/V20.1-loading.gif). Dit zijn werkelijke UI-hostrenders,
+geen foto's van een Casio of een live privéaccount. De bestaande V20.0/V21-tags blijven intact.
+
+Alle modellen betekent de ongefilterde lijst voor jouw API-account, niet alle
+historische of wereldwijd voor ieder account bestaande modellen. Accountrechten
+en API-ondersteuning blijven van toepassing; de app heeft geen beeld-/audiofuncties.
+Veertien ASan/UBSan-testgroepen en beide builds worden gecontroleerd. Live API- en
+fysieke hardwaretests moeten op jouw apparaat plaatsvinden.
 
 ## Windows: installeren
 
@@ -123,7 +130,7 @@ de modelkeuze op de Atom. De interface is Nederlands.
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
 vertraging sluit de poort niet. Hulp → Verbinding controleren geeft uitleg in gewone taal.
 Via **Wifi en account** kun je wifi en API-sleutel invullen via de tijdelijke
-installatiepagina. Zie [UPGRADE-V17.md](UPGRADE-V17.md) voor de stappen.
+installatiepagina. Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md) voor de stappen.
 
 ## Lokale chatgeschiedenis
 

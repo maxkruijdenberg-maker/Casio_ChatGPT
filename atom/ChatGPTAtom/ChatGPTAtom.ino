@@ -1,4 +1,4 @@
-/* ChatGPT V17.0 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V20.1 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
@@ -157,10 +157,10 @@ static void performCatalog(){
   if(http.getSize()>524288){error=E_BIG;http.end();break;}
   JsonDocument filter;filter["data"][0]["id"]=true;JsonDocument document;
   auto parsed=deserializeJson(document,http.getStream(),DeserializationOption::Filter(filter),DeserializationOption::NestingLimit(8));
-  http.end();
+  http.end();tls.stop();
   if(parsed||document.overflowed()){error=parsed==DeserializationError::NoMemory?E_MEMORY:E_JSON;break;}
   char *buffer=(char*)malloc(CATALOG_MAX);if(!buffer){error=E_MEMORY;break;}
-  int count=catalog_text(document.as<JsonVariantConst>(),buffer,CATALOG_MAX);
+  int count=catalog_text(document.as<JsonVariantConst>(),buffer,CATALOG_MAX);document.clear();
   if(count>0){result=buffer;if(result.length()!=strlen(buffer))error=E_MEMORY;}
   else error=E_MODEL;
   free(buffer);
@@ -185,7 +185,7 @@ static void handle(const WFrame& in) {
   if(!in.len||in.data[0]>2||(in.data[0]==2?in.len!=3:in.len!=1)){out.data[0]=E_REQUEST;break;}
   if(in.data[0]==1){
    if(busy()){out.data[0]=E_BUSY;break;}
-   catalogState=1;catalogError=0;catalogRunning=true;startCatalog=true;
+   catalog=String();catalogState=1;catalogError=0;catalogRunning=true;startCatalog=true;
   }
   if(in.data[0]==2){
    size_t at=w_get16(in.data+1);if(catalogState!=2||at>catalog.length()){out.data[0]=E_REQUEST;break;}
@@ -274,7 +274,7 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=17;out.data[2]=0;out.data[3]=31;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=20;out.data[2]=1;out.data[3]=63;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}

@@ -1,3 +1,5 @@
+> Opvolgende correctie: [UPGRADE-V20.1.md](UPGRADE-V20.1.md). Voor de ongefilterde accountlijst moet ook de Atom worden bijgewerkt.
+
 # V21 — verfijnd logo, donkere modus behouden
 
 ## Installeren vanaf V17 t/m V20

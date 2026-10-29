@@ -1,0 +1,14 @@
+Casio SH4 build: PASS
+Atom ESP32 build: PASS
+Casio bytes: 87792
+Casio SHA256: dfe652fe5d0d995cfc16065283b69b9ea8f9952eb4bed01bda4021e01f42a36f
+Atom bytes: 1123536
+Atom SHA256: 0b374e890f40667e7ecf3289d853c0989c9d8fa40ae4498203298fd340851fe8
+14 ASan/UBSan groups: PASS
+40 native menu reopens: PASS (simulated)
+Planet ring half-turn pixel symmetry: PASS
+Full catalog includes all modalities and unknown model names: PASS
+Long ID listing/upload/GET and OS heap release before MENU: PASS
+26 built-in IDs verified in pinned official SDK.
+No live API/account or physical hardware test.
+Arduino CLI emitted index/discovery warnings but compiled the installed platform successfully.

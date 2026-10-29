@@ -318,3 +318,14 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Schermschaal/bounds-aware RGB565 blending; geen nieuwe timers of hardwareconfiguratie.
 - Casio-menu-iconen en volledige Atom-broncode/binaries blijven gelijk.
 - Casio-build en veertien hosttestgroepen, inclusief 40 gesimuleerde menucycli.
+
+## V20.1 — symmetrische planeetring en volledige OpenAI-accountlijst
+
+- Eén gecentreerde schuine ellipsring, met render-symmetrietest. Donkere modus blijft.
+- “Een vraag is genoeg om te beginnen” verwijderd.
+- Alle accountmodel-ID's, zonder familie-/modelfilter; typen zijn alleen UI-uitleg.
+- Nieuwe Atom 20.1 (capabilitybit 32); chatkeuze blokkeert bekende niet-chatfamilies met uitleg.
+- 26 ingebouwde SDK-keuzes, waaronder GPT-6 Astra/Sol/Terra/Luna; vaste officiële bronrevisie vastgelegd.
+- Lijst maximaal 1024 IDs/65535 bytes, modelnaam/config/upload maximaal 255 tekens.
+- Casio-lijstbuffer op OS-heap, vrijgeven vóór MENU; SDK-RAM-regio ongewijzigd.
+- Beide builds, veertien ASan/UBSan-groepen en 40 gesimuleerde menuheropeningen.

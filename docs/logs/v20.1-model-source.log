@@ -1,0 +1,4 @@
+Official source: https://github.com/openai/openai-python/blob/ca1217ca59a5d0b4497e624771103853d39bd495/src/openai/types/shared/chat_model.py
+SHA256: d2a74c51d4ee5cf1f782fc753c3db15d49cb19f8c3d04cadc4b76775b6ba4167
+All 26 built-in IDs verified in pinned ChatModel enum.
+SDK enumeration does not verify account access, price or live completion behavior.

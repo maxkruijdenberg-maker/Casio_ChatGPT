@@ -14,11 +14,13 @@
 #include "native_menu_device.h"
 #include "keyboard_raw.h"
 #include "models.h"
+#include "../atom/ChatGPTAtom/model_kind.h"
 #include "answer_text.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "../atom/ChatGPTAtom/wire.h"
 #include "text.h"
 #include "font.h"
@@ -53,6 +55,7 @@ static int loadChatPair(int slot,int turn);
 static int requestClose(void);
 static void diagnose(void);
 static int closePromptActive=0;
+static void releaseModels(void);
 
 static unsigned short *vram;
 static ViewProfile viewProfile={100,0,0};
@@ -80,7 +83,7 @@ static void closeSerial(void){
 }
 static void stopMenuTimer(void);
 static void stopAutoProbe(void);
-static void cleanup(void){stopAutoProbe();stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
+static void cleanup(void){releaseModels();stopAutoProbe();stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
 /* The menu launch key and the key which opened a dialog must not become a
  * command in the newly opened screen. Require a stable all-keys-up edge. */
 static void waitForKeyRelease(void){
@@ -191,19 +194,32 @@ static void ellipse(int cx,int cy,int rx,int ry,unsigned short color){
   rect(cx-x,cy+y,2*x+1,1,color);
  }
 }
+/* One centered, sheared ellipse makes both ring halves exact opposites.
+ * 4*dy+dx gives a 1:4 tilt without floating point or rounding asymmetry. */
+static void planetRing(int cx,int cy,int rx,int ry,unsigned short color){
+ int x,y,innerX=rx-5,innerY=ry-3;
+ long outer=(long)16*rx*rx*ry*ry,inner=(long)16*innerX*innerX*innerY*innerY;
+ for(y=-(ry+rx/4+2);y<=ry+rx/4+2;y++)for(x=-rx;x<=rx;x++){
+  long v=4*y+x;
+  long outside=(long)16*x*x*ry*ry+v*v*rx*rx;
+  long hole=(long)16*x*x*innerY*innerY+v*v*innerX*innerX;
+  if(outside<=outer&&hole>=inner)rect(cx+x,cy+y,1,1,color);
+ }
+}
 static void abstractLogo(int cx,int cy,int size,int phase){
- static const int orbit[8][2]={{0,-39},{43,-27},{58,0},{43,27},{0,39},{-43,27},{-58,0},{-43,-27}};
- int radius=size/2;
- ellipse(cx-12,cy-3,radius+28,17,C_PURPLE_SOFT);
- ellipse(cx-12,cy-3,radius+23,12,C_BG);
- ellipse(cx+12,cy+3,radius+18,22,C_RAISED);
- ellipse(cx+12,cy+3,radius+13,17,C_BG);
+ static const int orbit[8][2]={{1024,0},{724,724},{0,1024},{-724,724},{-1024,0},{-724,-724},{0,-1024},{724,-724}};
+ int radius=size/2,rx=radius+29,ry=14;
+ planetRing(cx,cy,rx,ry,mix565(C_PURPLE,C_BG,6));
+ if(phase>=0){
+  int n;for(n=0;n<2;n++){
+   int i=(phase+4*n)%8,x=rx*orbit[i][0]/1024,y=ry*orbit[i][1]/1024-x/4;
+   rounded(cx+x-2,cy+y-2,n?3:5,n?3:5,n?C_MINT:C_PURPLE);
+  }
+ }
  ellipse(cx,cy,radius+10,radius+10,C_PURPLE_SOFT);
  ellipse(cx,cy,radius+8,radius+8,C_BLUE_SOFT);
  ellipse(cx,cy,radius+6,radius+6,C_PANEL);
  logoPaint(cx-radius,cy-radius,size,C_MINT,1);
- if(phase>=0){int i=phase%8,j=(i+4)%8;rounded(cx+orbit[i][0]-2,cy+orbit[i][1]-2,5,5,C_PURPLE);rounded(cx+orbit[j][0]-1,cy+orbit[j][1]-1,3,3,C_MINT);}
- else {rounded(cx-58,cy-17,4,4,C_PURPLE);rounded(cx+55,cy+17,4,4,C_MINT);}
 }
 static int glyphIndex(uint32_t cp){size_t i;for(i=0;i<FONT_COUNT;i++)if(font_glyphs[i].code==cp)return (int)i;return -1;}
 static void glyph(int x,int y,uint32_t cp,unsigned short color){
@@ -451,7 +467,7 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  if(promptMode==1&&!buf[0]){
   abstractLogo(192,76,48,-1);
   centered(113,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Wat wil je ontdekken?",C_TEXT);
-  centered(136,activeChatSlot>=0?"Vraag verder. Blijf nieuwsgierig.":"Een vraag is genoeg om te beginnen.",C_MUTED);
+  if(activeChatSlot>=0)centered(136,"Vraag verder. Blijf nieuwsgierig.",C_MUTED);
   centered(157,"Typ je vraag. Stuur met F1.",C_MINT);
  }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPage(buf,first,secret);}
  {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
@@ -508,11 +524,13 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if((cp>='a'&&cp<='z')||(cp>='A'&&cp<='Z'))firstLetter=0;
  }return KEY_PRGM_MENU;
 }
-static char publicSSID[33],publicModel[81];
+static char publicSSID[33],publicModel[256];
 static unsigned settingsEpoch=0;
-static char remoteModels[32768];
-static unsigned short modelOffsets[384];
+#define REMOTE_MODELS_CAP 65536
+static char *remoteModels=0;
+static unsigned short modelOffsets[1024];
 static int remoteModelCount=0;
+static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;}
 static int fetchModels(void);
 static int atomMajor=0,settingsKnown=0;
 static int readPublic(int target,char*out,size_t cap){
@@ -603,16 +621,16 @@ static void phoneSetup(void){
  {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
 }
 static int choiceCount(void){return remoteModelCount?remoteModelCount:MODEL_COUNT;}
-static const char *choiceId(int index,char out[81]){
+static const char *choiceId(int index,char out[256]){
  if(!remoteModelCount)return modelChoices[index].id;
- size_t at=modelOffsets[index],n=0;while(remoteModels[at]&&remoteModels[at]!='\n'&&n<80)out[n++]=remoteModels[at++];out[n]=0;return out;
+ size_t at=modelOffsets[index],n=0;while(remoteModels[at]&&remoteModels[at]!='\n'&&n<255)out[n++]=remoteModels[at++];out[n]=0;return out;
 }
 static int parseModelList(unsigned total){
  unsigned at=0,n=0,start=0;int count=0;remoteModelCount=0;
- if(!total||total>=sizeof(remoteModels))return 0;
+ if(!remoteModels||!total||total>=REMOTE_MODELS_CAP)return 0;
  while(at<total){unsigned char c=remoteModels[at++];
-  if(c=='\n'){if(!n||count>=384||!setting_valid(4,remoteModels+start,n))return 0;modelOffsets[count++]=(unsigned short)start;start=at;n=0;}
-  else if(c<33||c>126||++n>80)return 0;
+  if(c=='\n'){if(!n||count>=1024)return 0;modelOffsets[count++]=(unsigned short)start;start=at;n=0;}
+  else if(c<33||c>126||++n>255)return 0;
  }
  if(n||!count)return 0;remoteModels[total]=0;remoteModelCount=count;return 1;
 }
@@ -632,7 +650,7 @@ static int fetchModelsWork(void){
  }
  if(quitting)return 0;
  if(r.data[1]!=2){modelFetchError=r.data[2];return 0;}
- total=w_get16(r.data+3);if(!total||total>=sizeof(remoteModels))return 0;
+ total=w_get16(r.data+3);if(!remoteModels||!total||total>=REMOTE_MODELS_CAP)return 0;
  /* Do not retain partial lists after a failed refresh. */
  remoteModelCount=0;
  while(pos<total&&!quitting){
@@ -643,27 +661,29 @@ static int fetchModelsWork(void){
  return !quitting&&parseModelList(total);
 }
 static int fetchModels(void){
- int ok;modelFetchCancelled=modelFetchError=0;loadingPurpose=1;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
+ int ok;modelFetchCancelled=modelFetchError=0;
+ if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){message("Onvoldoende geheugen","De modellenlijst kon niet worden geladen. Je huidige model en chats blijven behouden.");return 0;}}
+ loadingPurpose=1;loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
  ok=fetchModelsWork();loadingActive=0;
  if(!ok&&!quitting&&!modelFetchCancelled)message("Modellen niet geladen",modelFetchError>0&&modelFetchError<(int)(sizeof(errNames)/sizeof(errNames[0]))?errNames[modelFetchError]:"Controleer Wifi en account en probeer opnieuw. Je huidige model is niet gewijzigd.");
  return ok;
 }
 static void paintModels(int selected){
- int i,first=(selected/5)*5,count=choiceCount();char id[81],label[64];clear("Jouw modellen");
- sprintf(label,"%d modellen · %s",count,remoteModelCount?"jouw account":"startkeuzes");printAt(14,38,label,C_MUTED);
+ int i,first=(selected/5)*5,count=choiceCount();char id[256],label[64];clear("Jouw modellen");
+ sprintf(label,"%d modellen · %s",count,remoteModelCount?(atomMajor>=20?"volledig account":"oude accountlijst"):"standaardlijst");printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
-  clipped(18,y,name,40,i==selected?C_BLUE:C_TEXT);
+  clipped(18,y,name,33,i==selected?C_BLUE:C_TEXT);printAt(302,y,model_kind_label(model_kind(name)),C_MUTED);
   if(!strcmp(publicModel,name))rounded(362,y+4,5,5,C_MINT);
  }
  printAt(14,177,"↑↓ kiezen · EXE opslaan",C_MUTED);
- footer("Kies","Ververs","Vorig","Info","Volgend","Terug");show();
+ footer(model_kind(choiceId(selected,id))>=1&&model_kind(choiceId(selected,id))<=6?"Info":"Kies",remoteModelCount?"Basis":"Account","Vorig","Info","Volgend","Terug");show();
 }
 static int modelPicker(void){
- int selected=0,k;char id[81],details[520];
+ int selected=0,k;char id[256],details[768];
  if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4)atomMajor=r.data[1];}
- if(atomMajor>=17&&!remoteModelCount&&!fetchModels()&&modelFetchCancelled)return 0;
+ if(atomMajor>=20&&!remoteModelCount&&!fetchModels()&&modelFetchCancelled)return 0;
  for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
  while(!quitting){
   if(selected>=choiceCount())selected=0;
@@ -674,17 +694,22 @@ static int modelPicker(void){
   if(k==KEY_PRGM_F5){selected+=5;if(selected>=choiceCount())selected=choiceCount()-1;}
   if(k==KEY_PRGM_F3){selected-=5;if(selected<0)selected=0;}
   if(k==KEY_PRGM_F2){
-   if(atomMajor<17)message("Atom bijwerken","Upload de meegeleverde Atom-firmware om de modellen uit je eigen account op te halen. Je wifi en sleutel blijven bewaard.");
+   if(remoteModelCount){remoteModelCount=0;}
+   else if(atomMajor<20)message("Atom bijwerken","Upload de meegeleverde Atom-firmware voor de volledige accountlijst zonder chatfilter. Je wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
+   selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
    continue;
   }
   if(k==KEY_PRGM_F4){
    const char *name=choiceId(selected,id);int preset=modelChoiceIndex(name);
-   sprintf(details,"%s\n\n%s\n\n%s",name,preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Kosten zijn relatief; controleer actuele API-prijzen.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
+   sprintf(details,"%s\nType: %s\n\n%s\n\n%s",name,model_kind_label(model_kind(name)),preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Controleer actuele API-prijzen. SDK-vermelding garandeert geen toegang voor je sleutel; dat wordt bij je vraag gecontroleerd.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
    message("Over dit model",details);
   }
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){
-   const char *name=choiceId(selected,id);if(!strcmp(publicModel,name))return 1;
+   const char *name=choiceId(selected,id);int kind=model_kind(name);
+   if(kind>=1&&kind<=6){message("Geen tekst-chatmodel","Dit model staat wel in de volledige accountlijst, maar gebruikt een andere functie zoals beeld of audio. Deze app verstuurt tekstvragen. Kies daarvoor een chatmodel. Er is geen betaalde vraag verstuurd.");continue;}
+   if(!setting_valid(4,name,strlen(name))){message("Niet instelbaar","De naam staat in de lijst, maar kan niet als chatmodel ingesteld worden. Je bestaande keuze blijft behouden.");continue;}
+   if(!strcmp(publicModel,name))return 1;
    if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;return 1;}
   }
  }
@@ -700,7 +725,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 21.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 20.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -893,7 +918,7 @@ static void runSession(void){
 static void endSession(void){
  /* Finish local work; keep the OS-owned UART driver open through native MENU.
   * No app timer, interrupt handler or quit callback remains active in MENU. */
- storageClose();erase(field,sizeof(field));waitForKeyRelease();stopAutoProbe();
+ storageClose();releaseModels();erase(field,sizeof(field));waitForKeyRelease();stopAutoProbe();
 }
 /* The OS key-wait must be active when a fallback MENU event is injected.
  * This ordering follows gint_osmenu_native; pre-queueing then calling GetKey

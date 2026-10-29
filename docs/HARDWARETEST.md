@@ -311,3 +311,12 @@ Vanaf V17 t/m V20 alleen de .g3a vervangen. Controleer het grotere beginlogo,
 het mint-lila verloop, de dubbele rand, kleine bovenbalk-/antwoordlogo's en de
 laadanimatie. Test ook je opgeslagen schaal/positie, annuleren en menuheropenen.
 De donkere modus en statusbetekenis blijven gelijk.
+
+## V20.1 — volledige modellenlijst en planeetring
+
+Werk Atom én .g3a bij met behoud van configuratie/CGPT3. Controleer de symmetrische
+ring en het verwijderde tekstregeltje. Vergelijk Account met de volledige GET /v1/models
+voor je sleutel, inclusief niet-chatfamilies; controleer F2 Basis/Account, paginering,
+lange namen en Info. Beeld/audio mogen geen chatvraag of nieuwe modelinstelling
+veroorzaken. Test een echt toegankelijk tekstmodel, veel toetsen, Atom uit/aan en
+twintig MENU/heropeningen plus andere Casio-apps.
