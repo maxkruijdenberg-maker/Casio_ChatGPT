@@ -543,11 +543,24 @@ static void testUnifiedConversation(void){
  assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();
 }
 
+static void testSentenceInput(void){
+ char input[128];int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
+ const int letters[]={77,0,76,0,66,0,79};strcpy(input,"Een zin. ");SCRIPT(letters);
+ assert(editor(input,sizeof(input),"Test",0,1,0,1)==KEY_PRGM_F1&&!strcmp(input,"Een zin. Ab"));
+ strcpy(input,"3.14 ");SCRIPT(letters);assert(editor(input,sizeof(input),"Test",0,1,0,1)==KEY_PRGM_F1&&!strcmp(input,"3.14 ab"));
+ strcpy(input,"Begin. ");SCRIPT(letters);assert(editor(input,sizeof(input),"Geheim",1,1,1,0)==KEY_PRGM_F1&&!strcmp(input,"Begin. ab"));
+ const int midWord[]={38,0,77,0,56,0,79};strcpy(input,"ab");SCRIPT(midWord);
+ assert(editor(input,sizeof(input),"Test",0,1,0,1)==KEY_PRGM_F1&&!strcmp(input,"acb"));
+ newLocalChat();const int lock[]={49,0,69,0,47,0,66,0,76,0,39,0,49,0,69,0,47,0,66,0,79};SCRIPT(lock);
+ assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"BAb")&&!chatInputUpper&&chatInputLetters);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);newLocalChat();
+}
+
 int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
  assert(editor(b,sizeof(b),"Test",0,1,0,1)==79);assert(!strcmp(b,"Hello"));
- const int exact[]={77,0,76,0,39,0,66,0,39,0,56,0,79};b[0]=0;SCRIPT(exact);
+ const int exact[]={77,0,76,0,49,0,69,0,47,0,66,0,49,0,69,0,47,0,56,0,79};b[0]=0;SCRIPT(exact);
  assert(editor(b,sizeof(b),"API",1,0,1,0)==79);assert(!strcmp(b,"aBc"));
  /* Secret editor displays '*' in its first content cell. */
  rect(0,0,384,216,C_PANEL);glyph(12,52,'*',C_TEXT);unsigned short expected[14*8];
@@ -604,14 +617,14 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
  renderEditor(composed,sizeof(composed),0,"ChatGPT",0,1,0,0,0,1,0);assert(!composed[0]);
- int lengths[]={1,43,44,45,175,351,352,1024};
+ int lengths[]={1,32,33,34,43,44,45,65,66,67,99,175,351,352,1024};
  for(unsigned n=0;n<sizeof(lengths)/sizeof(lengths[0]);n++){
-  memset(composed,'a',lengths[n]);composed[lengths[n]]=0;int r,c;cursorPosition(composed,strlen(composed),&r,&c);
+  memset(composed,'a',lengths[n]);composed[lengths[n]]=0;int r,c;cursorPosition(composed,strlen(composed),MESSAGE_COLS,&r,&c);
   int shown=composerRows(composed),firstRow=r>=ROWS?r-ROWS+1:0;assert(shown>=1&&shown<=8);
   assert(167-shown*14-5>=50&&167-shown*14+shown*14+5==172);
   renderEditor(composed,sizeof(composed),strlen(composed),"ChatGPT",0,1,1,0,0,0,firstRow);
@@ -620,7 +633,7 @@ int main(int argc,char **argv){
  char shrinking[401];memset(shrinking,'a',400);shrinking[400]=0;int eraseKeys[711],eraseAt=0;
  for(int i=0;i<355;i++){eraseKeys[eraseAt++]=44;eraseKeys[eraseAt++]=0;}eraseKeys[eraseAt++]=79;
  script(eraseKeys,eraseAt);assert(editor(shrinking,sizeof(shrinking),"ChatGPT",0,1,0,1)==79&&strlen(shrinking)==45);
- assert(vram[166*384+24]==C_MINT);
+ assert(vram[166*384+112]==C_MINT);
  /* Both ring halves must match under a half-turn about the same center. */
  applyView(view_default());clear("ChatGPT");planetRing(192,80,57,14,C_PURPLE);int ringPixels=0;
  for(int y=-40;y<=40;y++)for(int x=-70;x<=70;x++){
@@ -658,6 +671,7 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
+  int capsPreview=0;const int capsKeys[]={69,0,47};SCRIPT(capsKeys);pickCharacter(0,&capsPreview);assert(capsPreview);snprintf(path,sizeof(path),"%s/caps-lock.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
   if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
@@ -674,6 +688,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.8 inline input controls, sentence capitalization and caps lock in character menu; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

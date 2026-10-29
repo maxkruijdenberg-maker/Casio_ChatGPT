@@ -1,16 +1,18 @@
-# ChatGPT V22.7 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.8 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.7-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.7.pdf) · [Offline handleiding](docs/Handleiding-V22.7.html)
+[Installatiepakket](dist/ChatGPT-V22.8-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.8.pdf) · [Offline handleiding](docs/Handleiding-V22.8.html)
 
-- Geen ALPHA-balk linksboven; één klein, neutraal moduslabel bij de invoerbalk.
+- Geen losse OPTN/MENU-hint; invoerstand ín de berichtenbalk vóór het verstuurpijltje.
+- Automatische hoofdletter na een punt; hoofdletterlock via F4 Tekens → F2.
+- Geen aparte hoofdletterknop meer; tekst en cursor blijven vrij van de bedieningsruimte.
 - Modelkeuze zonder Vorig/Volgend: de lijst schuift mee met omhoog/omlaag.
 - Afgeronde Jij/ChatGPT-labels met pictogrammen en extra ruimte tussen vraag en antwoord.
 - Eén doorlopend gesprek, directe vervolginvoer en blijvende ALPHA-lock behouden.
 
 **Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
 en herstart de Casio. De Atom-code en firmware zijn ongewijzigd.
-[Bijwerken](UPGRADE-V22.7.md) · [Schermen](docs/design/V22.7-actual-screens.png).
+[Bijwerken](UPGRADE-V22.8.md) · [Schermen](docs/design/V22.8-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
 Geen live API-account of fysieke Casio in de bouwomgeving getest.
@@ -71,7 +73,7 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 |---|---|
 | ALPHA | Lettervergrendeling aan/uit; eenmaal drukken is genoeg |
 | SHIFT | Eenmalige gele functie, bijvoorbeeld sin → asin; nogmaals annuleert SHIFT |
-| F5 | Hoofdletters/kleine letters |
+| F4 → F2 | Hoofdletterlock aan/uit in Tekens |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
 | F2 | Nieuw gesprek; vraagt bevestiging als een concept verloren zou gaan |
 | F3 | Chats openen |
@@ -86,7 +88,8 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 
 De letterlabels op de normale toetsen worden gebruikt. Op het scherm staat
 123, abc, ABC of Abc. De eerste gewone letter van een nieuwe vraag wordt een
-hoofdletter, daarna volgen kleine letters. Instellingen veranderen nooit
+hoofdletter; ook na een punt begint een nieuwe zin met een hoofdletter.
+Vaste hoofdletters schakel je via F4 Tekens → F2, gevolgd door EXIT of F6. Instellingen veranderen nooit
 automatisch de letterkast. In het tekenkeuzescherm zijn alle afdrukbare
 ASCII-tekens beschikbaar, inclusief spatie, streepje en underscore voor sleutels.
 De eigen editor gebruikt de rode letterlabels bij ALPHA-lock. In cijferstand

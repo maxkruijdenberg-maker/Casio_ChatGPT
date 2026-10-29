@@ -398,3 +398,12 @@ Geen ALPHA-balk linksboven op begin- en invoerschermen; één klein neutraal lab
 rechtsonder naast de invoerbalk. Labelbreedte volgt 123/abc/Abc/ABC en eventuele
 SHIFT-aanduiding. Toetsen, ALPHA-lock, modelkeuze, gesprekken, Atom en menuhelpers
 ongewijzigd. Bestaande editor-/masker-/menu-/chatregressies controleren de software.
+
+
+## V22.8 — inline invoerbediening en zinshoofdletters
+
+Modus vóór vaste verstuurpijl in berichtenbalk, tekstbreedte van 33 kolommen met eigen
+cursor/wrapping. Losse OPTN/MENU-hint en F5-hoofdletteractie in de editor verwijderd. Lock in
+Tekens via F2; automatische zinshoofdletters alleen voor gewone invoer, niet
+geheime velden. Model-/API-/opslag-/menuhelpers onveranderd. Test lange invoer,
+zinbegin, decimalen, cursor midden woord, lock en exacte geheime letterkast.

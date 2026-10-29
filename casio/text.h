@@ -17,6 +17,25 @@ static int u_insert_text(char *s,size_t cap,size_t *cursor,const char *text){
  if(*cursor<len&&((unsigned char)s[*cursor]&0xc0)==0x80)return 0;
  memmove(s+*cursor+n,s+*cursor,len-*cursor+1);memcpy(s+*cursor,text,n);*cursor+=n;return 1;
 }
+/* Sentence case is derived from text at the insertion point, not a sticky
+ * first-letter flag. Call only for ordinary text, never secret/account fields.
+ * A decimal's following digit is unaffected; after 3.14 the previous nonspace
+ * character is 4, so it does not begin a new sentence. */
+static int sentence_capital(const char *s,size_t cursor){
+ size_t len,prev;uint32_t cp;
+ if(!s)return 0;len=strlen(s);
+ if(cursor>len||(cursor<len&&((unsigned char)s[cursor]&0xc0)==0x80))return 0;
+ while(cursor){
+  prev=u_prev(s,cursor);u_decode(s+prev,cursor-prev,&cp);cursor=prev;
+  if(cp=='\n'||cp=='\r')return 1;
+  if(cp==' '||cp=='\t'||cp==0xa0||cp==0x202f)continue;
+  /* Quotes/opening brackets do not consume the first letter of a sentence.
+   * A prior word still stops the scan, so ordinary quoted words stay lowercase. */
+  if(cp=='\"'||cp=='\''||cp=='('||cp=='['||cp=='{'||cp==0x201c||cp==0x2018)continue;
+  return cp=='.'||cp=='!'||cp=='?';
+ }
+ return 1;
+}
 /* Text equivalents of the Casio primary/yellow-label mathematical functions.
  * These are prompt text, not local evaluations or native 2D Casio tokens. */
 static const char *math_key(int key,int shifted){

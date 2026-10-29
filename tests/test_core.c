@@ -63,4 +63,30 @@ static void test_math_tokens(void){
  CHECK(!u_insert_text(s,0,&cursor,"x"));CHECK(!u_insert_text(s,sizeof(s),&cursor,""));
 }
 
-int main(void){test_frames();test_text();test_math_tokens();printf("PASS: %u assertions; frame roundtrips, corruption, recovery, bounds, UTF-8, editing, key mapping.\n",checks);return 0;}
+static void test_sentence_case(void){
+ CHECK(sentence_capital("",0));CHECK(sentence_capital("   ",3));
+ CHECK(sentence_capital("Hallo. ",7));CHECK(sentence_capital("Hallo.",6));
+ CHECK(sentence_capital("Echt?  ",7));CHECK(sentence_capital("Ja! ",4));
+ CHECK(sentence_capital("Hallo\n ",7));CHECK(sentence_capital("Hallo\r\n",7));
+ CHECK(sentence_capital("Hallo.\t",7));
+ CHECK(sentence_capital("één. ",strlen("één. ")));
+ CHECK(sentence_capital("\"hallo",1));CHECK(sentence_capital("'hallo",1));
+ CHECK(sentence_capital("(hallo",1));CHECK(sentence_capital("[hallo",1));CHECK(sentence_capital("{hallo",1));
+ CHECK(sentence_capital("Zin. \"volgende",6));
+ CHECK(sentence_capital("“hallo",strlen("“")));CHECK(sentence_capital("‘hallo",strlen("‘")));
+ CHECK(!sentence_capital("\"hallo\" ",strlen("\"hallo\" ")));
+ CHECK(!sentence_capital("een \"woord",5));CHECK(!sentence_capital("3.14 \"",strlen("3.14 \"")));
+ CHECK(!sentence_capital("Hallo",5));CHECK(!sentence_capital("Hallo wereld",8));
+ CHECK(sentence_capital("Hallo. wereld",7));
+ CHECK(!sentence_capital("3.14",4));CHECK(!sentence_capital("3.14 ",5));
+ CHECK(!sentence_capital("3.14 euro",6));CHECK(sentence_capital("3.",2));
+ CHECK(!sentence_capital("π = 3.14 ",strlen("π = 3.14 ")));
+ CHECK(!sentence_capital("één",1));CHECK(!sentence_capital("x",2));CHECK(!sentence_capital(NULL,0));
+ /* Recompute after navigation/deletion: do not reuse a first-letter latch. */
+ char draft[40]="Vraag. vervolg";size_t cursor=6;
+ CHECK(sentence_capital(draft,cursor));u_delete(draft,&cursor);
+ CHECK(!sentence_capital(draft,cursor));
+ cursor=0;CHECK(sentence_capital(draft,cursor));
+}
+
+int main(void){test_frames();test_text();test_math_tokens();test_sentence_case();printf("PASS: %u assertions; frame roundtrips, corruption, recovery, bounds, UTF-8, editing, key mapping.\n",checks);return 0;}
