@@ -1,0 +1,10 @@
+Casio SH4 build: PASS
+Casio bytes: 87920
+SHA256: 31531de86e813f2a3c103426674808208b2243c0d243529d8ed1875522d73831
+14 ASan/UBSan groups: PASS
+40 simulated native menu reopens: PASS
+Composer 1-8 visible lines, empty placeholder, cursor after shrinking a scrolled draft: PASS
+Round green/red status dot and text rendering: PASS
+Atom source/four binaries identical to built v20.1.0.
+Customer PDF/HTML, curated ZIP and binary integrity checked separately.
+Physical assembly, duration test and live API/account not verified in this environment.

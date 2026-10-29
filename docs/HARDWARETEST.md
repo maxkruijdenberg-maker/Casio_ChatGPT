@@ -320,3 +320,11 @@ voor je sleutel, inclusief niet-chatfamilies; controleer F2 Basis/Account, pagin
 lange namen en Info. Beeld/audio mogen geen chatvraag of nieuwe modelinstelling
 veroorzaken. Test een echt toegankelijk tekstmodel, veel toetsen, Atom uit/aan en
 twintig MENU/heropeningen plus andere Casio-apps.
+
+## V21.1 — chatbalk en installatiepakket
+
+Volg docs/V21.1-CONTROLE-VOOR-VERKOOP.md per apparaat. Controleer placeholder,
+1/2/8-regelige berichten, lange invoer inkorten, cursor, alle hoogtes en groene/rode
+bolletjes. Open PDF en HTML offline op Windows en loop de installatie met het
+klantpakket door. Bewaar CGPT3 en bestaande Atom-configuratie. Softwaretests
+vervangen deze echte controles niet.

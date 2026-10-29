@@ -1,34 +1,30 @@
-# ChatGPT V20.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V21.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-Donkere modus met een symmetrische, schuine planeetring om het mint-lila logo.
-De zin “Een vraag is genoeg om te beginnen” is verwijderd.
+Begin bij **[START-HIER.md](START-HIER.md)** of de
+[PDF-handleiding](docs/Handleiding-V21.1.pdf). De handleiding is ook als
+[offline HTML](docs/Handleiding-V21.1.html) beschikbaar.
 
-**De accountlijst toont alle modellen die jouw OpenAI-API-sleutel teruggeeft:**
-geen filter op chat, beeld, audio, video, embeddings, moderatie of onbekende families.
-Bekende typen krijgen een label. Beeld/audio zijn te bekijken, maar de app verstuurt
-tekstvragen: zulke modellen worden niet als chatmodel ingesteld.
+V21.1 verfijnt de donkere interface met een gewone chatbalk:
 
-- Met nieuwe Atom-firmware opent Model automatisch de volledige accountlijst.
-- F2 Basis toont 26 ingebouwde keuzes; F2 Account haalt je eigen volledige lijst op.
-- De basislijst bevat onder meer GPT-6 Astra, GPT-6.1 Sol/Terra en GPT-6 Sol/Luna.
-- Die namen zijn gecontroleerd in de officiële OpenAI-SDK. Dit bewijst geen
-  toegang voor jouw sleutel; de Atom controleert die bij een vraag.
+- **Stuur een bericht** staat alleen als tijdelijke tekst in een leeg invoerveld.
+- De invoer groeit omhoog tot acht regels en krimpt bij wissen.
+- Logo, kop, invoer, cursor en functietoetsen hebben vaste, afgestemde hoogtes.
+- Een rond groen bolletje bij Verbonden en een rood bolletje bij Verbroken.
+- De symmetrische planeetring, het mint-lila logo en de volledige accountlijst blijven.
 
-**Werk voor deze versie Atom én Casio-app bij.** Behoud wifi/sleutel door volledig
-wissen uitgeschakeld te laten, en laat `CGPT3` staan voor chats en scherminstellingen.
-Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md), [gebruikersgids](docs/V20.1-STARTGIDS.md)
-en [modellen en bronnen](docs/V20.1-MODELLEN.md).
+Het klantpakket staat in [dist/ChatGPT-V21.1-installatie.zip](dist/ChatGPT-V21.1-installatie.zip),
+met alleen de huidige bestanden, broncode, licenties en handleidingen.
+[De schermen](docs/design/V21.1-actual-screens.png) zijn echte UI-hostrenders;
+modellen/accountgegevens daarin zijn voorbeelddata.
 
-[Bekijk het ontwerp](docs/design/V20.1-actual-screens.png),
-[de volledige accountlijst met voorbeelddata](docs/design/V20.1-all-models.png)
-en [de laadanimatie](docs/design/V20.1-loading.gif). Dit zijn werkelijke UI-hostrenders,
-geen foto's van een Casio of een live privéaccount. De bestaande V20.0/V21-tags blijven intact.
+**Atom V20.1 al geïnstalleerd?** Vervang alleen `dist/ChatGPT.g3a`, laat `CGPT3`
+staan en herstart de Casio. De Atom-broncode en firmware zijn bytegelijk aan V20.1.
+Zo niet: volg de volledige installatie in de handleiding. Zie [UPGRADE-V21.1.md](UPGRADE-V21.1.md).
 
-Alle modellen betekent de ongefilterde lijst voor jouw API-account, niet alle
-historische of wereldwijd voor ieder account bestaande modellen. Accountrechten
-en API-ondersteuning blijven van toepassing; de app heeft geen beeld-/audiofuncties.
-Veertien ASan/UBSan-testgroepen en beide builds worden gecontroleerd. Live API- en
-fysieke hardwaretests moeten op jouw apparaat plaatsvinden.
+De Casio-build en veertien ASan/UBSan-groepen controleren de software. Controle
+op echte hardware, live wifi/API-toegang en montage blijft noodzakelijk voordat
+een apparaat voor verkoop wordt vrijgegeven. Gebruik de
+[controlelijst voor de verkoper](docs/V21.1-CONTROLE-VOOR-VERKOOP.md).
 
 ## Windows: installeren
 

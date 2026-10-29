@@ -537,6 +537,22 @@ int main(int argc,char **argv){
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
  testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();
+ /* Placeholder is painted only; the real draft remains empty. The chat
+  * field grows upward without drawing over header, mode or function keys. */
+ applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
+ renderEditor(composed,sizeof(composed),0,"ChatGPT",0,1,0,0,0,1,0);assert(!composed[0]);
+ int lengths[]={1,43,44,45,175,351,352,1024};
+ for(unsigned n=0;n<sizeof(lengths)/sizeof(lengths[0]);n++){
+  memset(composed,'a',lengths[n]);composed[lengths[n]]=0;int r,c;cursorPosition(composed,strlen(composed),&r,&c);
+  int shown=composerRows(composed),firstRow=r>=ROWS?r-ROWS+1:0;assert(shown>=1&&shown<=8);
+  assert(167-shown*14-5>=50&&167-shown*14+shown*14+5==172);
+  renderEditor(composed,sizeof(composed),strlen(composed),"ChatGPT",0,1,1,0,0,0,firstRow);
+ }
+ /* Shrinking a scrolled draft must return to the top of its growing field. */
+ char shrinking[401];memset(shrinking,'a',400);shrinking[400]=0;int eraseKeys[711],eraseAt=0;
+ for(int i=0;i<355;i++){eraseKeys[eraseAt++]=44;eraseKeys[eraseAt++]=0;}eraseKeys[eraseAt++]=79;
+ script(eraseKeys,eraseAt);assert(editor(shrinking,sizeof(shrinking),"ChatGPT",0,1,0,1)==79&&strlen(shrinking)==45);
+ assert(vram[166*384+24]==C_MINT);
  /* Both ring halves must match under a half-turn about the same center. */
  applyView(view_default());clear("ChatGPT");planetRing(192,80,57,14,C_PURPLE);int ringPixels=0;
  for(int y=-40;y<=40;y++)for(int x=-70;x<=70;x++){
@@ -548,10 +564,10 @@ int main(int argc,char **argv){
  /* Status remains understandable through text as well as green/red ink. */
  linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0;
  for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
- assert(greenInk>20&&!redInk);
+ assert(greenInk>20&&!redInk&&vram[16*384+294]==C_GREEN);
  linkOnline=0;clear("ChatGPT");greenInk=redInk=0;
  for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;}
- assert(redInk>20&&!greenInk);linkOnline=1;
+ assert(redInk>20&&!greenInk&&vram[16*384+294]==C_STATUS_RED);linkOnline=1;
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-4.1-mini");
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
@@ -560,7 +576,8 @@ int main(int argc,char **argv){
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   activeChatSlot=-1;prompt[0]=0;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/home.ppm",argv[2]);dumpFrame(path);snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
   activeChatSlot=0;strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(prompt,b);const int shotType[]={77,0,79};SCRIPT(shotType);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);dumpFrame(path);
-  strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
+  memset(b,'a',sizeof(b)-1);b[sizeof(b)-1]=0;renderEditor(b,sizeof(b),strlen(b),"ChatGPT",0,1,1,0,0,0,0);snprintf(path,sizeof(path),"%s/input-long.ppm",argv[2]);dumpFrame(path);
+  strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
   prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
@@ -580,6 +597,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V20.1 symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

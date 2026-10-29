@@ -329,3 +329,13 @@ identiek aan v11.0.0. OS-overlays en werkelijk menugedrag nog op hardware testen
 - Lijst maximaal 1024 IDs/65535 bytes, modelnaam/config/upload maximaal 255 tekens.
 - Casio-lijstbuffer op OS-heap, vrijgeven vóór MENU; SDK-RAM-regio ongewijzigd.
 - Beide builds, veertien ASan/UBSan-groepen en 40 gesimuleerde menuheropeningen.
+
+## V21.1 — chatbalk en klantpakket
+
+- Normale chatbalk met niet-verstuurde placeholder; groeit/krimpt tot acht zichtbare regels.
+- Cursor/scrollpositie herstelt correct wanneer een lang concept wordt ingekort.
+- Rond groen/rood statusbolletje; hoogtes en marges afgestemd.
+- PDF en offline HTML uit één handleidingbron; aparte fysieke vrijgavelijst voor de verkoper.
+- Klant-ZIP met alleen actuele bestanden en licenties; geen oude versiegidsen of ontwikkellogs.
+- Casio-build en veertien softwaretestgroepen; Atom bytegelijk aan V20.1.
+- Fysieke montage, duurtest en live API-toegang niet gecertificeerd vanuit deze omgeving.

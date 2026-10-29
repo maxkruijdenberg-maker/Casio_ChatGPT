@@ -1,3 +1,5 @@
+> Nieuwste uitwerking: [UPGRADE-V21.1.md](UPGRADE-V21.1.md), met chatbalk en PDF/HTML-handleiding.
+
 # V20.1 — planeetring en de volledige OpenAI-accountlijst
 
 Deze update vervangt geen bestaande V20.0-download: V20.1 is een apart pakket.

@@ -257,7 +257,7 @@ static void clear(const char *title){
   const char *status=linkOnline?"Verbonden":"Verbroken";
   unsigned short color=linkOnline?C_GREEN:C_STATUS_RED;
   rounded(286,6,92,21,linkOnline?C_GREEN_SOFT:C_RED_SOFT);
-  rounded(292,13,5,5,color);printAt(302,9,status,color);
+  ellipse(294,16,3,3,color);printAt(302,9,status,color);
  }
 }
 static void configureDisplay(void){
@@ -282,12 +282,12 @@ static void footer(const char *a,const char*b,const char*c,const char*d,const ch
   for(j=0;j<n;j++)glyph(i*64+32-n*step/2+j*step,197,(unsigned char)p[i][j],color);
  }
 }
-static void textPage(const char *s,int first,int hide){
+static void textPageAt(const char *s,int first,int hide,int left,int top,int visible){
  size_t at=0,len=strlen(s),n;uint32_t cp;int row=0,col=0;
  while(at<len){n=u_decode(s+at,len-at,&cp);at+=n;
   if(cp=='\r')continue;if(cp=='\n'){row++;col=0;continue;}
   if(col==COLS){row++;col=0;}
-  if(row>=first&&row<first+ROWS)glyph(12+col*8,52+(row-first)*14,hide?'*':cp,C_TEXT);
+  if(row>=first&&row<first+visible)glyph(left+col*8,top+(row-first)*14,hide?'*':cp,C_TEXT);
   col++;
  }
 }
@@ -458,19 +458,31 @@ static uint32_t pickCharacter(int asciiOnly){
 }
 /* Shared paint path: the OS saves this neutral input page before opening MENU,
  * so resuming cannot first restore the old "Ja/Nee" closing dialog. */
+static int composerRows(const char *buf){
+ int row,col;cursorPosition(buf,strlen(buf),&row,&col);row++;return row>ROWS?ROWS:row;
+}
 static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *title,int secret,int promptMode,
  int letters,int upper,int shifted,int firstLetter,int first){
- int row,col;char label[100];cursorPosition(buf,cursor,&row,&col);
+ int row,col,top=52,left=12,visible=ROWS;char label[100];cursorPosition(buf,cursor,&row,&col);
  clear(title);rounded(8,35,152,15,C_RAISED);
  sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");printAt(12,35,label,C_MUTED);
  (void)cap;
- if(promptMode==1&&!buf[0]){
-  abstractLogo(192,76,48,-1);
-  centered(113,activeChatSlot>=0?"Er valt nog meer te ontdekken.":"Wat wil je ontdekken?",C_TEXT);
-  if(activeChatSlot>=0)centered(136,"Vraag verder. Blijf nieuwsgierig.",C_MUTED);
-  centered(157,"Typ je vraag. Stuur met F1.",C_MINT);
- }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPage(buf,first,secret);}
- {int x=12+col*8,y=52+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<170)rect(x,y,8,1,C_MINT);}
+ if(promptMode==1){
+  visible=composerRows(buf);top=167-visible*14;left=16;
+  if(visible<=2){
+   abstractLogo(192,76,48,-1);
+   centered(117,activeChatSlot>=0?"Wat wil je nog weten?":"Waar kan ik je mee helpen?",C_TEXT);
+  }
+  rounded(8,top-5,368,visible*14+10,C_LINE);
+  rounded(9,top-4,366,visible*14+8,C_PANEL);
+  if(!buf[0]){
+   printAt(16,top,"Stuur een bericht",C_MUTED);
+   /* The send arrow is decorative; the physical F1/EXE keys submit. */
+   rounded(346,top-1,20,17,C_RAISED);
+   for(int dy=0;dy<4;dy++)rect(355-dy,top+2+dy,2+dy*2,1,C_MUTED);rect(355,top+6,2,7,C_MUTED);
+  }else textPageAt(buf,first,secret,left,top,visible);
+ }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPageAt(buf,first,secret,left,top,visible);}
+ {int x=left+col*8,y=top+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<172)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw","Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
  printAt(8,175,promptMode==1?"OPTN: chats · MENU: afsluiten":"DEL: wissen · Pijlen: cursor · EXIT: terug",C_MUTED);show();
 }
@@ -485,7 +497,9 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
  size_t cursor=strlen(buf);int letters=0,upper=0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
  while(!quitting){
   const char *token=0;
-  cursorPosition(buf,cursor,&row,&col);if(row<first)first=row;if(row>=first+ROWS)first=row-ROWS+1;
+  cursorPosition(buf,cursor,&row,&col);
+  if(promptMode==1){int endRow,endCol,maxFirst;cursorPosition(buf,strlen(buf),&endRow,&endCol);maxFirst=endRow+1-ROWS;if(maxFirst<0)maxFirst=0;if(first>maxFirst)first=maxFirst;}
+  if(row<first)first=row;if(row>=first+ROWS)first=row-ROWS+1;
   renderEditor(buf,cap,cursor,title,secret,promptMode,letters,upper,shifted,firstLetter,first);
   k=waitEditorKey(promptMode);if(quitting)return KEY_PRGM_MENU;if(k==UI_LINK_REFRESH)continue;
   if(k==KEY_PRGM_SHIFT){shifted=!shifted;continue;}
@@ -702,7 +716,7 @@ static int modelPicker(void){
   }
   if(k==KEY_PRGM_F4){
    const char *name=choiceId(selected,id);int preset=modelChoiceIndex(name);
-   sprintf(details,"%s\nType: %s\n\n%s\n\n%s",name,model_kind_label(model_kind(name)),preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Controleer actuele API-prijzen. SDK-vermelding garandeert geen toegang voor je sleutel; dat wordt bij je vraag gecontroleerd.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
+   sprintf(details,"%s\nType: %s\n\n%s\n\n%s",name,model_kind_label(model_kind(name)),preset>=0?modelChoices[preset].description:"Dit model staat in je API-account.",preset>=0?"Controleer actuele API-prijzen. De beschikbaarheid hangt af van je account; dat wordt bij je vraag gecontroleerd.":"Kosten verschillen per model. Controleer de API-prijzen. Niet elk model werkt met deze app. Kies bij een fout een ander model.");
    message("Over dit model",details);
   }
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){
@@ -725,7 +739,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 20.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 21.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
