@@ -513,10 +513,8 @@ static int composerRows(const char *buf){
 }
 static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *title,int secret,int promptMode,
  int letters,int upper,int shifted,int firstLetter,int first){
- int row,col,top=52,left=12,visible=ROWS;char label[100];cursorPosition(buf,cursor,&row,&col);
+ int row,col,top=52,left=12,visible=ROWS;char mode[8];cursorPosition(buf,cursor,&row,&col);
  clear(title);
- sprintf(label,"%s %s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",letters?"ALPHA aan":"ALPHA: abc",shifted?" S":"");
- if(promptMode!=1||!hasConversation()){rounded(8,35,152,15,C_RAISED);printAt(12,35,label,C_MUTED);}
  (void)cap;
  if(promptMode==1){
   visible=hasConversation()?conversationRows(buf):composerRows(buf);top=167-visible*14;left=16;
@@ -536,8 +534,10 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  }else {choiceCard(6,50,368,120,0,C_MINT,C_RAISED);textPageAt(buf,first,secret,left,top,visible);}
  {int x=left+col*8,y=top+(row-first)*14+13;if((promptMode!=1||buf[0])&&y<172)rect(x,y,8,1,C_MINT);}
  if(promptMode==1)footer("Stuur","Nieuw",unsavedReply?"Bewaar":"Chats","Tekens","ABC/abc","Instel");else footer("Opslaan","","","Tekens","ABC/abc","");
- printAt(8,175,promptMode==1?(chatReadError?"Een deel van je chat is niet leesbaar.":hasConversation()?"↑↓ gesprek · ←→ cursor":"OPTN: chats · MENU: afsluiten"):"DEL: wissen · Pijlen: cursor · EXIT: terug",chatReadError&&promptMode==1?C_RED:C_MUTED);
- if(promptMode==1&&hasConversation()&&!chatReadError){sprintf(label,"%s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",shifted?" S":"");printAt(320,175,label,C_MUTED);}show();
+ printAt(8,175,promptMode==1?(chatReadError?"Een deel van je chat is niet leesbaar.":hasConversation()?"↑↓ gesprek · ←→ cursor":"OPTN: chats · MENU: afsluiten"):"DEL wissen · ←→ cursor · EXIT terug",chatReadError&&promptMode==1?C_RED:C_MUTED);
+ /* A quiet, content-sized mode badge beside the composer, never a toolbar. */
+ sprintf(mode,"%s%s",letters?(upper?"ABC":firstLetter?"Abc":"abc"):"123",shifted?" S":"");
+ {int width=(int)strlen(mode)*8+12;rounded(376-width,174,width,15,C_PANEL);printAt(382-width,175,mode,C_MUTED);}show();
 }
 static void prepareMenuSnapshot(void){
  int known=linkKnown,online=linkOnline,seen=linkSeen,active=autoProbeActive;
@@ -830,7 +830,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.6\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.7\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }

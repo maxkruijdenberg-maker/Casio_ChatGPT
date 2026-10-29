@@ -1,11 +1,13 @@
-# ChatGPT voor Casio — V22.6
+# ChatGPT voor Casio — V22.7
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V22.6.pdf of docs/Handleiding-V22.6.html.
+docs/Handleiding-V22.7.pdf of docs/Handleiding-V22.7.html.
 
 Atom V22.3 al geïnstalleerd? Vervang alleen dist/ChatGPT.g3a op de Casio,
 laat CGPT3 staan en herstart de Casio. Voor een oudere Atom volg je de volledige
 installatie; laat Erase All Flash / volledig wissen uitgeschakeld.
+
+De invoerstand staat klein en rustig rechtsonder; de grote ALPHA-balk linksboven is verwijderd.
 
 Typ onderaan verder in hetzelfde gesprek. Omhoog/omlaag leest eerdere vragen
 en antwoorden; links/rechts verplaatst de cursor. F1 Stuur of EXE verstuurt.
@@ -15,4 +17,4 @@ F2 Nieuw maakt bewust een nieuwe chat; F3 Chats of OPTN opent je gesprekken.
 De bestaande grens van acht paren per chat blijft behouden.
 
 Je gebruikt eigen API-toegang en tegoed. Deel je sleutel niet met een verkoper.
-Fysieke controles: docs/V22.6-CONTROLE-VOOR-VERKOOP.md.
+Fysieke controles: docs/V22.7-CONTROLE-VOOR-VERKOOP.md.

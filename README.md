@@ -1,16 +1,16 @@
-# ChatGPT V22.6 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.7 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.6-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.6.pdf) · [Offline handleiding](docs/Handleiding-V22.6.html)
+[Installatiepakket](dist/ChatGPT-V22.7-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.7.pdf) · [Offline handleiding](docs/Handleiding-V22.7.html)
 
+- Geen ALPHA-balk linksboven; één klein, neutraal moduslabel bij de invoerbalk.
 - Modelkeuze zonder Vorig/Volgend: de lijst schuift mee met omhoog/omlaag.
 - Afgeronde Jij/ChatGPT-labels met pictogrammen en extra ruimte tussen vraag en antwoord.
-- Invoerstand rechtsonder voor meer ruimte bovenin de chat.
 - Eén doorlopend gesprek, directe vervolginvoer en blijvende ALPHA-lock behouden.
 
 **Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
 en herstart de Casio. De Atom-code en firmware zijn ongewijzigd.
-[Bijwerken](UPGRADE-V22.6.md) · [Schermen](docs/design/V22.6-actual-screens.png).
+[Bijwerken](UPGRADE-V22.7.md) · [Schermen](docs/design/V22.7-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
 Geen live API-account of fysieke Casio in de bouwomgeving getest.

@@ -401,3 +401,11 @@ Modelkeuze: geen Vorig/Volgend, geen F3/F5-paginering; schuivende selectie en
 scrollbalk. Chat: rolbadges met pictogram, extra witregel na vraag, invoerstand
 rechtsonder. Historie begint op y40 zodat de extra ruimte niet ten koste gaat
 van een zichtbare regel. Atom, opslag, menuhelpers en math-rendering ongewijzigd.
+
+
+## V22.7 — compacte invoerstand
+
+Geen ALPHA-balk linksboven op begin- en invoerschermen; één klein neutraal label
+rechtsonder naast de invoerbalk. Labelbreedte volgt 123/abc/Abc/ABC en eventuele
+SHIFT-aanduiding. Toetsen, ALPHA-lock, modelkeuze, gesprekken, Atom en menuhelpers
+ongewijzigd. Bestaande editor-/masker-/menu-/chatregressies controleren de software.
