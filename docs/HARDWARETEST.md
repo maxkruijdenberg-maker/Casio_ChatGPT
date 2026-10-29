@@ -372,3 +372,13 @@ Neutrale statuswoorden/achtergrond met gekleurd bolletje. Extra Unicode-gelijkte
 en native relatieglyphs; betekenis van ongeveer/ongelijk behouden, geen vervanging
 van letterlijke vraagtekens. UI-tests controleren ontvangen gelijktekens tot aan
 de schermpixels. Atom V22.3 en verbindings-/menu-/opslagcode ongewijzigd.
+
+
+## V22.5 — doorlopende chat en directe vervolginvoer
+
+Eén tijdlijn met vragen/antwoorden, pijlscrollen en een blijvende composer. Geen
+aparte antwoordviewer of vorige/volgende chatknoppen. Invoer met 1–3 zichtbare regels,
+ALPHA/hoofdletterstand behouden na versturen. Alleen 152 bytes tijdlijnmetadata,
+geen samengeplakte chattekst; live antwoordbuffers blijven intact bij scrollen.
+Atom, opslagformaat en native menuhelpers ongewijzigd. Test gesprekcontinuatie,
+concepten, oude chats, grens van acht paren, opslagfout en heropenen op echte hardware.

@@ -28,6 +28,7 @@ static int canLeaveReply(void){
 }
 static void newLocalChat(void){
  activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;prompt[0]=answer[0]=lastQuestion[0]=0;
+ chatInputLetters=chatInputUpper=0;chatFollowTail=1;invalidateConversation();
 }
 static uint32_t lastAtomBoot=0;
 static int atomBootKnown=0;

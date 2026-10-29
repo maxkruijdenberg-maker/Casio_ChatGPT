@@ -191,6 +191,8 @@ void SetQuitHandler(void(*h)(void)){quitCallback=h;}
 void DisplayMainMenu(void){assert(!"drawing MENU or returning main is not the native GetKey dispatcher");}
 static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
+/* Legacy fixtures now exercise the same unified editor used in production. */
+static void readAnswer(int ignored){(void)ignored;prompt[0]=0;editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);}
 static void dumpFrame(const char*path){
  FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n384 216\n255\n");
  for(int i=0;i<384*216;i++){unsigned short v=vram[i];unsigned char rgb[3]={(v>>11)*255/31,((v>>5)&63)*255/63,(v&31)*255/31};fwrite(rgb,1,3,f);}fclose(f);
@@ -227,7 +229,7 @@ static void testLifecycle(int direct){
  applyView((ViewProfile){80,24,-24});clear("Schermrand");show();assert(lcdFrame==C_BG);
  applyView(view_default());cleanup();
  autoProbeStarted=1;autoProbeAt=RTC_GetTicks();autoProbeActive=1;linkKnown=1;linkOnline=0;
- {char empty[PROMPT_MAX+1]="";const int done[]={79};SCRIPT(done);editor(empty,sizeof(empty),"ChatGPT - Vraag",0,1,0,1);}
+ {char empty[PROMPT_MAX+1]="";const int done[]={79};SCRIPT(done);editor(empty,sizeof(empty),"ChatGPT",0,1,0,1);}
  memcpy(startupSnapshot,framebuffer,sizeof(startupSnapshot));cleanup();
  int paid=requestCount[W_ASK],cancels=requestCount[W_CANCEL],closes=serialCloses,drains=drainedEvents,hellos=requestCount[W_HELLO];
  nativeResolverReady=direct;
@@ -439,7 +441,7 @@ static void testV17BuyerInterface(void){
  for(size_t c=0;c<strlen(equalExpected);c++)if(equalExpected[c]=='='){
   for(int y=0;y<14;y++)for(int x=0;x<8;x++){
    int ink=(font_glyphs[eq].rows[y]&(1<<(7-x)))!=0;
-   assert(vram[(91+y)*384+12+(int)c*8+x]==(ink?C_TEXT:C_BG));equalPixels+=ink;
+   assert(vram[(96+y)*384+12+(int)c*8+x]==(ink?C_TEXT:C_BG));equalPixels+=ink;
   }
  }
  assert(equalPixels>20);servedAnswer=0;
@@ -455,7 +457,7 @@ static void testV17BuyerInterface(void){
  connected=1;fakeAtomMajor=11;libraryReady=1;activeChatSlot=-1;unsavedReply=0;contextDirty=1;
  strcpy(prompt,"Wat is 23+42?");servedAnswer="23 + 42 ＝ 65";
  emulateQuestion=verifyLogoOnly=1;emulatedStatus=logoFrames=0;int beforeAsk=requestCount[W_ASK];
- ask();assert(!loadingActive&&logoFrames>4&&emulatedStatus==4&&requestCount[W_ASK]==beforeAsk+1);
+ ask();renderEditor(prompt,sizeof(prompt),strlen(prompt),"ChatGPT",0,1,0,0,0,1,0);assert(!loadingActive&&logoFrames>4&&emulatedStatus==4&&requestCount[W_ASK]==beforeAsk+1);
  assert(!strcmp(displayedAnswer,"23 + 42 = 65")&&!strcmp(answer,servedAnswer)&&!unsavedReply);
  emulateQuestion=verifyLogoOnly=0;servedAnswer=0;
  prompt[0]=answer[0]=lastQuestion[0]=0;quitting=0;
@@ -515,6 +517,32 @@ static void testAccountModels(void){
  assert(modelChoiceIndex("gpt-4.1-nano")==-1&&modelChoiceIndex("gpt-5.3-chat-latest")==-1&&modelChoiceIndex("gpt-5")==-1);
 }
 
+static void testUnifiedConversation(void){
+ connected=1;quitting=0;loadLibrary();int slot=freeSlot(savedChats);assert(slot>=0);
+ for(int i=0;i<3;i++){char q[40],a[80];sprintf(q,"Vraag %d",i+1);sprintf(a,"Antwoord %d\nTweede regel %d",i+1,i+1);assert(lib_append(&disk,slot,&savedChats[slot],q,a,&savedChats[slot]));}
+ activeChatSlot=slot;assert(loadChatPair(slot,2));contextDirty=1;prompt[0]=0;chatInputLetters=chatInputUpper=0;chatFollowTail=1;
+ int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
+ const int firstFollowup[]={77,0,76,0,66,0,79};SCRIPT(firstFollowup);
+ assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"Ab")&&chatInputLetters&&activeChatSlot==slot&&savedChats[slot].turns==3);
+ assert(!strcmp(answer,"Antwoord 3\nTweede regel 3")&&!strcmp(lastQuestion,"Vraag 3")&&requestCount[W_ASK]==paid);
+ int quiet[300]={0};SCRIPT(quiet);servedAnswer="Eerste vervolgantwoord.";emulateQuestion=1;emulatedStatus=0;ask();
+ assert(requestCount[W_ASK]==paid+1&&requestCount[W_ALLOC]==allocated+1&&activeChatSlot==slot&&savedChats[slot].turns==4&&!prompt[0]);
+ const int secondFollowup[]={56,0,66,0,79};SCRIPT(secondFollowup);
+ assert(editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1)==KEY_PRGM_F1&&!strcmp(prompt,"Cb")&&chatInputLetters&&activeChatSlot==slot);
+ SCRIPT(quiet);servedAnswer="Tweede vervolgantwoord.";emulatedStatus=0;ask();emulateQuestion=0;servedAnswer=0;
+ assert(requestCount[W_ASK]==paid+2&&activeChatSlot==slot&&savedChats[slot].turns==5&&!strcmp(lastQuestion,"Cb")&&!strcmp(answer,"Tweede vervolgantwoord."));
+ char savedQ[1025],savedA[8193];assert(lib_pair(&disk,&savedChats[slot].ref,3,savedQ,sizeof(savedQ),savedA,sizeof(savedA))&&!strcmp(savedQ,"Ab"));
+ assert(lib_pair(&disk,&savedChats[slot].ref,4,savedQ,sizeof(savedQ),savedA,sizeof(savedA))&&!strcmp(savedQ,"Cb"));storageClose();
+ int up[201],down[201];for(int i=0;i<100;i++){up[i*2]=28;up[i*2+1]=0;down[i*2]=37;down[i*2+1]=0;}up[200]=down[200]=47;
+ strcpy(prompt,"Bewaar mijn concept");connected=0;int contexts=requestCount[W_CONTEXT];SCRIPT(up);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);
+ assert(chatScroll==0&&!strcmp(prompt,"Bewaar mijn concept")&&!strcmp(lastQuestion,"Cb")&&!strcmp(answer,"Tweede vervolgantwoord.")&&activeChatSlot==slot&&viewTurn==4);
+ SCRIPT(down);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==conversation_tail(&chatTimeline,6)&&requestCount[W_ASK]==paid+2&&requestCount[W_CONTEXT]==contexts&&!strcmp(prompt,"Bewaar mijn concept"));
+ connected=1;prompt[0]=0;unsavedReply=1;strcpy(lastQuestion,"Nog niet bewaard");strcpy(answer,"Een lokaal antwoord.");
+ const int savePending[]={59,0,47};SCRIPT(savePending);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);
+ assert(!unsavedReply&&savedChats[slot].turns==6&&activeChatSlot==slot&&requestCount[W_ASK]==paid+2);
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();
+}
+
 int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
@@ -553,8 +581,9 @@ int main(int argc,char **argv){
  /* Opening and reading saved threads is offline and sends no RPC. */
  connected=0;prompt[0]=0;int beforeOpen=requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO];
  const int chooseChat[]={37,0,31};SCRIPT(chooseChat);assert(chatSidebar()==1&&activeChatSlot==0&&viewTurn==1);
- const int prev[]={39,0,47};SCRIPT(prev);readAnswer(0);assert(viewTurn==0&&!strcmp(lastQuestion,"Vorige vraag"));
- const int next[]={29,0,47};SCRIPT(next);readAnswer(0);assert(viewTurn==1&&!strcmp(answer,"Antwoord twee"));
+ int scrollUp[101],scrollDown[101];for(int i=0;i<50;i++){scrollUp[i*2]=28;scrollUp[i*2+1]=0;scrollDown[i*2]=37;scrollDown[i*2+1]=0;}scrollUp[100]=scrollDown[100]=47;
+ SCRIPT(scrollUp);readAnswer(0);assert(chatScroll==0&&viewTurn==1&&!strcmp(lastQuestion,"Volgende vraag"));
+ SCRIPT(scrollDown);readAnswer(0);assert(chatScroll==conversation_tail(&chatTimeline,6)&&viewTurn==1&&!strcmp(answer,"Antwoord twee"));
  assert(beforeOpen==requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO]);
  const int questionView[]={78,0,47,0,47};SCRIPT(questionView);readAnswer(0);
  SCRIPT(leave);screenTest();assert(framebuffer[0]==C_MINT&&framebuffer[384*216-1]==C_MINT);
@@ -575,7 +604,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -609,7 +638,9 @@ int main(int argc,char **argv){
  assert(!greenInk&&!redInk&&neutralInk>20&&vram[16*384+294]==C_STATUS_RED&&vram[6*384+286]==C_PANEL);linkOnline=1;
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-6.1-sol");strcpy(publicModel,storedModel);
+  assert(lib_delete(&disk,'C',0));savedChats[0]=lib_entry(&disk,'C',0);storageClose();
   assert(lib_append(&disk,0,&savedChats[0],"Hoe los ik 2x + 5 = 17 op?","Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.",&savedChats[0]));
+  assert(lib_append(&disk,0,&savedChats[0],"Waarom trek je eerst 5 af?","Zo blijft de term met x over.\nDaarna deel je beide kanten door 2.",&savedChats[0]));
   assert(lib_append(&disk,1,&savedChats[1],"Leg breuken eenvoudig uit.","Een breuk is een deel van een geheel.",&savedChats[1]));
   activeChatSlot=0;viewTurn=savedChats[0].turns-1;
   char path[512];snprintf(path,sizeof(path),"%s/input.ppm",argv[2]);
@@ -618,8 +649,12 @@ int main(int argc,char **argv){
   memset(b,'a',sizeof(b)-1);b[sizeof(b)-1]=0;renderEditor(b,sizeof(b),strlen(b),"ChatGPT",0,1,1,0,0,0,0);snprintf(path,sizeof(path),"%s/input-long.ppm",argv[2]);dumpFrame(path);
   strcpy(b,"Hoe los ik 2x + 5 = 17 op?");strcpy(lastQuestion,b);strcpy(answer,"Trek eerst 5 van beide kanten af.\n2x = 12\n\nDeel daarna door 2: x = 6.");
   SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/answer.ppm",argv[2]);dumpFrame(path);
+  int historyUp[81];for(int i=0;i<40;i++){historyUp[i*2]=28;historyUp[i*2+1]=0;}historyUp[80]=47;
+  SCRIPT(historyUp);readAnswer(0);snprintf(path,sizeof(path),"%s/conversation-up.ppm",argv[2]);dumpFrame(path);
+  chatFollowTail=1;strcpy(prompt,"Kun je nog een voorbeeld geven?");chatInputLetters=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/conversation-draft.ppm",argv[2]);dumpFrame(path);
+  activeChatSlot=-1;strcpy(lastQuestion,"Controleer de rekenstappen");
   strcpy(answer,"23 + 42 ＝ 65\n1 / 3 ≈ 0,333\nx ≠ 3; x ≤ 8; x ≥ 2\nx ≡ y; a ≔ 5");SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/math-answer.ppm",argv[2]);dumpFrame(path);
-  prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
+  activeChatSlot=0;assert(loadChatPair(0,savedChats[0].turns-1));prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
@@ -639,6 +674,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

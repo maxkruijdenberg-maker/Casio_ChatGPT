@@ -1,19 +1,20 @@
-# ChatGPT V22.4 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V22.5 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.4-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.4.pdf) · [Offline handleiding](docs/Handleiding-V22.4.html)
+[Installatiepakket](dist/ChatGPT-V22.5-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V22.5.pdf) · [Offline handleiding](docs/Handleiding-V22.5.html)
 
-- Neutrale tekst en achtergrond bij Verbonden/Verbroken; alleen het bolletje groen/rood.
-- Meer gelijktekenvarianten als =; nieuwe glyphs voor ongeveer gelijk en andere relaties.
-- Geen verwisseling van ≈, ≠, ≤, ≥ of echte vraagtekens met =.
-- Echte ontvangen tekst en opgeslagen chats blijven behouden.
+- Eén doorlopende chat met eerdere vragen en antwoorden boven de invoerbalk.
+- Direct verder typen en versturen in hetzelfde gesprek; ALPHA-lock blijft actief.
+- Omhoog/omlaag leest historie; links/rechts verplaatst de invoercursor.
+- Geen Verder/Vorig/Volgend-knoppen in een chat. F1 Stuur of EXE verstuurt.
+- Invoer toont in een chat maximaal drie regels tegelijk; langere invoer schuift mee.
 
 **Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
-en herstart de Casio. De Atom-code en firmware zijn bytegelijk aan V22.3.
-[Bijwerken](UPGRADE-V22.4.md) · [Schermen](docs/design/V22.4-actual-screens.png)
+en herstart de Casio. De Atom-code en firmware zijn ongewijzigd.
+[Bijwerken](UPGRADE-V22.5.md) · [Schermen](docs/design/V22.5-actual-screens.png).
 
-De geheugenarme modelcontrole, betaalde vraagroute, UART, toetsen, native menu en
-opslag zijn ongewijzigd. Geen echte hardware of live API-account in de bouwomgeving getest.
+Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
+Geen live API-account of fysieke Casio in de bouwomgeving getest.
 
 ## Windows: installeren
 
@@ -100,8 +101,9 @@ op toetsen in het invoerscherm volgen nieuwe controles bij herstel (minimaal 1 s
 en een controle iedere 10 seconden als de Atom online is. Het typen blijft
 beschikbaar. Verbinding controleren staat onder Instellingen → Hulp; verbinden vereist geen handmatige diagnose.
 
-Na versturen komt een apart antwoordscherm. Omhoog/omlaag scrolt een regel;
-links/rechts scrolt een pagina. F1 Verder begint een vervolgvraag. F2 begint een nieuw gesprek; de oude
+Na versturen staat het antwoord boven de invoerbalk in hetzelfde gesprek.
+Omhoog/omlaag leest de historie; typ direct je vervolgvraag en gebruik F1 Stuur of EXE.
+Links/rechts verplaatst de cursor. F2 begint bewust een nieuw gesprek; de oude
 opgeslagen chat blijft behouden. EXIT tijdens wachten vraagt annulering aan. Een al verstuurde
 API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
@@ -119,11 +121,10 @@ installatiepagina. Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md) voor de stappen.
 
 ## Lokale chatgeschiedenis
 
-Open de zijbalk met **OPTN**, of bij een antwoord met **F4 Chats**. Acht
-lokale gesprekken met elk maximaal acht complete vraag/antwoordparen worden
-in Casio-opslag bewaard. F5/F6 bladeren door eerdere paren; SHIFT toont de
-volledige vraag. Je kunt oude chats offline lezen en later vervolgen met
-begrensde context. Zie UPGRADE-V3.md voor limieten, backups en herstel.
+Open de zijbalk met **OPTN** of **F3 Chats**. Acht gesprekken met elk maximaal
+acht complete vraag/antwoordparen blijven lokaal bewaard. Lees alle paren met
+omhoog/omlaag in dezelfde tijdlijn en typ een vervolgvraag onderaan. De recente
+API-context blijft begrensd. Bewaar verschijnt tijdelijk op F3 bij opslagfout.
 V2- en ChatGPT-websitegesprekken worden niet geïmporteerd.
 
 ## Scherm instellen

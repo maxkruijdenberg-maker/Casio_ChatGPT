@@ -1,15 +1,17 @@
-# ChatGPT voor Casio — V22.4
+# ChatGPT voor Casio — V22.5
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V22.4.pdf of docs/Handleiding-V22.4.html.
+docs/Handleiding-V22.5.pdf of docs/Handleiding-V22.5.html.
 
-Heb je de Atom al naar V22.3 bijgewerkt? Vervang dan alleen dist/ChatGPT.g3a op
-de Casio, laat CGPT3 staan en herstart de Casio eenmaal. Heb je een oudere Atom,
-volg de volledige installatie; laat Erase All Flash / volledig wissen uitgeschakeld.
+Atom V22.3 al geïnstalleerd? Vervang alleen dist/ChatGPT.g3a op de Casio,
+laat CGPT3 staan en herstart de Casio. Voor een oudere Atom volg je de volledige
+installatie; laat Erase All Flash / volledig wissen uitgeschakeld.
 
-V22.4 maakt de status neutraal met alleen een groen/rood bolletje en ondersteunt
-extra gelijk- en relatietekens in antwoorden. De Atom-firmware is ongewijzigd.
-De geheugenarme F2 Account-controle en de paarsblauwe planeet blijven behouden.
+Typ onderaan verder in hetzelfde gesprek. Omhoog/omlaag leest eerdere vragen
+en antwoorden; links/rechts verplaatst de cursor. F1 Stuur of EXE verstuurt.
+ALPHA-lock blijft na versturen aan. De chat heeft geen Vorig/Volgend-knoppen meer.
+F2 Nieuw maakt bewust een nieuwe chat; F3 Chats of OPTN opent je gesprekken.
+De bestaande grens van acht paren per chat blijft behouden.
 
-Gebruik je eigen API-account en tegoed. Deel je sleutel niet met een verkoper.
-Fysieke controles: docs/V22.4-CONTROLE-VOOR-VERKOOP.md.
+Je gebruikt eigen API-toegang en tegoed. Deel je sleutel niet met een verkoper.
+Fysieke controles: docs/V22.5-CONTROLE-VOOR-VERKOOP.md.

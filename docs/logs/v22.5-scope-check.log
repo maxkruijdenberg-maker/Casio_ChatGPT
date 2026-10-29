@@ -1,0 +1,3 @@
+PASS 31 Atom sources/firmware, model choices, native menu helpers, raw keyboard, storage format, menu icons and math rendering byte-identical to v22.4.0.
+PASS tests include two follow-up requests in same slot, offline timeline scrolling without changing live buffers/draft, ALPHA retention and pending-answer save; host UART stubs, not live API.
+No physical Casio/Atom or paid API account available.
