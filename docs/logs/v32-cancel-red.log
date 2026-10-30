@@ -1,0 +1,2 @@
+Early cancellation leaked a request: type=14 target=-1 afterAck=0 key=0 W_ASK=1
+test_ui: /tmp/v32-cancel-red/test_ui.c:727: testV32EarlyCancellation: Assertion `earlyCancelDelivered==1&&requestCount[W_ASK]==asks&&savedPairCount()==stored&&!unsavedReply&&!strcmp(prompt,draft)' failed.

@@ -62,10 +62,19 @@ static int modelsLoading=0,modelRefreshes=0,modelServerError=0,modelReadError=0;
 static int modelCancelRequests=0,modelCancelAt=-1,modelCancelDelay=0,modelCancelFailure=0;
 static int fakeApiCancelAt=-1,fakeApiCancelDelay=0;
 static int statusServerError=0,askResponseLost=0;
+/* Physical-key injection tied to real UART frames, not production internals. */
+static int earlyCancelType=-1,earlyCancelTarget=-1,earlyCancelOccurrence=0,earlyCancelAfterAck=0;
+static int earlyCancelKey=0,earlyCancelMatched=0,earlyCancelDelivered=0,earlyCancelArmed=0,earlyCancelRelease=0;
+static size_t earlyCancelRxEnd=0;
+static int earlyCancelReadyAt=0;
+static void armEarlyCancel(int type,int target,int occurrence,int afterAck,int key);
+static void disarmEarlyCancel(void);
+
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[256]="gpt-4.1-mini";
 static Upload fakeUpload;
 static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
+static const int earlyMenuConfirm[512]={0,0,0,79};
 void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
@@ -128,7 +137,10 @@ int GetKeyWait_OS(int*c,int*r,int mode,int timeout,int menu,unsigned short*code)
  rawMenuQueued=0;inNativeWait=0;nativeTimerCalls++;menuReturned();
  *c=2;*r=1;*code=KEY_CTRL_EXE;return KEYREP_KEYEVENT;
 }
-static int scriptedKeyNext(void){timeTicks+=keyAdvanceMs;if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script at t=%d, link=%d misses=%d\n",timeTicks,linkOnline,linkMisses);abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
+static int scriptedKeyNext(void){
+ if(earlyCancelArmed&&timeTicks>=earlyCancelReadyAt){earlyCancelArmed=0;earlyCancelRelease=1;earlyCancelDelivered++;if(earlyCancelKey==KEY_PRGM_MENU){keys=earlyMenuConfirm;keyCount=sizeof(earlyMenuConfirm)/sizeof(earlyMenuConfirm[0]);keyAt=0;}return earlyCancelKey;}
+ if(earlyCancelRelease){earlyCancelRelease=0;return 0;}
+ timeTicks+=keyAdvanceMs;if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script at t=%d, link=%d misses=%d\n",timeTicks,linkOnline,linkMisses);abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
 int PRGM_GetKey(void){assert(!"OS keyboard syscall must never run during application polling");return 0;}
 static void keyboardReadWords(uint16_t words[6]){
  memset(words,0,12);int key=scriptedKeyNext();if(key){int row=key/10-1,col=key%10;assert(row>=0&&row<7&&col<10);words[col/2]=(uint16_t)(1u<<(row+8*(col%2)));}
@@ -140,12 +152,22 @@ int Serial_ClearTX(void){return 0;}int Serial_ClearRX(void){rxAt=rxEnd=0;return 
 int Serial_Close(int n){(void)n;if(lifecycleTesting&&quitting)assert(!quitCallback);serialCloses++;osSerialOpen=0;return 0;}int Serial_IsOpen(void){return osSerialOpen;}
 int Serial_Open(unsigned char *p){assert(p[0]==0&&p[1]==5&&p[2]==0&&p[3]==0&&p[4]==0&&p[5]==0);serialOpens++;if(openFailures){openFailures--;return 1;}osSerialOpen=1;return 0;}
 int Serial_PollTX(void){return 256;}int Serial_PollRX(void){return timeTicks<replyReadyAt?0:(int)(rxEnd-rxAt);}
-int Serial_ReadSingle(unsigned char*p){if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];return 0;}
+int Serial_ReadSingle(unsigned char*p){
+ if(rxAt>=rxEnd)return 1;*p=rx[rxAt++];
+ if(earlyCancelAfterAck&&earlyCancelRxEnd&&rxAt==earlyCancelRxEnd){
+  earlyCancelArmed=1;earlyCancelRxEnd=0;
+  if(earlyCancelAfterAck==2){serialOpen=0;osSerialOpen=1;earlyCancelReadyAt=timeTicks+1;}
+ }
+ return 0;
+}
 int Serial_Write(const unsigned char*p,int n){
  assert(osSerialOpen);if(writeFailures){writeFailures--;if(dropPortOnWriteFailure){osSerialOpen=0;dropPortOnWriteFailure=0;}if(expectSameWrite){memcpy(failedWrite,p,n);failedWriteLength=n;}return 1;}
  if(expectSameWrite&&failedWriteLength){assert(n==failedWriteLength&&!memcmp(p,failedWrite,n));expectSameWrite=0;failedWriteLength=0;}
  WParser parser={0};WFrame f,r={0};int got=0;for(int i=0;i<n;i++)if(w_feed(&parser,p[i],&f)==1)got=1;
  assert(got&&f.type<32);requestCount[f.type]++;
+ int target=f.type==W_BEGIN||f.type==W_CONTEXT?f.data[0]:f.type==W_APPEND||f.type==W_APPLY?fakeUpload.target:-1;
+ int inject=f.type==earlyCancelType&&(earlyCancelTarget<0||target==earlyCancelTarget)&&++earlyCancelMatched==earlyCancelOccurrence;
+ if(inject&&!earlyCancelAfterAck)earlyCancelArmed=1;
  if(verifyCancelClean&&f.type==W_CANCEL)assert(!loadingActive&&!lastPaintLoading);
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
@@ -203,7 +225,9 @@ int Serial_Write(const unsigned char*p,int n){
  default:r.data[0]=E_REQUEST;
  }
  if(rxAt==rxEnd)rxAt=rxEnd=0;
- rxEnd+=w_encode(&r,rx+rxEnd);replyReadyAt=timeTicks+(f.type==W_CANCEL&&cancelReplyDelay?cancelReplyDelay:f.type==W_STATUS&&statusReplyDelay?statusReplyDelay:replyDelay);assert(rxEnd<=sizeof(rx));return 0;
+ rxEnd+=w_encode(&r,rx+rxEnd);replyReadyAt=timeTicks+(inject&&!earlyCancelAfterAck?300:f.type==W_CANCEL&&cancelReplyDelay?cancelReplyDelay:f.type==W_STATUS&&statusReplyDelay?statusReplyDelay:replyDelay);
+ if(inject&&earlyCancelAfterAck)earlyCancelRxEnd=rxEnd;
+ assert(rxEnd<=sizeof(rx));return 0;
 }
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
@@ -599,14 +623,15 @@ static void testV30NavigationAndSymbols(void){
  int quiet[300]={0};SCRIPT(quiet);cancelQuestion();assert(!loadingActive&&!lastPaintLoading&&requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
  verifyCancelClean=0;cancelReplyDelay=0;newLocalChat();
  /* Actual status-wait cancellation uses the same non-loading handshake. */
- int cancelled[200]={47};cancelled[199]=47;SCRIPT(cancelled);
+ int cancelled[2400]={0};cancelled[2399]=47;SCRIPT(cancelled);
+ armEarlyCancel(W_STATUS,-1,1,0,KEY_PRGM_EXIT);
  strcpy(prompt,"Een testvraag");servedAnswer="Test";emulateQuestion=1;emulatedStatus=0;
- verifyCancelClean=1;cancelReplyDelay=statusReplyDelay=300;ask();
+ verifyCancelClean=1;cancelReplyDelay=statusReplyDelay=300;ask();disarmEarlyCancel();
  assert(!loadingActive&&requestCount[W_ASK]==paid+1&&requestCount[W_ALLOC]==allocated+1);
  verifyCancelClean=0;cancelReplyDelay=statusReplyDelay=0;emulateQuestion=0;servedAnswer=0;Serial_ClearRX();newLocalChat();
  /* Direct EXIT in the polling interval also clears the loader first. */
- SCRIPT(cancelled);strcpy(prompt,"Nog een testvraag");servedAnswer="Test";emulateQuestion=1;emulatedStatus=0;
- verifyCancelClean=1;cancelReplyDelay=300;ask();
+ SCRIPT(cancelled);armEarlyCancel(W_STATUS,-1,1,1,KEY_PRGM_EXIT);strcpy(prompt,"Nog een testvraag");servedAnswer="Test";emulateQuestion=1;emulatedStatus=0;
+ verifyCancelClean=1;cancelReplyDelay=300;ask();disarmEarlyCancel();
  assert(!loadingActive&&requestCount[W_ASK]==paid+2&&requestCount[W_ALLOC]==allocated+2);
  verifyCancelClean=0;cancelReplyDelay=0;emulateQuestion=0;servedAnswer=0;Serial_ClearRX();newLocalChat();
 }
@@ -637,7 +662,7 @@ static void testV31ModelsAndCancellation(void){
  assert(!modelAccountChecked&&!remoteModelCount);
  modelCancelDelay=0;modelCancelFailure=1;modelsLoading=1;modelCancelAt=-1;
  const int cancelFailure[]={47,0,47};SCRIPT(cancelFailure);assert(!fetchModels()&&modelStopPending&&!modelAccountChecked);
- strcpy(prompt,"Niet dubbel versturen");modelsLoading=100;const int dismiss[]={47};SCRIPT(dismiss);ask();
+ strcpy(prompt,"Niet dubbel versturen");modelsLoading=100;int dismiss[2400]={0};dismiss[2399]=47;SCRIPT(dismiss);ask();
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated&&modelStopPending);
  modelsLoading=0;modelCancelFailure=0;modelCancelAt=timeTicks;assert(ensureModelStopped()&&!modelStopPending);
  /* Pending API cancellation likewise gates the next paid submission. */
@@ -654,18 +679,97 @@ static void testV31QuestionCleanupPaths(void){
  emulateQuestion=verifyCancelClean=1;servedAnswer="Een testantwoord";emulatedStatus=0;
  int cancels=requestCount[W_CANCEL],allocated=requestCount[W_ALLOC],asks=requestCount[W_ASK];
  /* MENU confirmed during the interval after a successful status reply. */
- strcpy(prompt,"Sluiten tijdens wachten");int menu[300]={48,0,0,0,79};SCRIPT(menu);ask();
+ strcpy(prompt,"Sluiten tijdens wachten");int menu[300]={0};SCRIPT(menu);armEarlyCancel(W_STATUS,-1,1,1,KEY_PRGM_MENU);ask();disarmEarlyCancel();
  assert(quitting&&!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+1&&requestCount[W_ASK]==asks+1&&requestCount[W_ALLOC]==allocated+1);
  /* The same MENU during a delayed status RPC takes the other exit path. */
- newLocalChat();strcpy(prompt,"Sluiten tijdens status");SCRIPT(menu);statusReplyDelay=300;emulatedStatus=0;ask();statusReplyDelay=0;
+ newLocalChat();strcpy(prompt,"Sluiten tijdens status");SCRIPT(menu);armEarlyCancel(W_STATUS,-1,1,0,KEY_PRGM_MENU);statusReplyDelay=300;emulatedStatus=0;ask();disarmEarlyCancel();statusReplyDelay=0;
  assert(quitting&&!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+2&&requestCount[W_ASK]==asks+2);
  /* Transport/status failure also asks the existing worker to stop. */
- const int dismiss[]={47};SCRIPT(dismiss);newLocalChat();strcpy(prompt,"Een statusfout");statusServerError=E_INTERNET;emulatedStatus=0;ask();statusServerError=0;
+ int dismiss[2400]={0};dismiss[2399]=47;SCRIPT(dismiss);newLocalChat();strcpy(prompt,"Een statusfout");statusServerError=E_INTERNET;emulatedStatus=0;ask();statusServerError=0;
  assert(!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+3&&requestCount[W_ASK]==asks+3);
  /* Lost W_ASK ACKs replay the same request ID; cancellation never allocates a retry. */
  SCRIPT(dismiss);newLocalChat();strcpy(prompt,"Bevestiging ontbreekt");askResponseLost=1;emulatedStatus=0;ask();askResponseLost=0;
  assert(!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+4&&requestCount[W_ALLOC]==allocated+4&&requestCount[W_ASK]==asks+7);
  verifyCancelClean=emulateQuestion=0;servedAnswer=0;fakeApiCancelAt=-1;newLocalChat();quitting=0;
+}
+
+static void armEarlyCancel(int type,int target,int occurrence,int afterAck,int key){
+ earlyCancelType=type;earlyCancelTarget=target;earlyCancelOccurrence=occurrence;earlyCancelAfterAck=afterAck;earlyCancelKey=key;
+ earlyCancelMatched=earlyCancelDelivered=earlyCancelArmed=earlyCancelRelease=0;earlyCancelRxEnd=0;earlyCancelReadyAt=0;
+}
+static void disarmEarlyCancel(void){
+ earlyCancelType=-1;earlyCancelArmed=earlyCancelRelease=0;earlyCancelRxEnd=0;
+}
+static int savedPairCount(void){int count=0;for(int i=0;i<STORE_SLOTS;i++)count+=savedChats[i].used?savedChats[i].turns:0;return count;}
+static void testV32EarlyCancellation(void){
+ static const char draft[]="Bewaar dit concept. Deze langere vraag gebruikt meerdere uploadframes, zodat annuleren ook midden in het versturen van de tekst wordt getest.";
+ static const char reply[]="Een lang antwoord dat meerdere leesframes gebruikt. Geen halve tekst mag als nieuw antwoord in een opgeslagen gesprek terechtkomen.";
+ struct Stage {int type,target,restore;};
+ const struct Stage prep[]={
+  {W_DEVICE,-1,0},{W_NEW,-1,0},
+  {W_BEGIN,0,0},{W_APPEND,0,0},{W_APPLY,0,0},{W_ALLOC,-1,0},
+  {W_CONTEXT,0,1},{W_BEGIN,5,1},{W_APPEND,5,1},{W_APPLY,5,1},
+  {W_BEGIN,6,1},{W_APPEND,6,1},{W_APPLY,6,1},{W_CONTEXT,1,1}
+ };
+ int quiet[2400]={0};quiet[2399]=47;
+ connected=1;replyDelay=cancelReplyDelay=statusReplyDelay=0;fakeApiCancelDelay=0;fakeApiCancelAt=-1;
+ modelCancelAt=-1;modelsLoading=0;modelStopPending=questionStopPending=0;fakeAtomMajor=atomMajor=31;
+ emulateQuestion=1;servedAnswer=reply;loadLibrary();int slot=freeSlot(savedChats);assert(slot>=0);
+ assert(lib_append(&disk,slot,&savedChats[slot],"Bestaande vraag","Bestaand antwoord",&savedChats[slot]));storageClose();
+ int runs=0;
+ for(size_t stage=0;stage<sizeof(prep)/sizeof(prep[0]);stage++)for(int after=0;after<2;after++)for(int button=0;button<2;button++){
+  SCRIPT(quiet);newLocalChat();Serial_ClearRX();upload_clear(&fakeUpload);fakeApiCancelAt=-1;emulatedStatus=0;
+  if(prep[stage].restore){activeChatSlot=slot;assert(loadChatPair(slot,0));contextDirty=1;}
+  strcpy(prompt,draft);int asks=requestCount[W_ASK],allocated=requestCount[W_ALLOC],stored=savedPairCount();
+  armEarlyCancel(prep[stage].type,prep[stage].target,1,after,button?KEY_PRGM_F1:KEY_PRGM_EXIT);
+  ask();disarmEarlyCancel();
+  if(requestCount[W_ASK]!=asks)fprintf(stderr,"Early cancellation leaked a request: type=%d target=%d afterAck=%d key=%d W_ASK=%d\n",prep[stage].type,prep[stage].target,after,button,requestCount[W_ASK]-asks);
+  assert(earlyCancelDelivered==1&&requestCount[W_ASK]==asks&&savedPairCount()==stored&&!unsavedReply&&!strcmp(prompt,draft));
+  assert(requestCount[W_ALLOC]-allocated<=(prep[stage].type==W_ALLOC?1:0));
+  assert(!loadingActive&&!questionStopPending&&contextDirty);
+  char q[1025],a[8193];assert(lib_pair(&disk,&savedChats[slot].ref,0,q,sizeof(q),a,sizeof(a))&&!strcmp(q,"Bestaande vraag")&&!strcmp(a,"Bestaand antwoord"));storageClose();runs++;
+ }
+ /* Cancellation after W_ALLOC's ACK is the final safe boundary before W_ASK. */
+ assert(runs==56);
+ /* A physical cancellation can arrive during the 20ms UART reclaim just
+  * before W_ASK. It must be checked again after reclaim, before the write. */
+ for(int button=0;button<2;button++){
+  SCRIPT(quiet);newLocalChat();Serial_ClearRX();upload_clear(&fakeUpload);fakeApiCancelAt=-1;emulatedStatus=0;strcpy(prompt,draft);
+  int asks=requestCount[W_ASK],allocated=requestCount[W_ALLOC],stored=savedPairCount();
+  armEarlyCancel(W_ALLOC,-1,1,2,button?KEY_PRGM_F1:KEY_PRGM_EXIT);ask();disarmEarlyCancel();
+  assert(earlyCancelDelivered==1&&requestCount[W_ASK]==asks&&requestCount[W_ALLOC]==allocated+1&&savedPairCount()==stored&&!strcmp(prompt,draft));
+  assert(!loadingActive&&!questionStopPending&&contextDirty);
+ }
+ /* After W_ASK has been sent the request can already bill. Cancel it once;
+  * don't repeat admission or save the result, even when the ACK is delayed. */
+ for(int button=0;button<2;button++){
+  SCRIPT(quiet);newLocalChat();Serial_ClearRX();upload_clear(&fakeUpload);fakeApiCancelAt=-1;emulatedStatus=0;strcpy(prompt,draft);
+  int asks=requestCount[W_ASK],allocated=requestCount[W_ALLOC],stored=savedPairCount(),cancels=requestCount[W_CANCEL];
+  armEarlyCancel(W_ASK,-1,1,0,button?KEY_PRGM_F1:KEY_PRGM_EXIT);ask();disarmEarlyCancel();
+  assert(earlyCancelDelivered==1&&requestCount[W_ASK]==asks+1&&requestCount[W_ALLOC]==allocated+1&&requestCount[W_CANCEL]==cancels+1);
+  assert(savedPairCount()==stored&&!unsavedReply&&!strcmp(prompt,draft)&&!loadingActive&&!questionStopPending&&contextDirty);
+ }
+ /* Cancelling while downloading an already-produced response cannot save a
+  * partial pair; the existing local transcript remains byte-for-byte intact. */
+ for(int after=0;after<2;after++)for(int button=0;button<2;button++){
+  SCRIPT(quiet);newLocalChat();activeChatSlot=slot;assert(loadChatPair(slot,0));Serial_ClearRX();upload_clear(&fakeUpload);fakeApiCancelAt=-1;emulatedStatus=0;strcpy(prompt,draft);
+  int asks=requestCount[W_ASK],allocated=requestCount[W_ALLOC],stored=savedPairCount();
+  armEarlyCancel(W_READ,-1,1,after,button?KEY_PRGM_F1:KEY_PRGM_EXIT);ask();disarmEarlyCancel();
+  assert(earlyCancelDelivered==1&&requestCount[W_ASK]==asks+1&&requestCount[W_ALLOC]==allocated+1&&savedPairCount()==stored&&!unsavedReply&&!strcmp(prompt,draft));
+  assert(!loadingActive&&!questionStopPending&&contextDirty);
+  char q[1025],a[8193];assert(lib_pair(&disk,&savedChats[slot].ref,0,q,sizeof(q),a,sizeof(a))&&!strcmp(q,"Bestaande vraag")&&!strcmp(a,"Bestaand antwoord"));storageClose();
+ }
+ /* A deliberately retried question repairs a cancelled partial context and
+  * saves exactly one new pair; cancellation itself never retries it. */
+ SCRIPT(quiet);newLocalChat();activeChatSlot=slot;assert(loadChatPair(slot,0));Serial_ClearRX();upload_clear(&fakeUpload);fakeApiCancelAt=-1;emulatedStatus=0;strcpy(prompt,draft);
+ int asks=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
+ armEarlyCancel(W_APPEND,6,1,0,KEY_PRGM_EXIT);ask();disarmEarlyCancel();
+ assert(requestCount[W_ASK]==asks&&contextDirty&&!strcmp(prompt,draft)&&savedChats[slot].turns==1);
+ SCRIPT(quiet);emulatedStatus=0;ask();
+ assert(requestCount[W_ASK]==asks+1&&requestCount[W_ALLOC]==allocated+1&&savedChats[slot].turns==2&&!prompt[0]&&!unsavedReply);
+ char recoveredQ[1025],recoveredA[8193];assert(lib_pair(&disk,&savedChats[slot].ref,1,recoveredQ,sizeof(recoveredQ),recoveredA,sizeof(recoveredA))&&!strcmp(recoveredQ,draft)&&!strcmp(recoveredA,reply));storageClose();
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();
+ emulateQuestion=0;servedAnswer=0;fakeApiCancelAt=-1;newLocalChat();Serial_ClearRX();
 }
 
 static void testSentenceInput(void){
@@ -743,7 +847,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -817,6 +921,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

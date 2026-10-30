@@ -1,0 +1,8 @@
+PASS: 27 Atom source/firmware and native/raw-key helper files byte-identical to v31.0.0.
+Casio V32 build passed; Atom firmware remains V31 (no reflash for existing V31 users).
+18 ASan/UBSan groups passed with ASAN_OPTIONS=detect_leaks=0 (sandbox, no LeakSanitizer).
+Early cancellation: 56 staged preparation cases plus 2 UART-reclaim boundaries; all forbid W_ASK and preserve draft/storage.
+Also tested 2 post-send ACK cancellations, 4 W_READ cancellations without partial save, and explicit context-repair retry.
+Same regression tests fail original v31.0.0 at first delayed W_DEVICE/EXIT: W_ASK=1 (v32-cancel-red.log).
+Native menu, transport framing, retry policy and ledger unchanged; only question-scoped cancellation handling expanded.
+No physical hardware or live API tested.

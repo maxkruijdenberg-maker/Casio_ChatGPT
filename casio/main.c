@@ -44,6 +44,8 @@ static void animateLoading(void);
 static void paintLoading(int phase);
 static int loadingActive=0,loadingPhase=0,loadingAt=0;
 static int questionStopPending=0;
+/* This scope covers only a new question. Cleanup RPCs must stay usable. */
+static int questionActive=0,questionAbort=0,questionAskSent=0,questionAbortHandled=0;
 static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
 static uint8_t seq=0;
@@ -114,6 +116,15 @@ static int keyEvent(void){
  if((k==KEY_PRGM_UP||k==KEY_PRGM_DOWN||k==KEY_PRGM_LEFT||k==KEY_PRGM_RIGHT||k==44)&&elapsed(heldTick,450)&&elapsed(repeatTick,100)){
   repeatTick=now;return k;
  }return 0;
+}
+static int questionCancellationKey(int k){
+ if(questionActive&&(quitting||k==KEY_PRGM_EXIT||k==KEY_PRGM_F1))questionAbort=1;
+ return questionActive&&questionAbort;
+}
+static int pollQuestionCancellation(void){
+ if(!questionActive)return 0;
+ if(questionAbort||quitting){questionAbort=1;return 1;}
+ return questionCancellationKey(keyEvent());
 }
 static int waitKey(void){int k;while(!quitting){k=keyEvent();if(k)return k;OS_InnerWait_ms(10);}return KEY_PRGM_MENU;}
 /* RGB565 palette; all geometry is in actual 384x216 display pixels. */
@@ -373,17 +384,24 @@ static int rpcInner(int type,const uint8_t *data,size_t len,WFrame *reply,int ca
  req.type=(uint8_t)type;req.seq=++seq;req.len=(uint8_t)len;if(len)memcpy(req.data,data,len);
  n=w_encode(&req,bytes);
  for(attempt=0;attempt<attempts&&!quitting;attempt++){
+  if(pollQuestionCancellation())return -2;
   if(attempt)retries++;
   if(!ensureSerial()){OS_InnerWait_ms(20);continue;}
+  if(pollQuestionCancellation())return -2;
+  if(questionActive&&type==W_ASK)questionAskSent=1;
   if(Serial_Write(bytes,(int)n)!=0){resetSerialTransport();OS_InnerWait_ms(20);ensureSerial();continue;}
   start=RTC_GetTicks();
   while(!elapsed(start,timeout)&&!quitting){
    while(Serial_PollRX()>0){unsigned char c;WFrame f;int ok;
     if(Serial_ReadSingle(&c)!=0)break;ok=w_feed(&parser,c,&f);if(ok<0)errors++;
-    if(ok==1&&f.seq==req.seq&&f.type==(req.type|0x80)&&f.len){linkSucceeded();*reply=f;return f.data[0]?0:1;}
+    if(ok==1&&f.seq==req.seq&&f.type==(req.type|0x80)&&f.len){
+     linkSucceeded();*reply=f;
+     if(pollQuestionCancellation())return -2;
+     return f.data[0]?0:1;
+    }
    }
    if(loadingActive&&!closePromptActive)animateLoading();
-   k=keyEvent();if(quitting||(cancellable&&(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1)))return -2;
+   k=keyEvent();if(questionCancellationKey(k)||quitting||(cancellable&&(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1)))return -2;
    OS_InnerWait_ms(5);
   }
   memset(&parser,0,sizeof(parser));
@@ -924,7 +942,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 31\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -1030,6 +1048,7 @@ static int ensureQuestionStopped(void){
  message("Vorige vraag wordt gestopt","De Atom heeft het stoppen nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er wordt geen nieuwe vraag verstuurd. Een eerdere API-aanvraag kan nog kosten maken.");return 0;
 }
 static void cancelQuestion(void){
+ questionActive=0;questionAbortHandled=1;
  WFrame ignored;int start=RTC_GetTicks(),leaving=quitting,modal=closePromptActive;
  loadingActive=0;questionStopPending=1;contextDirty=1;
  {clear("Vraag stoppen");centered(85,"Je vraag wordt gestopt.",C_TEXT);centered(111,"Een eerdere aanvraag kan geld kosten.",C_MUTED);show();}
@@ -1049,7 +1068,6 @@ static void questionCancelledMessage(void){
 }
 static void askWork(void){
  WFrame r;uint8_t id[4];int start=RTC_GetTicks(),ok;uint8_t s,e;unsigned len;
- if(!ensureModelStopped()||!ensureQuestionStopped())return;
  if(!prompt[0]){message("Geen vraag","Typ eerst een vraag.");return;}
  loadLibrary();
  if(unsavedReply){message("Bewaar het antwoord","Het vorige antwoord is nog niet opgeslagen. Open het gesprek en probeer F3 Bewaar, of verwerp het bewust via Nieuw.");return;}
@@ -1060,6 +1078,7 @@ static void askWork(void){
  if(!checkedRpc(W_ALLOC,0,0,&r)||r.len!=5)return;memcpy(id,r.data+1,4);
  ok=rpc(W_ASK,id,4,&r,0);
  if(ok!=1){
+  if(questionAbort)return;
   uint8_t error=ok==0?r.data[0]:0;cancelQuestion();
   if(!quitting){
    if(error)message("Vraag niet gestart",error<sizeof(errNames)/sizeof(errNames[0])?errNames[error]:"Onbekende fout");
@@ -1068,7 +1087,7 @@ static void askWork(void){
  }
  while(!quitting){
   ok=rpc(W_STATUS,0,0,&r,1);
-  if(ok==-2){cancelQuestion();questionCancelledMessage();return;}
+  if(ok==-2){if(questionAbort)return;cancelQuestion();questionCancelledMessage();return;}
   if(ok!=1||r.len!=10){cancelQuestion();if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
@@ -1077,22 +1096,40 @@ static void askWork(void){
   if(s==S_CANCELLED){message("Geannuleerd","Er wordt geen antwoord opgehaald.");return;}
   paintLoading(loadingPhase);
   {int wait=RTC_GetTicks();while(!elapsed(wait,250)&&!quitting){
-   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){cancelQuestion();questionCancelledMessage();return;}OS_InnerWait_ms(10);
+   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){questionAbort=1;return;}OS_InnerWait_ms(10);
   }}
-  if(quitting){cancelQuestion();return;}
+  if(quitting){questionAbort=1;return;}
   if(elapsed(start,150000)){cancelQuestion();message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
+static void restoreLocalAfterQuestionAbort(void){
+ contextDirty=1;invalidateConversation();
+ /* W_READ may have overwritten the live answer with only a prefix. */
+ if(activeChatSlot>=0&&savedChats[activeChatSlot].used){
+  if(!lib_pair(&disk,&savedChats[activeChatSlot].ref,savedChats[activeChatSlot].turns-1,lastQuestion,sizeof(lastQuestion),answer,sizeof(answer)))lastQuestion[0]=answer[0]=0;
+ }else lastQuestion[0]=answer[0]=0;
+ storageClose();
+}
 static void ask(void){
+ if(!ensureModelStopped()||!ensureQuestionStopped()||quitting)return;
+ questionAbort=questionAskSent=questionAbortHandled=0;questionActive=1;
  loadingActive=prompt[0]!=0;loadingPhase=0;loadingAt=RTC_GetTicks();if(loadingActive)paintLoading(0);
- askWork();loadingActive=0;
+ askWork();questionActive=0;loadingActive=0;
+ if(questionAbort&&!questionAbortHandled){
+  cancelQuestion();restoreLocalAfterQuestionAbort();
+  if(!quitting){
+   if(questionStopPending)questionCancelledMessage();
+   else if(questionAskSent)questionCancelledMessage();
+   else message("Geannuleerd","Je vraag is niet verstuurd. Je invoer is bewaard.");
+  }
+ }
 }
 /* Fresh state after a cold launch or a return from native GetKey/MENU. */
 static void beginSession(void){
  int warm=serialOpen&&Serial_IsOpen()==1;storageClose();
  if(!warm){serialOpen=0;linkKnown=linkOnline=linkSeen=0;}
  oldSetup=GetSetupSetting(0x14);
- quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
+ quitting=0;closePromptActive=0;questionActive=questionAbort=questionAskSent=questionAbortHandled=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
  linkMisses=0;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;modelShowAll=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomMinor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;

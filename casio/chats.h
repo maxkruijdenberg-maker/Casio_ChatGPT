@@ -56,7 +56,10 @@ static int restoreChat(void){
  start=savedChats[activeChatSlot].turns>2?savedChats[activeChatSlot].turns-2:0;
  for(i=start;i<savedChats[activeChatSlot].turns&&!quitting;i++){
   if(!lib_pair(&disk,&savedChats[activeChatSlot].ref,i,field,sizeof(field),answer,sizeof(answer))||!uploadText(5,field)||!uploadText(6,answer)){
-   erase(field,sizeof(field));storageClose();rpc(W_CANCEL,0,0,&r,0);
+   erase(field,sizeof(field));storageClose();
+   if(questionAbort){contextDirty=1;return 0;}
+   rpc(W_CANCEL,0,0,&r,0);
+   if(questionAbort){contextDirty=1;return 0;}
    if(!quitting)message("Herstellen afgebroken","Er is nog geen nieuwe API-vraag gestart. Probeer later opnieuw.");return 0;
   }erase(field,sizeof(field));
  }

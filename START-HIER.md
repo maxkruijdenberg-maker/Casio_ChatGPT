@@ -1,12 +1,13 @@
-# ChatGPT voor Casio — V31
+# ChatGPT voor Casio — V32
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V31.pdf of docs/Handleiding-V31.html.
+docs/Handleiding-V32.pdf of docs/Handleiding-V32.html.
 
-Werk voor V31 beide onderdelen bij: upload de meegeleverde Atom-firmware V31 en
-vervang dist/ChatGPT.g3a op de Casio. Laat Erase All Flash / volledig wissen
-uitgeschakeld, laat CGPT3 staan en herstart de Casio. Zo blijven je instellingen
-en chats normaal behouden. De volledige stappen staan in de handleiding.
+Heb je Atom V31 al geïnstalleerd? Vervang alleen dist/ChatGPT.g3a op de Casio,
+laat CGPT3 staan en herstart de Casio eenmaal. De Atom-code en firmware zijn
+ongewijzigd V31. Heb je een oudere Atom, upload dan eerst de meegeleverde
+V31-firmware. Laat Erase All Flash / volledig wissen uitgeschakeld.
+De volledige stappen staan in de handleiding.
 
 De invoerstand staat in de berichtenbalk vóór de verstuurpijl. De losse teksthints
 en hoofdletterknop zijn weg. Na een punt komt automatisch een hoofdletter.
@@ -24,7 +25,10 @@ EXIT gaat vanuit een chat terug naar het beginscherm, zonder laadicoon. Een
 ongestuurd concept vraagt eerst bevestiging; een niet-opgeslagen antwoord geeft
 een waarschuwing. Je opgeslagen chat blijft onder F3 Chats staan. Op het beginscherm
 blijft EXIT binnen de app en bewaart het je concept. Alleen MENU vraagt om afsluiten.
-Tijdens annuleren verdwijnt de laadplaneet direct; een al verstuurde vraag kan nog kosten maken.
+EXIT of F1 werkt ook tijdens de voorbereiding van een vraag. Annuleren vóór de
+verstuuropdracht voorkomt dat die vraag alsnog wordt verstuurd; je concept blijft
+beschikbaar. Is de opdracht al verzonden, dan kan de API-vraag al gestart zijn en
+nog geld kosten. De laadplaneet verdwijnt bij annuleren.
 De bestaande grens van acht paren per chat blijft behouden.
 
 Open lijsten met EXE of pijl rechts; links of EXIT gaat terug. De losse F-knoppen
@@ -44,10 +48,10 @@ geen werkende chatvraag.
 
 Ook chatverzoeken hebben een totale tijdslimiet en een stopmogelijkheid; de app
 wacht ook daarbij op de bevestiging van de Atom. Er wordt
-geen nieuwe betaalde vraag gestart bij annuleren of een fout. Een al verzonden
+niet automatisch een nieuwe betaalde vraag gestart bij annuleren of een fout. Een al verzonden
 vraag kan nog kosten maken. Je gebruikt eigen API-toegang en tegoed.
 Deel je sleutel niet met een verkoper.
-V31 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
+V32 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
 Echte apparaten en live betaalde antwoorden zijn hier niet getest.
 Fysieke controles en een proef met een nieuwe gebruiker:
-docs/V31-CONTROLE-VOOR-VERKOOP.md.
+docs/V32-CONTROLE-VOOR-VERKOOP.md.

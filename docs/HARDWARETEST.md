@@ -461,3 +461,19 @@ alle 21 bestaande IDs blijven bereikbaar en de gekozen instelling blijft intact.
 Beide builds en 18 ASan/UBSan-groepen geslaagd; lekcontrole uit in sandbox.
 Geen fysieke apparatuur of live API-sleutel beschikbaar. Gebruik V31 als
 praktijkkandidaat; volg V31-CONTROLE-VOOR-VERKOOP.md voor apparaatvrijgave.
+
+
+## V32 — annuleren vóór de verstuuropdracht
+
+EXIT/F1 worden bij een nieuwe vraag vastgelegd tijdens alle voorbereidende
+UART-stappen, vóór elke verzendpoging en na ontvangst van een bevestiging.
+Het annuleringsslot voorkomt een latere W_ASK. Opruimen gebruikt een aparte
+route die niet door hetzelfde slot wordt geblokkeerd. Een onvolledig ontvangen
+antwoord wordt niet opgeslagen; de lokale chat wordt hersteld en context wordt
+bij een bewuste nieuwe vraag opnieuw opgebouwd. Zodra W_ASK al naar de driver
+is doorgegeven, wordt geen belofte van kosteloze annulering gedaan.
+
+Casio-build en 18 ASan/UBSan-groepen geslaagd. De nieuwe matrix bevat 58 vroege
+annuleringen, twee na verzending, vier tijdens antwoordoverdracht en herstel
+bij bewust opnieuw proberen. Dezelfde regressietest faalt op de oorspronkelijke
+V31-code. Atom blijft bytegelijk V31. Geen echte hardware of live API getest.
