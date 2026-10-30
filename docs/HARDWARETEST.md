@@ -418,3 +418,27 @@ modelkeuze, transport, opslag en native-menuhelpers zijn ongewijzigd.
 Casio-build en zestien ASan/UBSan-testgroepen geslaagd binnen de sandbox met
 ASAN_OPTIONS=detect_leaks=0; de afzonderlijke lekcontrole is niet uitgevoerd.
 Controleer bediening en heropenen op echte hardware vóór levering.
+
+
+## V30 — teruggaan, basissymbolen en accountcontrole
+
+EXIT vanuit een chat gaat lokaal terug naar het beginscherm; opgeslagen chat
+blijft bewaard en concept/opslaanfouten vragen bevestiging. Geen Atom-RPC bij
+teruggaan. Bij annulering wordt de laadweergave vóór W_CANCEL verwijderd.
+Veertig basissymbolen zonder alfabet/cijfers; spatie zichtbaar als SP en de
+voorheen lege underscoreglyph hersteld. Open/Terug met rechts/links; Hulp alleen
+als rij in Instellingen, geen F5-route.
+
+Een gedeelde lijst van 21 GPT-4/5/6-chatnamen met aangekondigde einddatums in Info.
+Atom V30 haalt accountmetadata in één GET op en verwerkt gedecodeerde body via
+een incrementele parser met vast geheugen; geen grote JSON- of antwoordbuffer.
+Maximaal 512 KiB gestreamde body, parser 488 bytes, uitvoer maximaal 2048 bytes,
+5s netwerk-time-outs en totale controledeadline. Geen gedeeltelijke lijst bij
+fout. Casio toont Account gecontroleerd of Account niet gecontroleerd.
+
+Casio- en Atom-build geslaagd; 17 ASan/UBSan-testgroepen (lekcontrole in sandbox
+uitgeschakeld). Onder meer 3500 onbekende modellen, deelchunks, foute JSON,
+lege accountdoorsnede, offline EXIT, conceptbehoud en vertraagde annulering.
+Betaalde POST, ledger, UART en native menuhelpers blijven ongewijzigd.
+Fysieke Casio/Atom en live API-account niet in deze omgeving getest. Werk beide
+onderdelen bij en volg docs/V30-CONTROLE-VOOR-VERKOOP.md vóór levering.

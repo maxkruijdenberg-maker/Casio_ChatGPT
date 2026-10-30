@@ -22,5 +22,5 @@ int main(){
  assert(probe_model_choices(none,result,0)==E_BIG);
  calls=0;assert(probe_model_choices(all,result,4)==E_BIG&&!result[0]&&calls==1);
  assert(model_probe_status(401).error==E_AUTH&&model_probe_status(429).error==E_LIMIT);
- puts("PASS fixed-memory account probes: exact shared aliases, all/mixed/zero access, 404 skips, auth/rate/server/timeout failures, no partial publication, 256-byte result and bounded output; no response bodies or paid requests.");
+ puts("PASS fixed-memory account probes: exact shared aliases, all/mixed/zero access, 404 skips, auth/rate/server/timeout failures, no partial publication, 2048-byte result and bounded output; no response bodies or paid requests.");
 }

@@ -30,6 +30,14 @@ static void newLocalChat(void){
  activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;prompt[0]=answer[0]=lastQuestion[0]=0;
  chatInputLetters=0;chatFollowTail=1;invalidateConversation();
 }
+/* Returning home is local: defer Atom context changes until the next question. */
+static void chatHome(void){
+ loadingActive=0;
+ if(!hasConversation()&&activeChatSlot<0)return;
+ if(prompt[0]&&!confirm("Terug naar het beginscherm en je niet-verstuurde bericht wissen? Je opgeslagen chat blijft bewaard."))return;
+ if(!canLeaveReply())return;
+ newLocalChat();
+}
 static uint32_t lastAtomBoot=0;
 static int atomBootKnown=0;
 static int restoreChat(void){
@@ -68,15 +76,15 @@ static int chatSidebar(void){
    clipped(9,y,i==0?"+ Nieuw gesprek":savedChats[map[i-1]].damaged?"Beschadigd":savedChats[map[i-1]].title,18,i==selected?C_MINT:C_TEXT);
   }
   rounded(236,49,64,58,C_PURPLE_SOFT);drawLogo(248,57,40);printAt(228,115,"Jouw chats",C_TEXT);printAt(208,137,"Lokaal bewaard",C_MUTED);
-  printAt(184,157,"Ook zonder wifi",C_MUTED);footer("Open","Wis","Nieuw","","","Terug");show();k=waitKey();
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6)return 0;
+  printAt(184,157,"Ook zonder wifi",C_MUTED);footer("","Wis","Nieuw","","","");show();k=waitKey();
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<count)selected++;
   if(k==KEY_PRGM_F2&&selected>0&&confirm("Dit opgeslagen gesprek verwijderen?")){
    int slot=map[selected-1];if(!lib_delete(&disk,'C',slot)){storageClose();message("Wisfout","Het gesprek is niet gewist.");continue;}
    savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();if(activeChatSlot==slot)newLocalChat();continue;
   }
-  if(k==KEY_PRGM_F3||((k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)&&selected==0)){if(prompt[0]&&!confirm("De niet-verstuurde vraag verwerpen en een nieuw gesprek beginnen?"))continue;newLocalChat();return 2;}
-  if((k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)&&selected>0){
+  if(k==KEY_PRGM_F3||((k==KEY_PRGM_RIGHT||k==KEY_PRGM_RETURN)&&selected==0)){if(prompt[0]&&!confirm("De niet-verstuurde vraag verwerpen en een nieuw gesprek beginnen?"))continue;newLocalChat();return 2;}
+  if((k==KEY_PRGM_RIGHT||k==KEY_PRGM_RETURN)&&selected>0){
    int slot=map[selected-1],switching=slot!=activeChatSlot;
    if(switching&&prompt[0]&&!confirm("De niet-verstuurde vraag verwerpen en een ander gesprek openen?"))continue;
    if(loadChatPair(slot,savedChats[slot].turns-1)){

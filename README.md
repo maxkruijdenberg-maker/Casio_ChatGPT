@@ -1,18 +1,20 @@
-# ChatGPT V22.9 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V30 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V22.9-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V22.9.pdf) · [Offline handleiding](docs/Handleiding-V22.9.html)
+[Installatiepakket](dist/ChatGPT-V30-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V30.pdf) · [Offline handleiding](docs/Handleiding-V30.html)
 
 - Geen losse OPTN/MENU-hint; invoerstand ín de berichtenbalk vóór het verstuurpijltje.
 - Automatische hoofdletter aan het begin van een zin; geen handmatige hoofdletterlock.
-- Alleen de compacte invoerstanden 123, abc en Abc; losse hoofdletters kies je via Tekens.
+- EXIT brengt je vanuit een gesprek terug naar het beginscherm; opgeslagen chats blijven bewaard.
+- Tekens bevat veertig basissymbolen zonder alfabet of cijfers; SP betekent spatie.
 - Modelkeuze zonder Vorig/Volgend: de lijst schuift mee met omhoog/omlaag.
 - Afgeronde Jij/ChatGPT-labels met pictogrammen en extra ruimte tussen vraag en antwoord.
 - Eén doorlopend gesprek, directe vervolginvoer en blijvende ALPHA-lock behouden.
 
-**Atom V22.3 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a, laat CGPT3 staan
-en herstart de Casio. De Atom-code en firmware zijn ongewijzigd.
-[Bijwerken](UPGRADE-V22.9.md) · [Schermen](docs/design/V22.9-actual-screens.png).
+**Voor V30 werk je zowel de Atom als de Casio-app bij.** Upload de meegeleverde
+Atom-firmware V30 zonder volledig wissen en vervang dist/ChatGPT.g3a. Laat CGPT3
+staan en herstart de Casio. Zo blijven wifi, API-sleutel en opgeslagen chats normaal behouden.
+[Bijwerken](UPGRADE-V30.md) · [Schermen](docs/design/V30-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
 Geen live API-account of fysieke Casio in de bouwomgeving getest.
@@ -82,17 +84,18 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 | Omhoog/omlaag | Door de chatgeschiedenis lezen; in nieuwe invoer de cursor verplaatsen |
 | DEL | Vorige letter verwijderen |
 | AC | Invoerveld wissen, na bevestiging |
-| EXIT | Terug/annuleren binnen de app; op het beginscherm blijft je concept staan |
+| EXIT | Vanuit een chat naar het beginscherm; op het beginscherm blijft je concept staan |
 | MENU | Vraagt om afsluiten; Blijven bewaart de huidige invoer en verbinding |
 
 De letterlabels op de normale toetsen worden gebruikt. Op het scherm staat
 123, abc of Abc. ALPHA wisselt tussen cijfers en letters; dit is geen hoofdletterlock.
 De eerste gewone letter van een nieuwe vraag wordt een hoofdletter; ook na . ! ?
 begint een nieuwe zin automatisch met een hoofdletter. Er is geen handmatige
-hoofdletterlock meer, ook niet in Tekens. Een losse hoofdletter kies je via F4 Tekens;
-EXIT of F6 keert terug naar de invoer. In het tekenkeuzescherm staan alle afdrukbare
-ASCII-tekens, inclusief hoofdletters, spatie, streepje en underscore. Geheime velden
-behouden de exact ingevoerde letterkast en krijgen geen automatische hoofdletters.
+hoofdletterlock meer, ook niet in Tekens. F4 Tekens toont veertig basissymbolen
+voor rekenen en gewone leestekens, zonder alfabet of cijfers. De geselecteerde tegel
+is duidelijk omlijnd. SP staat voor spatie; bij selectie verschijnt Spatie.
+EXIT keert terug naar de invoer. Wifi en API-sleutel vul je via je telefoon in,
+met de exact gewenste letterkast.
 De eigen editor gebruikt de rode letterlabels bij ALPHA-lock. In cijferstand
 voeren de wiskundetoetsen functietekst in; SHIFT gebruikt eenmalig de gele
 functie. Bijvoorbeeld sin → `sin(`, SHIFT+sin → `asin(`, SHIFT+x² → `sqrt(`
@@ -107,7 +110,12 @@ beschikbaar. Verbinding controleren staat onder Instellingen → Hulp; verbinden
 Na versturen staat het antwoord boven de invoerbalk in hetzelfde gesprek.
 Omhoog/omlaag leest de historie; typ direct je vervolgvraag en gebruik F1 Stuur of EXE.
 Links/rechts verplaatst de cursor. F2 begint bewust een nieuw gesprek; de oude
-opgeslagen chat blijft behouden. EXIT tijdens wachten vraagt annulering aan. Een al verstuurde
+opgeslagen chat blijft behouden. EXIT gaat vanuit een chat lokaal terug naar het beginscherm,
+zonder laadscherm of Atom-aanvraag. Bij een ongestuurd concept vraagt de app eerst
+om bevestiging; een niet-opgeslagen antwoord geeft een aparte waarschuwing.
+Op het beginscherm blijft EXIT binnen de app en behoudt het je concept.
+EXIT tijdens wachten vraagt annulering aan en haalt de laadplaneet meteen weg,
+voordat de Atom de annulering verwerkt. Een al verstuurde
 API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
 netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
@@ -118,9 +126,26 @@ sleutel wissen; opgeslagen chats blijven behouden. Die bevestiging reset ook
 de modelkeuze op de Atom. De interface is Nederlands.
 
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
-vertraging sluit de poort niet. Hulp → Verbinding controleren geeft uitleg in gewone taal.
+vertraging sluit de poort niet. Hulp → Verbinding controleren geeft uitleg in gewone taal. Hulp staat alleen in
+Instellingen en heeft geen afzonderlijke F-sneltoets. Lijsten openen met EXE of
+rechts; links of EXIT gaat terug. De losse F-knoppen Open en Terug zijn verwijderd.
 Via **Wifi en account** kun je wifi en API-sleutel invullen via de tijdelijke
 installatiepagina. Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md) voor de stappen.
+
+## Modellen en accountcontrole
+
+Instellingen → Model biedt herkenbare modelnamen uit de GPT-4-, GPT-5- en GPT-6-families;
+zie docs/V30-MODELLEN.md voor de gecontroleerde selectie en de keuzehulp. F4 Info
+geeft uitleg, F1 Kies of EXE bewaart de keuze en F2 Account controleert je account.
+De vaste lijst opent zonder internetaanvraag en bewijst geen accounttoegang.
+
+Voor de vernieuwde accountcontrole is Atom V30 nodig. Die gebruikt één gestreamde,
+geheugenbegrensde GET-aanvraag, in plaats van een afzonderlijke aanvraag per model.
+Bij succes verschijnt Account gecontroleerd. Bij fout verschijnt Account niet
+gecontroleerd en blijft de vaste lijst duidelijk als ongecontroleerd herkenbaar.
+Een metadataresultaat garandeert nog geen geslaagde chatvraag; daarvoor zijn ook
+modelrechten, internet en tegoed nodig. Er wordt geen betaalde chatvraag verstuurd.
+Een oudere Atom kan bestaande chats blijven gebruiken, maar F2 Account vraagt om V30.
 
 ## Lokale chatgeschiedenis
 

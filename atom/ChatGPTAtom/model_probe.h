@@ -2,7 +2,7 @@
 #define CHATGPT_MODEL_PROBE_H
 #include "model_choices.h"
 #include "wire.h"
-#define MODEL_PROBE_BYTES 256
+#define MODEL_PROBE_BYTES 2048
 struct ModelProbeResult {bool available;uint8_t error;};
 static ModelProbeResult model_probe_status(int code){
  if(code==200)return {true,E_NONE};

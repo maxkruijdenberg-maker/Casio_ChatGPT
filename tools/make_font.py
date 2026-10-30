@@ -10,6 +10,8 @@ rows=['/* Generated DejaVu Sans Mono 13px. See docs/FONT-LICENSE.txt. */','#ifnd
 for ch in chars:
  im=Image.new('1',(8,14));ImageDraw.Draw(im).text((0,-1),ch,font=font,fill=1)
  data=[sum((1<<(7-x)) if im.getpixel((x,y)) else 0 for x in range(8)) for y in range(14)]
+ # The underscore baseline falls below this 14px cell; keep it visible.
+ if ch=='_':data[-2]=0x7f
  rows.append('{0x%x,{%s}},'%(ord(ch),','.join('0x%02x'%x for x in data)))
 rows.extend(['};','#define FONT_COUNT (sizeof(font_glyphs)/sizeof(font_glyphs[0]))','#endif'])
 (root/'casio/font.h').write_text('\n'.join(rows)+'\n')

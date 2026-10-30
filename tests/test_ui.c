@@ -10,6 +10,7 @@
 static unsigned short framebuffer[384*216],otherFramebuffer[384*216],lcd[384*216],startupSnapshot[384*216];
 static unsigned short *deviceFramebuffer=framebuffer;
 static int emulateQuestion=0,emulatedStatus=0,verifyLogoOnly=0,logoFrames=0;
+static int verifyCancelClean=0,lastPaintLoading=0,cancelReplyDelay=0,statusReplyDelay=0;
 static int statusMode,stripeCalls=0,fullCopies=0,colorMode=0,keysCleared=0,initKeys=0;
 static unsigned short lcdFrame=0xffff;
 static int dma[4]={24,300,24,191},failCreate=0;
@@ -65,6 +66,7 @@ static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
 void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
+ lastPaintLoading=loadingActive;
  if(verifyLogoOnly&&loadingActive&&!closePromptActive){
   for(int y=185;y<191;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
   logoFrames++;
@@ -141,6 +143,7 @@ int Serial_Write(const unsigned char*p,int n){
  if(expectSameWrite&&failedWriteLength){assert(n==failedWriteLength&&!memcmp(p,failedWrite,n));expectSameWrite=0;failedWriteLength=0;}
  WParser parser={0};WFrame f,r={0};int got=0;for(int i=0;i<n;i++)if(w_feed(&parser,p[i],&f)==1)got=1;
  assert(got&&f.type<32);requestCount[f.type]++;
+ if(verifyCancelClean&&f.type==W_CANCEL)assert(!loadingActive&&!lastPaintLoading);
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
@@ -183,7 +186,7 @@ int Serial_Write(const unsigned char*p,int n){
  default:r.data[0]=E_REQUEST;
  }
  if(rxAt==rxEnd)rxAt=rxEnd=0;
- rxEnd+=w_encode(&r,rx+rxEnd);replyReadyAt=timeTicks+replyDelay;assert(rxEnd<=sizeof(rx));return 0;
+ rxEnd+=w_encode(&r,rx+rxEnd);replyReadyAt=timeTicks+(f.type==W_CANCEL&&cancelReplyDelay?cancelReplyDelay:f.type==W_STATUS&&statusReplyDelay?statusReplyDelay:replyDelay);assert(rxEnd<=sizeof(rx));return 0;
 }
 void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
@@ -464,7 +467,7 @@ static void testV17BuyerInterface(void){
 }
 
 static void testAccountModels(void){
- connected=1;fakeAtomMajor=atomMajor=22;atomMinor=3;modelsLoading=1;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;
+ connected=1;fakeAtomMajor=atomMajor=30;atomMinor=0;modelsLoading=1;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];
  int quiet[300]={0};
  /* Merely opening the fixed list must not contact the model endpoint. */
@@ -494,9 +497,9 @@ static void testAccountModels(void){
  int readFailureKeys[200]={0};readFailureKeys[199]=47;modelReadError=E_CONFIG;SCRIPT(readFailureKeys);assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT);modelReadError=0;
  SCRIPT(quiet);assert(fetchModels()&&!modelCheckFailed&&remoteModelCount==8);
  /* Only exact maintained aliases are offered: no media, dated duplicate,
-  * unknown, fine-tuned, deprecated or retired model can leak into the picker. */
+  * unknown, fine-tuned or retired model can leak into the picker. */
  const char *previous=servedModels;servedModels="gpt-image-1\ngpt-6-astra\nwhisper-1\ntext-embedding-3-small\ngpt-5.5-2026-04-23\nft:gpt-6-astra:custom\ngpt-5.3-chat-latest\ngpt-5\ngpt-next\ngpt-4.1-nano\n";
- SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==10&&choiceCount()==1);assert(!strcmp(choiceId(0,id),"gpt-6-astra"));
+ SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==10&&choiceCount()==2);assert(!strcmp(choiceId(0,id),"gpt-6-astra"));
  const int chooseAstra[]={31};SCRIPT(chooseAstra);assert(modelPicker()&&!strcmp(storedModel,"gpt-6-astra"));
  /* No compatible model is a genuine empty view, not the unchecked base list.
   * EXE, F1, Right, Info and page navigation are safe with zero entries. */
@@ -514,7 +517,7 @@ static void testAccountModels(void){
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
  fakeAtomMajor=atomMajor=11;modelsLoading=0;
  assert(choiceCount()==MODEL_COUNT);modelDetails(1,details,sizeof(details));assert(strstr(details,"nog niet gecontroleerd"));
- assert(modelChoiceIndex("gpt-4.1-nano")==-1&&modelChoiceIndex("gpt-5.3-chat-latest")==-1&&modelChoiceIndex("gpt-5")==-1);
+ assert(modelChoiceIndex("gpt-4.1-nano")==-1&&modelChoiceIndex("gpt-5.3-chat-latest")==-1&&modelChoiceIndex("gpt-5")>=0&&modelChoiceIndex("gpt-4.1")>=0);
 }
 
 static void testUnifiedConversation(void){
@@ -543,6 +546,54 @@ static void testUnifiedConversation(void){
  assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();
 }
 
+static void testV30NavigationAndSymbols(void){
+ uint32_t symbols[40];int count=characterChoices(symbols,0);assert(count==40&&symbols[0]=='='&&symbols[39]==' ');
+ for(int i=0;i<count;i++){
+  assert(!((symbols[i]>='a'&&symbols[i]<='z')||(symbols[i]>='A'&&symbols[i]<='Z')||(symbols[i]>='0'&&symbols[i]<='9')));
+  int g=glyphIndex(symbols[i]);assert(g>=0);
+  if(symbols[i]!=' '){int ink=0;for(int row=0;row<14;row++)ink|=font_glyphs[g].rows[row];assert(ink);}
+  int path[90],n=0;for(int step=0;step<i/8;step++){path[n++]=37;path[n++]=0;}
+  for(int step=0;step<i%8;step++){path[n++]=27;path[n++]=0;}
+  path[n++]=79;script(path,n);assert(pickCharacter(0)==symbols[i]);
+ }
+ int ascii=characterChoices(symbols,1);for(int i=0;i<ascii;i++)assert(symbols[i]>=32&&symbols[i]<127);
+ /* A symbol-space is displayed as SP, rather than a blank selectable cell. */
+ const int space[]={37,0,37,0,37,0,37,0,27,0,27,0,27,0,27,0,27,0,27,0,27,0,79};
+ SCRIPT(space);assert(pickCharacter(0)==' ');
+ int textInk=0;for(int y=148;y<162;y++)for(int x=341;x<357;x++)if(framebuffer[y*384+x]==C_MINT)textInk++;assert(textInk>0);
+ /* Active chat EXIT returns home locally even when the Atom is offline. */
+ loadLibrary();int slot=freeSlot(savedChats);assert(slot>=0);assert(lib_append(&disk,slot,&savedChats[slot],"Vraag","Antwoord",&savedChats[slot]));storageClose();
+ activeChatSlot=slot;assert(loadChatPair(slot,0));prompt[0]=0;unsavedReply=0;connected=0;loadingActive=1;
+ int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],newRequests=requestCount[W_NEW],contexts=requestCount[W_CONTEXT],closes=serialCloses;
+ const int backHome[]={47,0,48,0,0,0,79,0,0,0};SCRIPT(backHome);runSession();
+ assert(quitting&&activeChatSlot==-1&&!hasConversation()&&!loadingActive&&savedChats[slot].used&&savedChats[slot].turns==1);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated&&requestCount[W_NEW]==newRequests&&requestCount[W_CONTEXT]==contexts&&serialCloses==closes);
+ /* Rejecting a draft warning cannot discard an unsaved response first. */
+ quitting=0;activeChatSlot=slot;assert(loadChatPair(slot,0));strcpy(prompt,"Concept");strcpy(answer,"Nog niet bewaard");unsavedReply=1;
+ const int no[]={0,0,0,69};SCRIPT(no);chatHome();assert(activeChatSlot==slot&&unsavedReply&&!strcmp(prompt,"Concept")&&!strcmp(answer,"Nog niet bewaard"));
+ prompt[0]=0;SCRIPT(no);chatHome();assert(activeChatSlot==slot&&unsavedReply&&!strcmp(answer,"Nog niet bewaard"));
+ const int yes[]={0,0,0,79};SCRIPT(yes);chatHome();assert(activeChatSlot==-1&&!unsavedReply&&savedChats[slot].turns==1);
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();connected=1;
+ /* F1/F5/F6 no longer open rows, show help, or act as Back in Settings. */
+ settingsKnown=1;linkOnline=1;autoProbeStarted=1;autoProbeAt=timeTicks;
+ int setup=requestCount[W_SETUP];const int ignored[]={79,0,39,0,29,0,38};SCRIPT(ignored);settings();assert(requestCount[W_SETUP]==setup);
+ /* Cancellation paints a non-loading screen before a slow Atom reply. */
+ strcpy(prompt,"Even wachten");loadingActive=1;paintLoading(2);verifyCancelClean=1;cancelReplyDelay=300;
+ int quiet[300]={0};SCRIPT(quiet);cancelQuestion();assert(!loadingActive&&!lastPaintLoading&&requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
+ verifyCancelClean=0;cancelReplyDelay=0;newLocalChat();
+ /* Actual status-wait cancellation uses the same non-loading handshake. */
+ int cancelled[200]={47};cancelled[199]=47;SCRIPT(cancelled);
+ strcpy(prompt,"Een testvraag");servedAnswer="Test";emulateQuestion=1;emulatedStatus=0;
+ verifyCancelClean=1;cancelReplyDelay=statusReplyDelay=300;ask();
+ assert(!loadingActive&&requestCount[W_ASK]==paid+1&&requestCount[W_ALLOC]==allocated+1);
+ verifyCancelClean=0;cancelReplyDelay=statusReplyDelay=0;emulateQuestion=0;servedAnswer=0;Serial_ClearRX();newLocalChat();
+ /* Direct EXIT in the polling interval also clears the loader first. */
+ SCRIPT(cancelled);strcpy(prompt,"Nog een testvraag");servedAnswer="Test";emulateQuestion=1;emulatedStatus=0;
+ verifyCancelClean=1;cancelReplyDelay=300;ask();
+ assert(!loadingActive&&requestCount[W_ASK]==paid+2&&requestCount[W_ALLOC]==allocated+2);
+ verifyCancelClean=0;cancelReplyDelay=0;emulateQuestion=0;servedAnswer=0;Serial_ClearRX();newLocalChat();
+}
+
 static void testSentenceInput(void){
  char input[128];int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
  const int letters[]={77,0,76,0,66,0,79};strcpy(input,"Een zin. ");SCRIPT(letters);
@@ -560,9 +611,8 @@ int main(int argc,char **argv){
  char b[128]="";
  const int hello[]={77,0,65,0,36,0,25,0,25,0,54,0,79};SCRIPT(hello);
  assert(editor(b,sizeof(b),"Test",0,1,0,1)==79);assert(!strcmp(b,"Hello"));
- /* Pick one uppercase B from Tekens; the next typed letter stays lowercase. */
- int exact[50],exactAt=0;const int prefix[]={77,0,76,0,49,0,37,0,37,0};memcpy(exact,prefix,sizeof(prefix));exactAt=sizeof(prefix)/sizeof(prefix[0]);
- for(int i=0;i<10;i++){exact[exactAt++]=27;exact[exactAt++]=0;}exact[exactAt++]=79;exact[exactAt++]=0;exact[exactAt++]=56;exact[exactAt++]=0;exact[exactAt++]=79;b[0]=0;script(exact,exactAt);
+ /* Secret input preserves exact existing case without automatic capitals. */
+ const int exact[]={77,0,56,0,79};strcpy(b,"aB");SCRIPT(exact);
  assert(editor(b,sizeof(b),"API",1,0,1,0)==79);assert(!strcmp(b,"aBc"));
  /* Secret editor displays '*' in its first content cell. */
  rect(0,0,384,216,C_PANEL);glyph(12,52,'*',C_TEXT);unsigned short expected[14*8];
@@ -619,7 +669,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -673,7 +723,8 @@ int main(int argc,char **argv){
   SCRIPT(leave);screenTest();snprintf(path,sizeof(path),"%s/screen.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);screenSettings();snprintf(path,sizeof(path),"%s/calibration.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=11;settingsKnown=0;SCRIPT(leave);settings();snprintf(path,sizeof(path),"%s/settings.ppm",argv[2]);dumpFrame(path);
-  const int characterKeys[]={69,0,47};SCRIPT(characterKeys);pickCharacter(0);snprintf(path,sizeof(path),"%s/characters.ppm",argv[2]);dumpFrame(path);
+  const int characterKeys[]={47};SCRIPT(characterKeys);pickCharacter(0);snprintf(path,sizeof(path),"%s/characters.ppm",argv[2]);dumpFrame(path);
+  const int spaceKeys[]={37,0,37,0,37,0,37,0,27,0,27,0,27,0,27,0,27,0,27,0,27,0,47};SCRIPT(spaceKeys);pickCharacter(0);snprintf(path,sizeof(path),"%s/characters-space.ppm",argv[2]);dumpFrame(path);
   atomMajor=11;SCRIPT(leave);phoneSetup();snprintf(path,sizeof(path),"%s/phone.ppm",argv[2]);dumpFrame(path);
   if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
@@ -690,6 +741,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V22.9 no manual caps lock, automatic sentence case and exact secret character selection retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

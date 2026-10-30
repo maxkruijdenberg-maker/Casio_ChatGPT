@@ -1,0 +1,1 @@
+PASS streaming account catalog: 21 maintained aliases, fixed 488-byte parser, single-byte/arbitrary chunks, all/mixed/zero matches, ordering/deduplication, JSON/UTF-8/escapes/truncation validation, 3500 unknown models, bounded depth/body/output, stalled-peer overall deadline/wrap and no partial publication.

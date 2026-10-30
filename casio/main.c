@@ -282,6 +282,11 @@ static void footer(const char *a,const char*b,const char*c,const char*d,const ch
   for(j=0;j<n;j++)glyph(i*64+32-n*step/2+j*step,197,(unsigned char)p[i][j],color);
  }
 }
+/* Navigation uses the physical arrows; these labels are not function keys. */
+static void navigationFooter(int open){
+ footer("","","","","","");printAt(12,197,"← Terug",C_MUTED);
+ if(open)printAt(310,197,"Open →",C_MUTED);
+}
 static void textPageAt(const char *s,int first,int hide,int left,int top,int visible,int columns){
  size_t at=0,len=strlen(s),n;uint32_t cp;int row=0,col=0;
  while(at<len){n=u_decode(s+at,len-at,&cp);at+=n;
@@ -319,8 +324,8 @@ static void message(const char *title,const char *body){
  int first=0,lines=line_count(body,COLS),k,max=scroll_limit(lines,ROWS);
  while(!quitting){clear(title);paragraph(body,first,12,52,COLS,ROWS);scrollbar(376,52,112,first,ROWS,lines);
   if(max)printAt(12,175,"Pijlen: lezen · EXIT: terug",C_MUTED);
-  footer("Terug","","","","","");show();k=waitKey();
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return;
+  navigationFooter(0);show();k=waitKey();
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_RETURN)return;
   if(k==KEY_PRGM_DOWN&&first<max)first++;if(k==KEY_PRGM_UP&&first>0)first--;
  }
 }
@@ -436,24 +441,37 @@ static int waitEditorKey(int promptMode){
   OS_InnerWait_ms(10);
  }return KEY_PRGM_MENU;
 }
-/* All printable ASCII plus a named Unicode repertoire. API keys use ASCII only. */
+/* Everyday symbols only; letters and digits use the physical keyboard. */
+static const uint32_t basicCharacters[]={
+ '=', '+', '-', 0xd7, 0xf7, '/', '(', ')',
+ '.', ',', ':', ';', '!', '?', '%', 0xb0,
+ '<', '>', 0x2264, 0x2265, 0x2260, 0x2248, 0xb1, '^',
+ 0x221a, 0xb2, 0xb3, '[', ']', '{', '}', '|',
+ '_', '@', '#', '&', '\'', '\"', 0x20ac, ' '
+};
+static int characterChoices(uint32_t *choices,int asciiOnly){
+ int i,count=0;
+ for(i=0;i<(int)(sizeof(basicCharacters)/sizeof(basicCharacters[0]));i++){
+  uint32_t cp=basicCharacters[i];if(!asciiOnly||cp<127)choices[count++]=cp;
+ }return count;
+}
 static uint32_t pickCharacter(int asciiOnly){
- static const char extras[]="éëèêáàâäíïìîóöòôúüùûçñÉËπθαβγδμωφ∞√≤≥≠×÷±∑∫∆→←↑↓²³°€";
- uint32_t choices[180];int count=0,i,sel=0,first=0,k;size_t pos=0,len=strlen(extras);uint32_t cp;
- choices[count++]='=';
- for(i=32;i<=126;i++)if(i!='=')choices[count++]=(uint32_t)i;
- if(!asciiOnly)while(pos<len){pos+=u_decode(extras+pos,len-pos,&cp);choices[count++]=cp;}
- while(!quitting){char label[80];clear("Kies een teken");
-  sprintf(label,"Teken %d van %d",sel+1,count);printAt(8,35,label,C_MUTED);
-  if(sel<first)first=(sel/12)*12;if(sel>=first+96)first=(sel/12-7)*12;
-  for(i=first;i<count&&i<first+96;i++){
-   int x=8+((i-first)%12)*30,y=51+((i-first)/12)*15;glyph(x,y,choices[i],i==sel?0x0280:0);
-   if(i==sel){int x2;for(x2=x;x2<x+16;x2++)rect(x2,y+14,1,1,C_MINT);}
+ uint32_t choices[40];int count=characterChoices(choices,asciiOnly),i,sel=0,k;
+ while(!quitting){clear("Kies een teken");
+  if(choices[sel]==' ')printAt(12,35,"Spatie",C_MUTED);
+  else {printAt(12,35,"Invoegen:",C_MUTED);glyph(92,35,choices[sel],C_TEXT);}
+  for(i=0;i<count;i++){
+   int x=14+(i%8)*45,y=53+(i/8)*23;
+   rounded(x,y,40,20,i==sel?C_MINT:C_LINE);
+   rounded(x+1,y+1,38,18,i==sel?C_RAISED:C_PANEL);
+   if(choices[i]==' ')printAt(x+12,y+3,"SP",i==sel?C_MINT:C_TEXT);
+   else glyph(x+16,y+3,choices[i],i==sel?C_MINT:C_TEXT);
   }
-  printAt(8,175,"Pijlen kiezen · EXE invoegen",C_MUTED);footer("Kies","","","","","Terug");show();k=waitKey();
-  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return choices[sel];if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6)return 0;
+  printAt(12,175,"Pijlen kiezen · EXE invoegen",C_MUTED);footer("Kies","","","","","");show();k=waitKey();
+  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return choices[sel];if(k==KEY_PRGM_EXIT)return 0;
   if(k==KEY_PRGM_LEFT&&sel>0)sel--;if(k==KEY_PRGM_RIGHT&&sel<count-1)sel++;
-  if(k==KEY_PRGM_UP&&sel>=12)sel-=12;if(k==KEY_PRGM_DOWN&&sel+12<count)sel+=12;
+  if(k==KEY_PRGM_UP&&sel>=8)sel-=8;
+  if(k==KEY_PRGM_DOWN&&sel/8<(count-1)/8){sel+=8;if(sel>=count)sel=count-1;}
  }return 0;
 }
 /* Shared paint path: the OS saves this neutral input page before opening MENU,
@@ -640,7 +658,7 @@ static void screenTest(void){
  int k;physicalRect(0,0,384,216,C_BG);rect(0,0,384,2,C_MINT);rect(0,214,384,2,C_MINT);rect(0,0,2,216,C_MINT);rect(382,0,2,216,C_MINT);
  printAt(5,4,"TL",C_TEXT);printAt(361,4,"TR",C_TEXT);printAt(5,198,"BL",C_TEXT);printAt(361,198,"BR",C_TEXT);
  printAt(108,76,"Schermtest 384x216",C_TEXT);printAt(60,106,"Zijn alle vier hoeken zichtbaar?",C_MUTED);printAt(140,144,"EXIT: terug",C_MUTED);show();
- while(!quitting){k=waitKey();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return;}
+ while(!quitting){k=waitKey();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_RETURN)return;}
 }
 static void screenSettings(void){
  ViewProfile original=viewProfile,draft=viewProfile;int selected=0,k,i;char text[64];
@@ -695,9 +713,9 @@ static void phoneSetup(void){
    printAt(12,100,r.data[1]==3?"API-sleutel wordt bij je vraag getest.":r.data[1]==4?"Controleer wifi-naam en wachtwoord.":"Je bestaande chats blijven bewaard.",C_MUTED);
    printAt(12,128,"Opslaan verstuurt geen API-vraag.",C_MUTED);
   }
-  footer("Terug","","","","","");show();
-  do{k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F1||quitting)break;OS_InnerWait_ms(10);}while(!elapsed(tick,1000));
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F1||quitting)break;
+  navigationFooter(0);show();
+  do{k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||quitting)break;OS_InnerWait_ms(10);}while(!elapsed(tick,1000));
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||quitting)break;
   action=0;if(rpc(W_SETUP,&action,1,&r,0)!=1||r.len!=17)break;tick=RTC_GetTicks();
  }
  {int leaving=quitting;quitting=0;action=2;rpc(W_SETUP,&action,1,&r,0);quitting=leaving;}erase(password,sizeof(password));
@@ -791,7 +809,7 @@ static int fetchModels(void){
 }
 static void paintModels(int selected){
  int i,count=choiceCount(),first=selected-2;char id[256],label[80];if(first>count-5)first=count-5;if(first<0)first=0;clear("Model kiezen");
- sprintf(label,"%d chatmodellen · %s",count,modelAccountChecked?"jouw account":"vaste lijst");printAt(14,38,label,C_MUTED);
+ if(modelAccountChecked)sprintf(label,"Account gecontroleerd · %d modellen",count);else sprintf(label,"%d chatmodellen · vaste lijst",count);printAt(14,38,label,modelAccountChecked?C_MINT:C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
   int y=61+(i-first)*23;const char *name=choiceId(i,id);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
@@ -799,8 +817,8 @@ static void paintModels(int selected){
   if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
  }
  if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
- printAt(14,177,!count?"Je huidige keuze blijft bewaard.":modelAccountChecked?"Toegang gevonden in je account.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
- scrollbar(378,58,114,first,5,count);footer(count?"Kies":"","Account","",count?"Info":"","","Terug");show();
+ printAt(14,177,modelAccountChecked?(count?"Controle gelukt · kies je model":"Controle gelukt · geen passende modellen"):!count?"Je huidige keuze blijft bewaard.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
+ scrollbar(378,58,114,first,5,count);footer(count?"Kies":"","Account","",count?"Info":"","","");show();
 }
 static int modelPicker(void){
  int selected=0,k;char id[256],details[1024];
@@ -808,12 +826,12 @@ static int modelPicker(void){
  while(!quitting){
   int count=choiceCount();if(selected>=count)selected=0;
   paintModels(selected);k=waitEditorKey(1);if(quitting)return 0;
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return 0;
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;
   if(k==KEY_PRGM_DOWN&&selected<count-1)selected++;
   if(k==KEY_PRGM_F2){
    if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];}}
-   if(atomMajor<22||(atomMajor==22&&atomMinor<3))message("Atom bijwerken","Werk ook de Atom bij naar V22.3 met de meegeleverde firmware. Deze versie controleert modellen zonder de grote accountlijst te bewaren. Wifi en sleutel blijven bewaard.");
+   if(atomMajor<30)message("Atom bijwerken","Werk ook de Atom bij naar V30 met de meegeleverde firmware. Deze versie controleert je account in één aanvraag zonder de hele lijst te bewaren. Wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
    selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
    continue;
@@ -833,12 +851,12 @@ static void deviceSettings(void){
  while(!quitting){
   clear("Meer instellingen");
   for(i=0;i<3;i++){int y=58+i*34;choiceCard(8,y-4,368,28,i==selected,C_GOLD,C_GOLD_SOFT);printAt(18,y,names[i],i==selected?C_GOLD:C_TEXT);glyph(362,y,'>',C_MUTED);}
-  footer("Open","","","","","Terug");show();k=waitKey();
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
+  navigationFooter(1);show();k=waitKey();
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
-  if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
+  if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 22.9\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 30\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -848,16 +866,16 @@ static void helpAndDevice(void){
  int selected=0,k,i;const char *names[]={"Aan de slag","Typen en toetsen","Antwoorden en kosten","Verbinding controleren"};
  const char *body[]={
  "1. Open Wifi en account.\n2. Volg de stappen op je telefoon.\n3. Kies een model.\n4. Typ je vraag en kies Stuur.\n\nJe hebt eigen OpenAI API-tegoed nodig. Een ChatGPT-abonnement bevat dit niet.",
- "ALPHA zet letters aan of uit en blijft actief na versturen. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens. Links/rechts verplaatst de cursor; omhoog/omlaag leest je gesprek.\n\nEXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
+ "ALPHA zet letters aan of uit en blijft actief na versturen. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens. Links/rechts verplaatst de cursor; omhoog/omlaag leest je gesprek.\n\nEXIT gaat vanuit een chat terug naar het beginscherm. Rechts of EXE opent een keuze; links of EXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
  "Typ onderaan verder in hetzelfde gesprek. Omhoog/omlaag leest eerdere berichten. F1 Stuur of EXE verstuurt je bericht. Chats blijven lokaal op je Casio.\n\nAPI-gebruik kost geld via je eigen account. Controleer prijzen en antwoorden. Een al verstuurde vraag kan ook na annuleren kosten maken."
  };
  while(!quitting){
   clear("Hulp");
   for(i=0;i<4;i++){int y=48+i*31;choiceCard(8,y-4,368,27,i==selected,C_PURPLE,C_PURPLE_SOFT);printAt(18,y,names[i],i==selected?C_PURPLE:C_TEXT);glyph(362,y,'>',C_MUTED);}
-  footer("Open","","","","","Terug");show();k=waitKey();
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_F6)return;
+  navigationFooter(1);show();k=waitKey();
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
-  if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){if(selected<3)message(names[selected],body[selected]);else diagnose();}
+  if(k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){if(selected<3)message(names[selected],body[selected]);else diagnose();}
  }
 }
 static void paintSettings(int selected){
@@ -871,7 +889,7 @@ static void paintSettings(int selected){
   rounded(17,y+1,29,25,tint[i]);settingIcon(20,y+3,i,accent[i]);
   printAt(56,y,names[i],i==selected?accent[i]:C_TEXT);clipped(56,y+14,notes[i],36,C_MUTED);glyph(362,y+7,'>',accent[i]);
  }
- footer("Open","","","","Hulp","Terug");show();
+ navigationFooter(1);show();
 }
 static void settings(void){
  int selected=0,k;uint8_t configured[4]={0};
@@ -879,10 +897,9 @@ static void settings(void){
  while(!quitting){
   paintSettings(selected);k=waitEditorKey(1);
   if(k==UI_LINK_REFRESH){if(linkOnline&&!settingsKnown)refreshSettings(configured);continue;}
-  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
+  if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return;
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<3)selected++;
-  if(k==KEY_PRGM_F5){helpAndDevice();continue;}
-  if(k!=KEY_PRGM_F1&&k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
+  if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0){phoneSetup();remoteModelCount=0;modelAccountChecked=0;if(!quitting)refreshSettings(configured);}
   if(selected==1)modelPicker();
   if(selected==2)helpAndDevice();
@@ -895,7 +912,7 @@ static void paintDiagnosis(int successes,int checked){
  clear("Verbinding controleren");rounded(8,44,368,36,C_RAISED);printAt(18,55,title,successes==checked&&successes?C_MINT:C_RED);
  paragraph(body,0,14,92,44,3);
  paragraph("Deze controle kijkt naar de aansluiting, niet naar wifi of je API-tegoed.",0,14,148,44,3);
- footer("Opnieuw","","","","","Terug");show();
+ footer("Opnieuw","","","","","");show();
 }
 static void diagnose(void){
  int k,successes,checked,i,beforeRetries,beforeErrors;WFrame reply;
@@ -912,7 +929,7 @@ static void diagnose(void){
   while(!quitting){
    paintDiagnosis(!linkOnline?0:successes,checked);k=waitKey();
    if(k==UI_LINK_REFRESH&&linkOnline&&!successes)break;
-   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F6||k==KEY_PRGM_LEFT)return;
+   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return;
    if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)break;
   }
  }while(!quitting);
@@ -931,6 +948,16 @@ static void paintLoading(int phase){
  centered(196,"EXIT of F1: annuleren",C_MINT);show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
+/* Remove the waiting screen before any cancellation handshake can block. */
+static void cancelQuestion(void){
+ WFrame ignored;loadingActive=0;
+ if(!quitting){
+  int row,col,visible=hasConversation()?conversationRows(prompt):composerRows(prompt);
+  cursorPosition(prompt,strlen(prompt),MESSAGE_COLS,&row,&col);
+  renderEditor(prompt,sizeof(prompt),strlen(prompt),"ChatGPT",0,1,chatInputLetters,0,sentence_capital(prompt,strlen(prompt)),row>=visible?row-visible+1:0);
+ }
+ rpc(W_CANCEL,0,0,&ignored,0);
+}
 static void askWork(void){
  WFrame r;uint8_t id[4];int start=RTC_GetTicks(),ok;uint8_t s,e;unsigned len;
  if(!prompt[0]){message("Geen vraag","Typ eerst een vraag.");return;}
@@ -944,7 +971,7 @@ static void askWork(void){
  if(!checkedRpc(W_ASK,id,4,&r))return;
  while(!quitting){
   ok=rpc(W_STATUS,0,0,&r,1);
-  if(ok==-2){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);if(!quitting)message("Annulering aangevraagd","Een al verstuurde API-aanvraag kan nog kosten maken. De Atom moet de netwerkbewerking eerst afronden.");return;}
+  if(ok==-2){cancelQuestion();if(!quitting)message("Annulering aangevraagd","Een al verstuurde API-aanvraag kan nog kosten maken. De Atom moet de netwerkbewerking eerst afronden.");return;}
   if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
@@ -953,9 +980,9 @@ static void askWork(void){
   if(s==S_CANCELLED){message("Geannuleerd","Er wordt geen antwoord opgehaald.");return;}
   paintLoading(loadingPhase);
   {int wait=RTC_GetTicks();while(!elapsed(wait,250)&&!quitting){
-   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);loadingActive=0;message("Geannuleerd","Een al verstuurde vraag kan nog kosten maken.");return;}OS_InnerWait_ms(10);
+   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){cancelQuestion();message("Geannuleerd","Een al verstuurde vraag kan nog kosten maken.");return;}OS_InnerWait_ms(10);
   }}
-  if(elapsed(start,150000)){WFrame ignored;rpc(W_CANCEL,0,0,&ignored,0);message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
+  if(elapsed(start,150000)){cancelQuestion();message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
 static void ask(void){
@@ -990,9 +1017,7 @@ static void runSession(void){
    else if(k==KEY_PRGM_F2){if(canLeaveReply()&&(!prompt[0]||confirm("De niet-verstuurde vraag wissen en opnieuw beginnen?")))newLocalChat();}
    else if(k==UI_CHATS){int changed=chatSidebar();if(changed){chatFollowTail=1;invalidateConversation();}}
    else if(k==KEY_PRGM_F6){epoch=settingsEpoch;settings();if(epoch!=settingsEpoch)contextDirty=1;}
-   else if(k==KEY_PRGM_EXIT){
-    /* Root EXIT leaves the app and typed draft exactly as they are. */
-   }
+   else if(k==KEY_PRGM_EXIT)chatHome();
   }
   if(!unsavedReply)break;
   resumeAfterMenu();if(saveReply()||canLeaveReply()){quitting=1;break;}
