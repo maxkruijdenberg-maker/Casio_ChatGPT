@@ -511,3 +511,24 @@ annulerings-, navigatie- en UART-regressies blijven slagen. De eigen glyph en
 het daadwerkelijke UI-frame zijn gecontroleerd. Atom-code en alle vier
 firmwarebestanden blijven bytegelijk V31; geen fysieke of live API-test van
 deze patch uitgevoerd. Alleen de Casio-app bijwerken als Atom V31 al aanwezig is.
+
+
+## V32.3 — foto-gecontroleerde toetsenindeling
+
+Alle 30 roze invoertekens (A–Z, r, θ, spatie en aanhalingsteken) en 22 gele
+invoerfuncties zijn gecontroleerd via de echte editor bij aantikken,
+vasthouden, beide loslaatvolgordes en gelijktijdig indrukken. ALPHA schakelt
+ook bij een fysieke combinatie zijn letterlock maar eenmaal om. Ontbrekende
+∠, i, x^(-1), gemengde breuken en SHIFT-EXE nieuwe regel zijn toegevoegd.
+CLIP-selectie, PASTE, INS en UNDO zijn lokale tekstfuncties met vaste buffers;
+geheime velden worden niet gekopieerd of in Undo bewaard. De kopie wordt
+bij afsluiten gewist. Native systeem-/2D-acties geven uitleg in plaats van
+verkeerde tekst. F-toetsen, MENU en lokale EXIT-bediening blijven behouden.
+
+Casio-build en 18 ASan/UBSan-testgroepen geslaagd, inclusief de bestaande vroege
+annulering, UART-, context- en menuheropeningsregressies. LeakSanitizer staat
+uit in deze omgeving. De nieuwe invoermatrix bevat 208 fysieke cases plus
+Unicode-kopiëren, selecteren, plakken, buffergrenzen, Undo/redo, beveiligde
+velden, lokale kopiewissing en geen betaalde verstuur- of allocatieberichten
+door toetsenbewerking. Alle Atom-bronnen en vier firmwarebestanden blijven
+ongewijzigd V31. Deze patch is niet fysiek of met een live API getest.

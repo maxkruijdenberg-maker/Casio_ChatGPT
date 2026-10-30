@@ -29,14 +29,14 @@ static void keyboard_shift_reset(KeyboardShiftState *state){
  state->down=state->used=state->announced=state->deferred=0;
 }
 static void keyboard_shift_consume(KeyboardShiftState *state){state->used=1;}
-static int keyboard_decode_shift(const uint16_t words[6],int previous,KeyboardShiftState *state,int *chordShifted){
- int row,col,other=0,count=0,shiftDown=keyboard_down(words,78);
+static int keyboard_decode_modifier(const uint16_t words[6],int previous,KeyboardShiftState *state,int *chordShifted,int modifier){
+ int row,col,other=0,count=0,shiftDown=keyboard_down(words,modifier);
  *chordShifted=0;
  if(!shiftDown)keyboard_shift_reset(state);
  else if(!state->down){
   state->down=1;state->used=state->announced=state->deferred=0;
   /* A late modifier must not redispatch an already-held ordinary key. */
-  if(previous&&previous!=78&&previous!=48&&keyboard_down(words,previous))state->deferred=previous;
+  if(previous&&previous!=modifier&&previous!=48&&keyboard_down(words,previous))state->deferred=previous;
  }
  if(keyboard_down(words,48))return 48; /* MENU retains absolute priority. */
  if(!shiftDown)return keyboard_decode(words,previous);
@@ -46,22 +46,25 @@ static int keyboard_decode_shift(const uint16_t words[6],int previous,KeyboardSh
  }
  for(col=0;col<10;col++)for(row=0;row<7;row++){
   int key=(row+1)*10+col;
-  if(key!=78&&keyboard_valid(row,col)&&((words[col/2]>>(row+8*(col%2)))&1)){other=key;count++;}
+  if(key!=modifier&&keyboard_valid(row,col)&&((words[col/2]>>(row+8*(col%2)))&1)){other=key;count++;}
  }
  if(count>1){
   /* Preserve a previously held key, but reject every new ambiguous chord. */
-  if(previous&&previous!=78&&keyboard_down(words,previous))return previous;
-  return previous==78&&state->announced&&!state->used?78:0;
+  if(previous&&previous!=modifier&&keyboard_down(words,previous))return previous;
+  return previous==modifier&&state->announced&&!state->used?modifier:0;
  }
  if(count==1){
   if(previous==other)return other;
-  if(!state->used){state->used=1;*chordShifted=1;}
+  if(!state->used){state->used=1;*chordShifted=modifier==78||!state->announced;}
   return other;
  }
  /* Releasing the function before SHIFT must never create a second SHIFT edge.
   * announced also protects a tapped SHIFT from a temporary rejected chord. */
- if(state->used||(state->announced&&previous!=78))return 0;
- state->announced=1;return 78;
+ if(state->used||(state->announced&&previous!=modifier))return 0;
+ state->announced=1;return modifier;
+}
+static int keyboard_decode_shift(const uint16_t words[6],int previous,KeyboardShiftState *state,int *shifted){
+ return keyboard_decode_modifier(words,previous,state,shifted,78);
 }
 #ifdef CHATGPT_HOST_TEST
 static void keyboardReadWords(uint16_t words[6]);
@@ -74,5 +77,15 @@ static void keyboardReadWords(uint16_t words[6]){
 static int keyboardRead(int previous){uint16_t words[6];keyboardReadWords(words);return keyboard_decode(words,previous);}
 static int keyboardReadShift(int previous,KeyboardShiftState *state,int *chordShifted){
  uint16_t words[6];keyboardReadWords(words);return keyboard_decode_shift(words,previous,state,chordShifted);
+}
+/* ALPHA toggles a persistent letter lock exactly once per physical press.
+ * A chord only needs a synthetic toggle when ALPHA was not announced alone. */
+static int keyboardReadModifiers(int previous,KeyboardShiftState *shift,KeyboardShiftState *alpha,int *shifted,int *alphaToggle){
+ uint16_t words[6];keyboardReadWords(words);*shifted=*alphaToggle=0;
+ if(!keyboard_down(words,78))keyboard_shift_reset(shift);
+ if(!keyboard_down(words,77))keyboard_shift_reset(alpha);
+ if(keyboard_down(words,77)&&!keyboard_down(words,78))
+  return keyboard_decode_modifier(words,previous,alpha,alphaToggle,77);
+ return keyboard_decode_shift(words,previous,shift,shifted);
 }
 #endif

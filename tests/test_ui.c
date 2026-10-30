@@ -150,6 +150,7 @@ static int scriptedKeyNext(void){
 int PRGM_GetKey(void){assert(!"OS keyboard syscall must never run during application polling");return 0;}
 static void keyboardReadWords(uint16_t words[6]){
  memset(words,0,12);int key=scriptedKeyNext();
+ if(key>=2000){words[3]=(uint16_t)(1u<<14);key-=2000;}
  if(key>=1000){words[4]=(uint16_t)(1u<<6);key-=1000;}
  if(key){int row=key/10-1,col=key%10;assert(row>=0&&row<7&&col<10);words[col/2]|=(uint16_t)(1u<<(row+8*(col%2)));}
 }
@@ -241,7 +242,7 @@ void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
 void SetQuitHandler(void(*h)(void)){quitCallback=h;}
 void DisplayMainMenu(void){assert(!"drawing MENU or returning main is not the native GetKey dispatcher");}
-static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
+static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyboard_shift_reset(&keyboardAlphaState);keyChordShift=keyChordAlpha=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
 /* Legacy fixtures now exercise the same unified editor used in production. */
 static void readAnswer(int ignored){(void)ignored;prompt[0]=0;editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);}
@@ -253,7 +254,7 @@ static const int lifeOne[]={31,31,0,0,0,0,47,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
 static const int lifeTwo[]={31,31,0,0,0,0,77,0,65,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
 static const int lifeThree[]={31,31,0,0,0,0,47,0,48,48,0,0,0,69,69,0,0,0,47,0,48,48,0,0,0,79,79,0,0,0,0,0,0};
 static void menuReturned(void){
- assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0);
+ assert(lifecycleTesting&&quitting&&serialOpen==1&&storageReadHandle<0&&storageWriteHandle<0&&!editClipboard[0]);
  assert(statusMode==0&&lcdFrame==0xffff&&fullCopies>copiesAtMenu&&linkOnline);
  assert(!memcmp(deviceFramebuffer,startupSnapshot,sizeof(startupSnapshot)));
  /* OS SaveAndOpenMainMenu (or its timer fallback) suspends the app.
@@ -438,6 +439,61 @@ static void testShiftChordsAndCubeRoot(void){
  }
  int cube=glyphIndex(0x221b);assert(cube>=0&&cube!=glyphIndex(0xfffd)&&cube!=glyphIndex(0x221a));
  int ink=0;for(int y=0;y<14;y++)ink|=font_glyphs[cube].rows[y];assert(ink);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc&&serialCloses==closed);
+}
+
+static void testPhotoKeyboardMap(void){
+ const int alphaKeys[]={76,66,56,46,36,26,75,65,55,45,35,25,74,64,54,73,63,53,43,33,72,62,52,42,32,71,67,57,61,51};
+ const uint32_t alphaValues[]={'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','r',0x3b8,' ','"'};
+ const int shiftKeys[]={76,66,56,46,36,26,67,57,75,55,45,43,33,42,32,72,62,71,61,51,41,31};
+ const char *values[]={"∠","10^(","e^(","asin(","acos(","atan(","sqrt(","root(","mixed(","∛(","^(-1)","{","}","[","]","List ","Mat ","i","=","π","Ans","\n"};
+ int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC],closed=serialCloses;
+ for(size_t i=0;i<sizeof(alphaKeys)/sizeof(alphaKeys[0]);i++)for(int mode=0;mode<4;mode++){
+  int key=alphaKeys[i],tap[]={77,0,key,0,79},held[]={77,2000+key,77,0,79},release[]={77,2000+key,key,0,79},both[]={2000+key,0,79};
+  char text[128]="",expected[5];u_encode(alphaValues[i],expected);
+  if(mode==0)SCRIPT(tap);else if(mode==1)SCRIPT(held);else if(mode==2)SCRIPT(release);else SCRIPT(both);
+  assert(editor(text,sizeof(text),"Test",0,0,0,1)==79);
+  if(strcmp(text,expected))fprintf(stderr,"ALPHA %d mode %d got [%s] expected [%s]\n",key,mode,text,expected);
+  assert(!strcmp(text,expected));
+ }
+ for(size_t i=0;i<sizeof(shiftKeys)/sizeof(shiftKeys[0]);i++)for(int mode=0;mode<4;mode++){
+  int key=shiftKeys[i],tap[]={78,0,key,0,79},held[]={78,1000+key,78,0,79},release[]={78,1000+key,key,0,79},both[]={1000+key,0,79};char text[128]="";
+  if(mode==0)SCRIPT(tap);else if(mode==1)SCRIPT(held);else if(mode==2)SCRIPT(release);else SCRIPT(both);
+  assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,values[i]));
+ }
+ const int normal[]={46,0,36,0,26,0,55,0,45,0,71,0,61,0,79};char text[128]="";SCRIPT(normal);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"sin(cos(tan(()0."));
+ const int alphaLock[]={2076,77,2066,77,0,56,0,77,0,72,0,79};text[0]=0;SCRIPT(alphaLock);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"abc1"));
+ const int undo[]={72,0,62,0,77,0,44,0,79};text[0]=0;SCRIPT(undo);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"1"));
+ const int deleteLetter[]={77,0,76,0,66,0,44,0,79};text[0]=0;SCRIPT(deleteLetter);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"a"));
+ const int overwrite[]={38,0,78,0,44,0,52,0,79};strcpy(text,"12");SCRIPT(overwrite);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"13"));
+ const int copyPaste[]={78,0,64,0,31,0,78,0,54,0,79};strcpy(text,"θπ");SCRIPT(copyPaste);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"θπθπ"));
+ const int selectedCopy[]={78,0,64,0,38,0,31,0,78,0,54,0,79};strcpy(text,"θπ");SCRIPT(selectedCopy);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"θππ"));
+ const int nativeKeys[]={65,35,25,74,10,58,68};
+ for(size_t i=0;i<sizeof(nativeKeys)/sizeof(nativeKeys[0]);i++){
+  const int native[]={78,0,nativeKeys[i],0,47,0,79};strcpy(text,"Behoud");SCRIPT(native);
+  assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"Behoud"));
+ }
+ const int catalog[]={78,0,73,0,31,0,79};text[0]=0;SCRIPT(catalog);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"="));
+ const int format[]={78,0,63,0,47,0,79};strcpy(text,"Behoud");SCRIPT(format);
+ assert(editor(text,sizeof(text),"Test",0,0,0,1)==79&&!strcmp(text,"Behoud"));
+ char small[8]="éé";size_t cursor=0;assert(edit_insert(small,sizeof(small),&cursor,"θ",1)&&!strcmp(small,"θé"));
+ char before[8];strcpy(before,small);assert(!edit_insert(small,sizeof(small),&cursor,"abcdef",1)&&!strcmp(small,before));
+ const int variables[]={77,0,67,0,57,0,79};text[0]=0;SCRIPT(variables);
+ assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!strcmp(text,"rθ"));
+ strcpy(text,"éπ");cursor=4;edit_begin("é",2,0);edit_observe(text,cursor,0);
+ assert(edit_undo(text,sizeof(text),&cursor)&&!strcmp(text,"é")&&cursor==2);
+ assert(edit_undo(text,sizeof(text),&cursor)&&!strcmp(text,"éπ")&&cursor==4);
+ strcpy(editClipboard,"safe");const int secretActions[]={78,0,64,0,78,0,54,0,77,0,44,0,79};strcpy(text,"dummy-secret");SCRIPT(secretActions);
+ assert(editor(text,sizeof(text),"Geheim",1,0,1,0)==79&&!strcmp(text,"dummy-secret")&&!strcmp(editClipboard,"safe")&&!editObserved[0]&&!editUndo[0]);
+ const int released[]={0,0,0};SCRIPT(released);endSession();assert(!editClipboard[0]);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc&&serialCloses==closed);
 }
 
@@ -973,7 +1029,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testShiftChordsAndCubeRoot();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
+ testMenuFailures();testShiftChordsAndCubeRoot();testPhotoKeyboardMap();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -1022,7 +1078,7 @@ int main(int argc,char **argv){
   SCRIPT(historyUp);readAnswer(0);snprintf(path,sizeof(path),"%s/conversation-up.ppm",argv[2]);dumpFrame(path);
   chatFollowTail=1;strcpy(prompt,"Kun je nog een voorbeeld geven?");chatInputLetters=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/conversation-draft.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=-1;strcpy(lastQuestion,"Geef een lange uitleg.");strcpy(answer,answerStartFixture);prompt[0]=0;chatFocusAnswer=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/answer-start.ppm",argv[2]);dumpFrame(path);
-  activeChatSlot=-1;answer[0]=lastQuestion[0]=0;strcpy(prompt,"∛(27) = 3; asin(0.5)");SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/shift-math.ppm",argv[2]);dumpFrame(path);
+  activeChatSlot=-1;answer[0]=lastQuestion[0]=0;chatInputLetters=0;strcpy(prompt,"∠30; i^2 = -1; x^(-1)\n∛(27) = 3; r; θ");SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/shift-math.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=-1;strcpy(lastQuestion,"Controleer de rekenstappen");
   strcpy(answer,"23 + 42 ＝ 65\n1 / 3 ≈ 0,333\nx ≠ 3; x ≤ 8; x ≥ 2\nx ≡ y; a ≔ 5");SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/math-answer.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=0;assert(loadChatPair(0,savedChats[0].turns-1));prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
@@ -1051,6 +1107,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V32.3 photo mapping: all 30 ALPHA characters and 22 SHIFT input functions in four physical press/release modes, ALPHA lock, UTF-8 clipboard selection/paste, overwrite and Undo; V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

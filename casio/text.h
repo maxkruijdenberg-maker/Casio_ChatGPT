@@ -43,7 +43,8 @@ static const char *math_key(int key,int shifted){
   case 66:return "10^(";case 56:return "e^(";
   case 46:return "asin(";case 36:return "acos(";case 26:return "atan(";
   case 67:return "sqrt(";case 57:return "root(";
-  case 55:return "∛(";
+  case 55:return "∛(";case 45:return "^(-1)";
+  case 76:return "∠";case 71:return "i";case 75:return "mixed(";
   case 51:return "π";case 61:return "=";case 41:return "Ans";
   case 42:return "[";case 32:return "]";case 43:return "{";case 33:return "}";
   case 72:return "List ";case 62:return "Mat ";
@@ -60,6 +61,7 @@ static const char *math_key(int key,int shifted){
 /* Matrix positions are libfxcg PRGM_GetKey values. Letters follow key labels. */
 static int alpha_key(int key){
  const int map[26]={76,66,56,46,36,26,75,65,55,45,35,25,74,64,54,73,63,53,43,33,72,62,52,42,32,71};
+ if(key==67)return 'r';if(key==57)return 0x3b8;
  int i;for(i=0;i<26;i++)if(key==map[i])return 'a'+i;if(key==61)return ' ';if(key==51)return '"';return 0;
 }
 static int number_key(int key){

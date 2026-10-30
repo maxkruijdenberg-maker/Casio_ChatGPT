@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include "../atom/ChatGPTAtom/wire.h"
 #include "text.h"
+#include "input_edit.h"
 #include "font.h"
 #include "logo_aa.h"
 #include "layout.h"
@@ -34,8 +35,8 @@
 #define ANSWER_MAX 8192
 static char prompt[PROMPT_MAX+1],answer[ANSWER_MAX+1],field[PROMPT_MAX+1],lastQuestion[PROMPT_MAX+1];
 static int quitting=0,serialOpen=0,lastKey=0,errors=0,retries=0;
-static KeyboardShiftState keyboardShiftState;
-static int keyChordShift=0;
+static KeyboardShiftState keyboardShiftState,keyboardAlphaState;
+static int keyChordShift=0,keyChordAlpha=0;
 static unsigned uartOpens=0,uartCloses=0;
 static int rpcDepth=0;
 static int autoConnectTick(void);
@@ -63,6 +64,8 @@ static int canLeaveReply(void);
 static int loadChatPair(int slot,int turn);
 static int requestClose(void);
 static void diagnose(void);
+static void screenSettings(void);
+static void settings(void);
 static int closePromptActive=0;
 static void releaseModels(void);
 
@@ -92,13 +95,13 @@ static void closeSerial(void){
 }
 static void stopMenuTimer(void);
 static void stopAutoProbe(void);
-static void cleanup(void){releaseModels();stopAutoProbe();stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));}
+static void cleanup(void){releaseModels();stopAutoProbe();stopMenuTimer();closeSerial();storageClose();EnableStatusArea(0);DrawFrame(0xffff);erase(field,sizeof(field));erase(editClipboard,sizeof(editClipboard));}
 /* The menu launch key and the key which opened a dialog must not become a
  * command in the newly opened screen. Require a stable all-keys-up edge. */
 static void waitForKeyRelease(void){
  int quiet=0;
  while(quiet<3){if(keyboardRead(lastKey)==KEY_PRGM_NONE)quiet++;else quiet=0;OS_InnerWait_ms(10);}
- lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;heldTick=repeatTick=RTC_GetTicks();
+ lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyboard_shift_reset(&keyboardAlphaState);keyChordShift=keyChordAlpha=0;heldTick=repeatTick=RTC_GetTicks();
 }
 /* Raw PRGM polling does not consume the OS event FIFO. Drain it only at
  * session boundaries, with native MENU processing disabled for these stale
@@ -108,7 +111,7 @@ static void drainNativeKeys(void){
  for(n=0;n<32;n++)if(GetKeyWait_OS(&column,&row,KEYWAIT_HALTOFF_TIMEROFF,0,1,&code)!=KEYREP_KEYEVENT)break;
 }
 static int keyEvent(void){
- int k=keyboardReadShift(lastKey,&keyboardShiftState,&keyChordShift),now=RTC_GetTicks();
+ int k=keyboardReadModifiers(lastKey,&keyboardShiftState,&keyboardAlphaState,&keyChordShift,&keyChordAlpha),now=RTC_GetTicks();
 
  if(!k){lastKey=0;return 0;}
  if(k!=lastKey){lastKey=k;heldTick=repeatTick=now;
@@ -576,13 +579,13 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  if(promptMode==1){
   if(chatReadError)printAt(8,175,"Een deel van je chat is niet leesbaar.",C_RED);
   /* Reserved control rail: input and caret stop before the mode and send arrow. */
-  sprintf(mode,"%s%s",letters?(firstLetter?"Abc":"abc"):"123",shifted?" S":"");
+  sprintf(mode,"%s%s%s",letters?(firstLetter?"Abc":"abc"):"123",shifted?" S":"",editOverwrite?" O":"");
   printAt(336-(int)strlen(mode)*8,153,mode,C_MUTED);
   rounded(346,152,20,17,C_RAISED);
   for(int dy=0;dy<4;dy++)rect(355-dy,155+dy,2+dy*2,1,C_MUTED);rect(355,159,2,7,C_MUTED);
  }else {
   printAt(8,175,"DEL wissen · ←→ cursor · EXIT terug",C_MUTED);
-  sprintf(mode,"%s%s",letters?"abc":"123",shifted?" S":"");
+  sprintf(mode,"%s%s%s",letters?"abc":"123",shifted?" S":"",editOverwrite?" O":"");
   {int width=(int)strlen(mode)*8+12;rounded(376-width,174,width,15,C_PANEL);printAt(382-width,175,mode,C_MUTED);}
  }show();
 }
@@ -592,13 +595,29 @@ static void prepareMenuSnapshot(void){
  renderEditor("",PROMPT_MAX+1,0,"ChatGPT",0,1,0,0,1,0);
  linkKnown=known;linkOnline=online;linkSeen=seen;autoProbeActive=active;
 }
+/* CLIP selects text locally; no native key handlers or UART reconfiguration. */
+static void copyEditorText(const char *buf,size_t cursor){
+ size_t anchor=cursor,end=cursor;char preview[EDIT_CAP];int k;
+ if(!buf[0])return;
+ while(!quitting){
+  size_t a=anchor<end?anchor:end,b=anchor<end?end:anchor;
+  if(a==b){a=0;b=strlen(buf);}memcpy(preview,buf+a,b-a);preview[b-a]=0;
+  clear("Tekst kopiëren");paragraph(preview,0,12,52,COLS,ROWS);
+  printAt(12,175,"←→ selecteren · EXE kopiëren",C_MUTED);footer("","","","","","");show();k=waitKey();
+  if(k==KEY_PRGM_EXIT)return;
+  if(k==KEY_PRGM_RETURN){edit_copy(buf,a,b);return;}
+  if(k==KEY_PRGM_LEFT)end=u_prev(buf,end);
+  if(k==KEY_PRGM_RIGHT&&end<strlen(buf))end=u_next(buf,end);
+  if(k==KEY_PRGM_UP)end=0;if(k==KEY_PRGM_DOWN)end=strlen(buf);
+ }
+}
 /* Returns F1/F2/F6/EXIT. Secret input is never revealed or retained on Casio. */
-static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
- size_t cursor=strlen(buf);int keepMode=promptMode==1&&buf==prompt;int letters=keepMode?chatInputLetters:0,shifted=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
+static int editorInner(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
+ size_t cursor=strlen(buf);int keepMode=promptMode==1&&buf==prompt;int letters=keepMode?chatInputLetters:0,shifted=0,alphaCommand=0,first=0,row,col,k,cp,useShift,firstLetter=autoCapital&&cursor==0;
  int columns=promptMode==1?MESSAGE_COLS:COLS;
  if(promptMode==1)invalidateConversation();
  while(!quitting){
-  const char *token=0;
+  const char *token=0;edit_observe(buf,cursor,secret);
   firstLetter=autoCapital&&!secret&&sentence_capital(buf,cursor);
   cursorPosition(buf,cursor,columns,&row,&col);
   int visible=promptMode==1?(hasConversation()?conversationRows(buf):composerRows(buf)):ROWS;
@@ -606,17 +625,36 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(row<first)first=row;if(row>=first+visible)first=row-visible+1;
   renderEditor(buf,cap,cursor,title,secret,promptMode,letters,shifted,firstLetter,first);
   k=waitEditorKey(promptMode);if(quitting)return KEY_PRGM_MENU;if(k==UI_LINK_REFRESH)continue;
-  if(k==KEY_PRGM_SHIFT){shifted=!shifted;if(!shifted)keyboard_shift_consume(&keyboardShiftState);continue;}
-  if(k==KEY_PRGM_ALPHA){letters=!letters;if(keepMode)chatInputLetters=letters;shifted=0;continue;}
-  useShift=shifted||keyChordShift;shifted=0;
+  if(keyChordAlpha){alphaCommand=1;letters=!letters;if(keepMode)chatInputLetters=letters;shifted=0;}
+  if(k==KEY_PRGM_SHIFT){alphaCommand=0;shifted=!shifted;if(!shifted)keyboard_shift_consume(&keyboardShiftState);continue;}
+  if(k==KEY_PRGM_ALPHA){alphaCommand=1;letters=!letters;if(keepMode)chatInputLetters=letters;shifted=0;continue;}
+  useShift=shifted||keyChordShift;shifted=0;int useAlpha=alphaCommand;alphaCommand=0;
+  if(useShift&&(k==65||k==35||k==25||k==74||k==10||k==58||k==68)){
+   message("Casio-functie","Deze gele functie hoort bij het Casio-systeem of de 2D-formule-editor. In ChatGPT typ je tekst. Gebruik MENU om terug te gaan naar Casio.");continue;
+  }
   if(k==KEY_PRGM_F5)continue;
   if(promptMode==1&&k==KEY_PRGM_F3&&unsavedReply){saveReply();invalidateConversation();continue;}
   if(promptMode==1&&(k==KEY_PRGM_OPTN||k==KEY_PRGM_F3))return UI_CHATS;
+  if(useShift&&k==KEY_PRGM_RETURN){if(!secret&&!asciiOnly&&!edit_insert(buf,cap,&cursor,"\n",0))message("Invoer vol","Er past geen nieuwe regel meer in dit veld.");continue;}
   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN)return KEY_PRGM_F1;
   if(k==KEY_PRGM_EXIT)return k;
   if(promptMode==1&&(k==KEY_PRGM_F2||k==KEY_PRGM_F6))return k;
   if(k==KEY_PRGM_LEFT){cursor=useShift?0:u_prev(buf,cursor);continue;}
   if(k==KEY_PRGM_RIGHT){if(useShift)cursor=strlen(buf);else if(cursor<strlen(buf))cursor=u_next(buf,cursor);continue;}
+  if(useShift&&k==44){editOverwrite=!editOverwrite;continue;}
+  if(useAlpha&&!useShift&&k==44){if(!secret)edit_undo(buf,cap,&cursor);continue;}
+  if(useShift&&k==64){if(!secret)copyEditorText(buf,cursor);continue;}
+  if(useShift&&k==54){
+   if(secret||!editClipboard[0])continue;
+   int valid=1;size_t a=0,n=strlen(editClipboard);uint32_t ch;
+   while(a<n){size_t step=u_decode(editClipboard+a,n-a,&ch);if((asciiOnly&&(ch<32||ch>126))||glyphIndex(ch)<0){valid=0;break;}a+=step;}
+   if(!valid)message("Kan niet plakken","Dit veld ondersteunt deze tekens niet.");
+   else if(!edit_insert(buf,cap,&cursor,editClipboard,editOverwrite))message("Invoer vol","De gekopieerde tekst past niet.");
+   continue;
+  }
+  if(useShift&&k==73){cp=(int)pickCharacter(asciiOnly);if(cp){char value[5];u_encode((uint32_t)cp,value);edit_insert(buf,cap,&cursor,value,editOverwrite);}continue;}
+  if(useShift&&k==63){screenSettings();continue;}
+  if(!letters&&!useShift&&k==65){message("S↔D","Omrekenen doe je via een vraag. Typ bijvoorbeeld: Zet 0.25 om in een breuk.");continue;}
   if(k==44){u_delete(buf,&cursor);if(!buf[0])firstLetter=autoCapital;continue;}
   if(k==KEY_PRGM_ACON){if(confirm("Dit invoerveld helemaal wissen?")){erase(buf,cap);cursor=0;firstLetter=autoCapital;}continue;}
   if(promptMode==1&&hasConversation()&&(k==KEY_PRGM_UP||k==KEY_PRGM_DOWN)){
@@ -633,19 +671,26 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
     size_t at=0,len=strlen(token),n;uint32_t ch;int valid=1;
     while(at<len){n=u_decode(token+at,len-at,&ch);if((asciiOnly&&(ch<32||ch>126))||glyphIndex(ch)<0){valid=0;break;}at+=n;}
     if(!valid){message("Ongeldig teken","Dit veld ondersteunt alleen de beschikbare ASCII-tekens.");continue;}
-    if(!u_insert_text(buf,cap,&cursor,token)){message("Invoer vol","De functie past niet meer in dit invoerveld.");continue;}
+    if(!edit_insert(buf,cap,&cursor,token,editOverwrite)){message("Invoer vol","De functie past niet meer in dit invoerveld.");continue;}
     for(at=0;at<len;at++)if((token[at]>='a'&&token[at]<='z')||(token[at]>='A'&&token[at]<='Z'))firstLetter=0;
     continue;
    }
    cp=letters&&!useShift?alpha_key(k):number_key(k);
   }
-  if(firstLetter){if(cp>='a'&&cp<='z')cp-=32;else if(cp>=0xe0&&cp<=0xfe&&cp!=0xf7&&glyphIndex(cp-32)>=0)cp-=32;}
+  if(firstLetter&&!(letters&&!useShift&&k==67)){if(cp>='a'&&cp<='z')cp-=32;else if(cp>=0xe0&&cp<=0xfe&&cp!=0xf7&&glyphIndex(cp-32)>=0)cp-=32;}
   if(!cp){if(k!=KEY_PRGM_F4)message("Teken niet ondersteund","Gebruik F4 Tekens voor speciale tekens en formules.");continue;}
   if(asciiOnly&&(cp<32||cp>126)){message("Ongeldig teken","Dit veld ondersteunt alleen ASCII.");continue;}
   if(glyphIndex((uint32_t)cp)<0){message("Teken niet ondersteund","Dit invoerteken kan niet worden weergegeven.");continue;}
-  if(!u_insert(buf,cap,&cursor,(uint32_t)cp)){message("Invoer vol","Dit veld is vol. Verwijder tekst om verder te typen.");continue;}
+  char value[5];u_encode((uint32_t)cp,value);
+  if(!edit_insert(buf,cap,&cursor,value,editOverwrite)){message("Invoer vol","Dit veld is vol. Verwijder tekst om verder te typen.");continue;}
   if((cp>='a'&&cp<='z')||(cp>='A'&&cp<='Z'))firstLetter=0;
  }return KEY_PRGM_MENU;
+}
+static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapital,int asciiOnly,int promptMode){
+ edit_begin(buf,strlen(buf),secret);
+ int result=editorInner(buf,cap,title,secret,autoCapital,asciiOnly,promptMode);
+ erase(editObserved,sizeof(editObserved));erase(editUndo,sizeof(editUndo));editUndoReady=editOverwrite=0;
+ return result;
 }
 static char publicSSID[33],publicModel[256];
 static unsigned settingsEpoch=0;
@@ -962,7 +1007,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32.2\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32.3\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -1149,7 +1194,7 @@ static void beginSession(void){
  int warm=serialOpen&&Serial_IsOpen()==1;storageClose();
  if(!warm){serialOpen=0;linkKnown=linkOnline=linkSeen=0;}
  oldSetup=GetSetupSetting(0x14);
- keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;
+ keyboard_shift_reset(&keyboardShiftState);keyboard_shift_reset(&keyboardAlphaState);keyChordShift=keyChordAlpha=0;
  quitting=0;closePromptActive=0;questionActive=questionAbort=questionAskSent=questionAbortHandled=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
@@ -1182,7 +1227,7 @@ static void runSession(void){
 static void endSession(void){
  /* Finish local work; keep the OS-owned UART driver open through native MENU.
   * No app timer, interrupt handler or quit callback remains active in MENU. */
- storageClose();releaseModels();erase(field,sizeof(field));waitForKeyRelease();stopAutoProbe();
+ storageClose();releaseModels();erase(field,sizeof(field));erase(editClipboard,sizeof(editClipboard));waitForKeyRelease();stopAutoProbe();
 }
 /* The OS key-wait must be active when a fallback MENU event is injected.
  * This ordering follows gint_osmenu_native; pre-queueing then calling GetKey

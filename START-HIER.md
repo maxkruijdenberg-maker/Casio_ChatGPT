@@ -1,7 +1,7 @@
-# ChatGPT voor Casio — V32.2
+# ChatGPT voor Casio — V32.3
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V32.2.pdf of docs/Handleiding-V32.2.html.
+docs/Handleiding-V32.3.pdf of docs/Handleiding-V32.3.html.
 
 Heb je Atom V31 al geïnstalleerd? Vervang alleen dist/ChatGPT.g3a op de Casio,
 laat CGPT3 staan en herstart de Casio eenmaal. De Atom-code en firmware zijn
@@ -15,6 +15,10 @@ Er is geen handmatige hoofdletterlock meer. ALPHA wisselt gewoon tussen cijfers
 en letters. F4 Tekens bevat veertig basissymbolen zonder alfabet of cijfers.
 SP is de zichtbare spatiekeuze; EXIT keert terug naar je bericht.
 De compacte invoerstand toont 123, abc of Abc.
+
+Ook ALPHA-r en θ, SHIFT-∠, i en x^(-1) werken volgens de foto.
+SHIFT + EXE geeft een nieuwe regel. CLIP, PASTE, INS en UNDO werken lokaal;
+de volledige toetsentabel en de grenzen van native Casio-functies staan in de handleiding.
 
 In cijferstand 123 geeft sin de tekst sin(; SHIFT + sin geeft asin(, dezelfde
 inverse sinus als sin⁻¹. SHIFT + ( geeft ∛( voor de derdemachtswortel.
@@ -70,7 +74,7 @@ wacht ook daarbij op de bevestiging van de Atom. Er wordt
 niet automatisch een nieuwe betaalde vraag gestart bij annuleren of een fout. Een al verzonden
 vraag kan nog kosten maken. Je gebruikt eigen API-toegang en tegoed.
 Deel je sleutel niet met een verkoper.
-V32.2 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
+V32.3 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
 Echte apparaten en live betaalde antwoorden zijn hier niet getest.
 Fysieke controles en een proef met een nieuwe gebruiker:
-docs/V32.2-CONTROLE-VOOR-VERKOOP.md.
+docs/V32.3-CONTROLE-VOOR-VERKOOP.md.

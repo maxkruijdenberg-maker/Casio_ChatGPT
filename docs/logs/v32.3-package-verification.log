@@ -1,0 +1,4 @@
+PASS 18 ASan/UBSan groups. Input matrix: 30 ALPHA + 22 SHIFT functions x 4 physical press/release modes = 208 cases; local clipboard/selection/Undo/overwrite, protected fields and no paid requests.
+PASS ZIP integrity, all 5 binary hashes, all packaged Casio/Atom sources, PDF magic and offline HTML links.
+PASS Atom code, four Atom firmware binaries and native menu implementation unchanged versus V32.2.
+Archive SHA256 3581fa3c42cb72440091d784db47aa784845db022bf811e2a9523cb534801afa

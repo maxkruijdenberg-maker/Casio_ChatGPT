@@ -44,6 +44,7 @@ static void test_text(void){
  CHECK(u_encode(0xd800,b)==0);CHECK(u_encode(0x110000,b)==0);
  const char *bad[]={"\xc0\xaf","\xed\xa0\x80","\xf4\x90\x80\x80","\xe2\x82","\xff"};
  for(i=0;i<sizeof(bad)/sizeof(bad[0]);i++)CHECK(u_decode(bad[i],strlen(bad[i]),&cp)==1&&cp==0xfffd);
+ CHECK(alpha_key(67)=='r');CHECK(alpha_key(57)==0x3b8);CHECK(alpha_key(51)=='"');
  CHECK(alpha_key(76)=='a');CHECK(alpha_key(71)=='z');CHECK(alpha_key(61)==' ');CHECK(number_key(72)=='1');
  for(i=0;i<26;i++)CHECK(alpha_key((int[]){76,66,56,46,36,26,75,65,55,45,35,25,74,64,54,73,63,53,43,33,72,62,52,42,32,71}[i])=='a'+(int)i);
 }
@@ -52,6 +53,7 @@ static void test_math_tokens(void){
  CHECK(!strcmp(math_key(46,0),"sin("));CHECK(!strcmp(math_key(46,1),"asin("));
  CHECK(!strcmp(math_key(36,0),"cos("));CHECK(!strcmp(math_key(36,1),"acos("));
  CHECK(!strcmp(math_key(26,0),"tan("));CHECK(!strcmp(math_key(26,1),"atan("));
+ CHECK(!strcmp(math_key(76,1),"∠"));CHECK(!strcmp(math_key(45,1),"^(-1)"));CHECK(!strcmp(math_key(71,1),"i"));CHECK(!strcmp(math_key(75,1),"mixed("));
  CHECK(!strcmp(math_key(55,1),"∛("));CHECK(!math_key(55,0)&&number_key(55)=='(');
  CHECK(!strcmp(math_key(67,1),"sqrt("));CHECK(!strcmp(math_key(57,1),"root("));
  CHECK(!strcmp(math_key(51,1),"π"));CHECK(!math_key(79,0));
