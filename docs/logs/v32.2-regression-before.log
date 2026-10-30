@@ -1,0 +1,3 @@
+Legacy key-event reader reproduced with current UI fixture; expected assertion failure.
+SHIFT fixture 0: got [asin(], expected [asin(sin(]
+test_ui: /tmp/shift-regression-g6w74rlt/tests/test_ui.c:437: testShiftChordsAndCubeRoot: Assertion `!strcmp(text,cases[i].expected)' failed.

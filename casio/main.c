@@ -34,6 +34,8 @@
 #define ANSWER_MAX 8192
 static char prompt[PROMPT_MAX+1],answer[ANSWER_MAX+1],field[PROMPT_MAX+1],lastQuestion[PROMPT_MAX+1];
 static int quitting=0,serialOpen=0,lastKey=0,errors=0,retries=0;
+static KeyboardShiftState keyboardShiftState;
+static int keyChordShift=0;
 static unsigned uartOpens=0,uartCloses=0;
 static int rpcDepth=0;
 static int autoConnectTick(void);
@@ -96,7 +98,7 @@ static void cleanup(void){releaseModels();stopAutoProbe();stopMenuTimer();closeS
 static void waitForKeyRelease(void){
  int quiet=0;
  while(quiet<3){if(keyboardRead(lastKey)==KEY_PRGM_NONE)quiet++;else quiet=0;OS_InnerWait_ms(10);}
- lastKey=0;heldTick=repeatTick=RTC_GetTicks();
+ lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;heldTick=repeatTick=RTC_GetTicks();
 }
 /* Raw PRGM polling does not consume the OS event FIFO. Drain it only at
  * session boundaries, with native MENU processing disabled for these stale
@@ -106,7 +108,7 @@ static void drainNativeKeys(void){
  for(n=0;n<32;n++)if(GetKeyWait_OS(&column,&row,KEYWAIT_HALTOFF_TIMEROFF,0,1,&code)!=KEYREP_KEYEVENT)break;
 }
 static int keyEvent(void){
- int k=keyboardRead(lastKey),now=RTC_GetTicks();
+ int k=keyboardReadShift(lastKey,&keyboardShiftState,&keyChordShift),now=RTC_GetTicks();
 
  if(!k){lastKey=0;return 0;}
  if(k!=lastKey){lastKey=k;heldTick=repeatTick=now;
@@ -604,9 +606,9 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
   if(row<first)first=row;if(row>=first+visible)first=row-visible+1;
   renderEditor(buf,cap,cursor,title,secret,promptMode,letters,shifted,firstLetter,first);
   k=waitEditorKey(promptMode);if(quitting)return KEY_PRGM_MENU;if(k==UI_LINK_REFRESH)continue;
-  if(k==KEY_PRGM_SHIFT){shifted=!shifted;continue;}
+  if(k==KEY_PRGM_SHIFT){shifted=!shifted;if(!shifted)keyboard_shift_consume(&keyboardShiftState);continue;}
   if(k==KEY_PRGM_ALPHA){letters=!letters;if(keepMode)chatInputLetters=letters;shifted=0;continue;}
-  useShift=shifted;shifted=0;
+  useShift=shifted||keyChordShift;shifted=0;
   if(k==KEY_PRGM_F5)continue;
   if(promptMode==1&&k==KEY_PRGM_F3&&unsavedReply){saveReply();invalidateConversation();continue;}
   if(promptMode==1&&(k==KEY_PRGM_OPTN||k==KEY_PRGM_F3))return UI_CHATS;
@@ -960,7 +962,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32.2\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -1147,6 +1149,7 @@ static void beginSession(void){
  int warm=serialOpen&&Serial_IsOpen()==1;storageClose();
  if(!warm){serialOpen=0;linkKnown=linkOnline=linkSeen=0;}
  oldSetup=GetSetupSetting(0x14);
+ keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;
  quitting=0;closePromptActive=0;questionActive=questionAbort=questionAskSent=questionAbortHandled=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;

@@ -22,6 +22,47 @@ static int keyboard_decode(const uint16_t words[6],int previous){
  }
  return count==1?result:0; /* Reject new multi-key chords/ghosts. */
 }
+/* The editor supports a physical SHIFT+key chord as well as a tapped, one-shot
+ * SHIFT. Keep this separate from the legacy scanner used at OS boundaries. */
+typedef struct {int down,used,announced,deferred;} KeyboardShiftState;
+static void keyboard_shift_reset(KeyboardShiftState *state){
+ state->down=state->used=state->announced=state->deferred=0;
+}
+static void keyboard_shift_consume(KeyboardShiftState *state){state->used=1;}
+static int keyboard_decode_shift(const uint16_t words[6],int previous,KeyboardShiftState *state,int *chordShifted){
+ int row,col,other=0,count=0,shiftDown=keyboard_down(words,78);
+ *chordShifted=0;
+ if(!shiftDown)keyboard_shift_reset(state);
+ else if(!state->down){
+  state->down=1;state->used=state->announced=state->deferred=0;
+  /* A late modifier must not redispatch an already-held ordinary key. */
+  if(previous&&previous!=78&&previous!=48&&keyboard_down(words,previous))state->deferred=previous;
+ }
+ if(keyboard_down(words,48))return 48; /* MENU retains absolute priority. */
+ if(!shiftDown)return keyboard_decode(words,previous);
+ if(state->deferred){
+  if(keyboard_down(words,state->deferred))return previous==state->deferred?previous:0;
+  state->deferred=0;
+ }
+ for(col=0;col<10;col++)for(row=0;row<7;row++){
+  int key=(row+1)*10+col;
+  if(key!=78&&keyboard_valid(row,col)&&((words[col/2]>>(row+8*(col%2)))&1)){other=key;count++;}
+ }
+ if(count>1){
+  /* Preserve a previously held key, but reject every new ambiguous chord. */
+  if(previous&&previous!=78&&keyboard_down(words,previous))return previous;
+  return previous==78&&state->announced&&!state->used?78:0;
+ }
+ if(count==1){
+  if(previous==other)return other;
+  if(!state->used){state->used=1;*chordShifted=1;}
+  return other;
+ }
+ /* Releasing the function before SHIFT must never create a second SHIFT edge.
+  * announced also protects a tapped SHIFT from a temporary rejected chord. */
+ if(state->used||(state->announced&&previous!=78))return 0;
+ state->announced=1;return 78;
+}
 #ifdef CHATGPT_HOST_TEST
 static void keyboardReadWords(uint16_t words[6]);
 #else
@@ -31,4 +72,7 @@ static void keyboardReadWords(uint16_t words[6]){
 }
 #endif
 static int keyboardRead(int previous){uint16_t words[6];keyboardReadWords(words);return keyboard_decode(words,previous);}
+static int keyboardReadShift(int previous,KeyboardShiftState *state,int *chordShifted){
+ uint16_t words[6];keyboardReadWords(words);return keyboard_decode_shift(words,previous,state,chordShifted);
+}
 #endif

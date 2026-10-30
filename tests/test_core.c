@@ -52,6 +52,7 @@ static void test_math_tokens(void){
  CHECK(!strcmp(math_key(46,0),"sin("));CHECK(!strcmp(math_key(46,1),"asin("));
  CHECK(!strcmp(math_key(36,0),"cos("));CHECK(!strcmp(math_key(36,1),"acos("));
  CHECK(!strcmp(math_key(26,0),"tan("));CHECK(!strcmp(math_key(26,1),"atan("));
+ CHECK(!strcmp(math_key(55,1),"∛("));CHECK(!math_key(55,0)&&number_key(55)=='(');
  CHECK(!strcmp(math_key(67,1),"sqrt("));CHECK(!strcmp(math_key(57,1),"root("));
  CHECK(!strcmp(math_key(51,1),"π"));CHECK(!math_key(79,0));
  char s[16]="ab",before[16];size_t cursor=1;

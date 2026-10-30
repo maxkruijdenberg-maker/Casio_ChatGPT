@@ -43,6 +43,7 @@ static const char *math_key(int key,int shifted){
   case 66:return "10^(";case 56:return "e^(";
   case 46:return "asin(";case 36:return "acos(";case 26:return "atan(";
   case 67:return "sqrt(";case 57:return "root(";
+  case 55:return "∛(";
   case 51:return "π";case 61:return "=";case 41:return "Ans";
   case 42:return "[";case 32:return "]";case 43:return "{";case 33:return "}";
   case 72:return "List ";case 62:return "Mat ";

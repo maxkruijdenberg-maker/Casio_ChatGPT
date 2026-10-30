@@ -505,3 +505,20 @@ laadscherm; zelf annuleren geldt niet als mislukte accountcontrole.
 Casio-build en 18 ASan/UBSan-groepen geslaagd, inclusief de vroeg-annulering-
 regressies van V32. Geen nieuwe live API-aanvraag of fysieke test uitgevoerd.
 Atom-code en alle vier firmwarebestanden blijven bytegelijk V31.
+
+
+## V32.2 — SHIFT-combinaties en derdemachtswortel
+
+SHIFT + ( voegt nu ∛( in met een eigen lettertypeglyph. Een ingedrukte SHIFT
+werkt ook als toetscombinatie; na één functie kan dezelfde SHIFT-druk niet
+opnieuw inschakelen. Aantikken, gelijktijdig indrukken, beide loslaatvolgordes,
+dubbel SHIFT annuleren en ALPHA-lock zijn gedekt. sin( blijft de gewone sinus;
+asin( met SHIFT is de inverse sinus, dezelfde functie als sin⁻¹.
+
+Casio-build en 18 ASan/UBSan-testgroepen geslaagd (LeakSanitizer uitgeschakeld
+in deze omgeving). De echte editorfixture toont het oorspronkelijke verlies
+van SHIFT+sin met de oude scanner en slaagt met de nieuwe scanner. De overige
+annulerings-, navigatie- en UART-regressies blijven slagen. De eigen glyph en
+het daadwerkelijke UI-frame zijn gecontroleerd. Atom-code en alle vier
+firmwarebestanden blijven bytegelijk V31; geen fysieke of live API-test van
+deze patch uitgevoerd. Alleen de Casio-app bijwerken als Atom V31 al aanwezig is.

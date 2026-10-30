@@ -1,0 +1,3 @@
+PASS: 18 ASan/UBSan groups; customer ZIP integrity, 5 hashes, packaged source identity, PDF and offline HTML links.
+PASS: all Atom sources, four firmware binaries and native-menu helpers unchanged versus V32.1.
+Archive SHA256 eec3696d947b70c054236c51e13c79f88ae2c7ad9bd854e53357824a4c82dde3

@@ -149,7 +149,9 @@ static int scriptedKeyNext(void){
  timeTicks+=keyAdvanceMs;if(connectAt>=0&&timeTicks>=connectAt){connected=1;connectAt=-1;}if(timeTicks<busyUntil)return 0;if(keyAt>=keyCount){fprintf(stderr,"Editor exceeded key script at t=%d, link=%d misses=%d\n",timeTicks,linkOnline,linkMisses);abort();}int key=keys[keyAt++];if(lifecycleTesting&&key)staleEvents=5;return key;}
 int PRGM_GetKey(void){assert(!"OS keyboard syscall must never run during application polling");return 0;}
 static void keyboardReadWords(uint16_t words[6]){
- memset(words,0,12);int key=scriptedKeyNext();if(key){int row=key/10-1,col=key%10;assert(row>=0&&row<7&&col<10);words[col/2]=(uint16_t)(1u<<(row+8*(col%2)));}
+ memset(words,0,12);int key=scriptedKeyNext();
+ if(key>=1000){words[4]=(uint16_t)(1u<<6);key-=1000;}
+ if(key){int row=key/10-1,col=key%10;assert(row>=0&&row<7&&col<10);words[col/2]|=(uint16_t)(1u<<(row+8*(col%2)));}
 }
 int RTC_GetTicks(void){return timeTicks;}
 int RTC_Elapsed_ms(int start,int ms){return timeTicks-start>=ms;}
@@ -239,7 +241,7 @@ void SetSetupSetting(unsigned int n,unsigned char v){(void)n;(void)v;}
 unsigned char GetSetupSetting(unsigned int n){(void)n;return 0;}
 void SetQuitHandler(void(*h)(void)){quitCallback=h;}
 void DisplayMainMenu(void){assert(!"drawing MENU or returning main is not the native GetKey dispatcher");}
-static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
+static void script(const int *p,size_t n){keys=p;keyCount=n;keyAt=0;lastKey=0;keyboard_shift_reset(&keyboardShiftState);keyChordShift=0;quitting=0;vram=deviceFramebuffer;busyUntil=0;}
 #define SCRIPT(a) script(a,sizeof(a)/sizeof(a[0]))
 /* Legacy fixtures now exercise the same unified editor used in production. */
 static void readAnswer(int ignored){(void)ignored;prompt[0]=0;editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);}
@@ -404,6 +406,39 @@ static void chooseTestModel(const char *id){
  for(int i=selected;i!=wanted;i+=i<wanted?1:-1){path[n++]=i<wanted?KEY_PRGM_DOWN:KEY_PRGM_UP;path[n++]=0;}
  path[n++]=KEY_PRGM_RETURN;script(path,n);assert(modelPicker());
  assert(!strcmp(storedModel,id));
+}
+
+static void testShiftChordsAndCubeRoot(void){
+ struct Case {const int *keys;size_t count;const char *expected;};
+ const int sinFirst[]={78,1046,78,0,46,0,79};
+ const int shiftFirst[]={78,1046,46,0,46,0,79};
+ const int simultaneous[]={1046,0,46,0,79};
+ const int holdOneShot[]={78,1046,78,1036,78,0,26,0,79};
+ const int tap[]={78,0,46,0,36,0,79};
+ const int cancelTap[]={78,0,78,0,46,0,79};
+ const int cancelHeld[]={78,0,78,1046,78,0,46,0,79};
+ const int cubeTap[]={78,0,55,0,62,0,74,0,45,0,55,0,79};
+ const int cubeHeld[]={78,1055,78,0,55,0,79};
+ const int cubeSimultaneous[]={1055,0,55,0,79};
+ const int alphaHeld[]={77,0,78,1046,78,0,66,0,79};
+ #define SHIFT_CASE(keys,value) {keys,sizeof(keys)/sizeof(keys[0]),value}
+ const struct Case cases[]={
+  SHIFT_CASE(sinFirst,"asin(sin("),SHIFT_CASE(shiftFirst,"asin(sin("),SHIFT_CASE(simultaneous,"asin(sin("),
+  SHIFT_CASE(holdOneShot,"asin(cos(tan("),SHIFT_CASE(tap,"asin(cos("),SHIFT_CASE(cancelTap,"sin("),
+  SHIFT_CASE(cancelHeld,"sin(sin("),SHIFT_CASE(cubeTap,"∛(27)("),SHIFT_CASE(cubeHeld,"∛(("),
+  SHIFT_CASE(cubeSimultaneous,"∛(("),SHIFT_CASE(alphaHeld,"asin(b")
+ };
+ #undef SHIFT_CASE
+ int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC],closed=serialCloses;
+ for(size_t i=0;i<sizeof(cases)/sizeof(cases[0]);i++){
+  char text[128]="";script(cases[i].keys,cases[i].count);
+  assert(editor(text,sizeof(text),"ChatGPT",0,1,0,1)==KEY_PRGM_F1);
+  if(strcmp(text,cases[i].expected))fprintf(stderr,"SHIFT fixture %zu: got [%s], expected [%s]\n",i,text,cases[i].expected);
+  assert(!strcmp(text,cases[i].expected));
+ }
+ int cube=glyphIndex(0x221b);assert(cube>=0&&cube!=glyphIndex(0xfffd)&&cube!=glyphIndex(0x221a));
+ int ink=0;for(int y=0;y<14;y++)ink|=font_glyphs[cube].rows[y];assert(ink);
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc&&serialCloses==closed);
 }
 
 static void testV14NavigationAndModels(void){
@@ -938,7 +973,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
+ testMenuFailures();testShiftChordsAndCubeRoot();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -987,6 +1022,7 @@ int main(int argc,char **argv){
   SCRIPT(historyUp);readAnswer(0);snprintf(path,sizeof(path),"%s/conversation-up.ppm",argv[2]);dumpFrame(path);
   chatFollowTail=1;strcpy(prompt,"Kun je nog een voorbeeld geven?");chatInputLetters=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/conversation-draft.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=-1;strcpy(lastQuestion,"Geef een lange uitleg.");strcpy(answer,answerStartFixture);prompt[0]=0;chatFocusAnswer=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/answer-start.ppm",argv[2]);dumpFrame(path);
+  activeChatSlot=-1;answer[0]=lastQuestion[0]=0;strcpy(prompt,"∛(27) = 3; asin(0.5)");SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/shift-math.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=-1;strcpy(lastQuestion,"Controleer de rekenstappen");
   strcpy(answer,"23 + 42 ＝ 65\n1 / 3 ≈ 0,333\nx ≠ 3; x ≤ 8; x ≥ 2\nx ≡ y; a ≔ 5");SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/math-answer.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=0;assert(loadChatPair(0,savedChats[0].turns-1));prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
@@ -1015,6 +1051,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

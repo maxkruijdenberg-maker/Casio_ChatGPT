@@ -1,8 +1,10 @@
-# ChatGPT V32.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V32.2 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V32.1-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V32.1.pdf) · [Offline handleiding](docs/Handleiding-V32.1.html)
+[Installatiepakket](dist/ChatGPT-V32.2-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V32.2.pdf) · [Offline handleiding](docs/Handleiding-V32.2.html)
 
+- SHIFT werkt eenmalig bij aantikken én bij vasthouden met een functietoets.
+- SHIFT + ( voegt ∛( in voor de derdemachtswortel.
 - Nieuwe antwoorden openen bij de eerste zin, met het ChatGPT-label erboven.
 - Omhoog/omlaag blijft je gesprek lezen; typen laat de weergave niet naar het einde springen.
 - De vroege EXIT/F1-annulering uit V32 blijft behouden.
@@ -22,13 +24,13 @@ laat CGPT3 staan en herstart de Casio eenmaal. De meegeleverde Atom-code en
 firmware zijn ongewijzigd V31. Voor een oudere Atom upload je eerst de
 meegeleverde V31-firmware zonder volledig wissen. Zo blijven wifi, API-sleutel en
 opgeslagen chats normaal behouden.
-[Bijwerken](UPGRADE-V32.1.md) · [Schermen](docs/design/V32.1-actual-screens.png).
+[Bijwerken](UPGRADE-V32.2.md) · [Schermen](docs/design/V32.2-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
-V32.1 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
+V32.2 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
 specifiek gebouwd apparaat klaar is voor verkoop. Er is in deze bouwomgeving geen
 fysieke Casio/Atom of live betaald API-account getest. Zie de
-[praktijk- en overdrachtscontrole](docs/V32.1-CONTROLE-VOOR-VERKOOP.md).
+[praktijk- en overdrachtscontrole](docs/V32.2-CONTROLE-VOOR-VERKOOP.md).
 
 ## Windows: installeren
 
@@ -85,7 +87,7 @@ jouw exemplaar. Installeer geen willekeurige driver van een onbekende website.
 | Toets | Invoerscherm |
 |---|---|
 | ALPHA | Lettervergrendeling aan/uit; eenmaal drukken is genoeg |
-| SHIFT | Eenmalige gele functie, bijvoorbeeld sin → asin; nogmaals annuleert SHIFT |
+| SHIFT | Eenmalige gele functie; aantikken of samen vasthouden, nogmaals drukken annuleert de klaarstaande stand |
 | F1 of EXE | Versturen; in Instellingen: opslaan |
 | F2 | Nieuw gesprek; vraagt bevestiging als een concept verloren zou gaan |
 | F3 | Chats openen |
@@ -108,10 +110,18 @@ is duidelijk omlijnd. SP staat voor spatie; bij selectie verschijnt Spatie.
 EXIT keert terug naar de invoer. Wifi en API-sleutel vul je via je telefoon in,
 met de exact gewenste letterkast.
 De eigen editor gebruikt de rode letterlabels bij ALPHA-lock. In cijferstand
-voeren de wiskundetoetsen functietekst in; SHIFT gebruikt eenmalig de gele
-functie. Bijvoorbeeld sin → `sin(`, SHIFT+sin → `asin(`, SHIFT+x² → `sqrt(`
-en SHIFT+×10ˣ → `π`. Zie UPGRADE-V10.md voor de volledige tabel. Functies zijn
-vraagtekst voor ChatGPT, geen lokale berekening of native 2D-Casio-formule.
+123 voeren de wiskundetoetsen functietekst in. `sin` voegt `sin(` in;
+SHIFT + sin voegt `asin(` in. Dat betekent arcsinus, dezelfde inverse functie
+als sin⁻¹ op het gele Casio-label. SHIFT + ( voegt `∛(` in voor de derdemachtswortel.
+Bijvoorbeeld: `∛(8)` is tekst voor een vraag over de derdemachtswortel van 8.
+
+Tik SHIFT aan en gebruik daarna één functietoets, of houd SHIFT samen met die
+toets ingedrukt. Ook gelijktijdig indrukken werkt. De eenmalige SHIFT-stand is
+na die functie verbruikt; dezelfde nog vastgehouden SHIFT-toets zet hem niet
+opnieuw aan. Het maakt niet uit welke van de twee toetsen je eerst loslaat.
+Nogmaals op SHIFT drukken annuleert een klaarstaande SHIFT-stand. ALPHA blijft
+wisselen tussen cijfers en letters. Functies zijn vraagtekst voor ChatGPT,
+geen lokale berekening of native 2D-Casio-formule.
 
 Bij openen/heropenen start automatisch een gratis UART-HELLO. Tijdens wachten
 op toetsen in het invoerscherm volgen nieuwe controles bij herstel (minimaal 1 seconde tussen startmomenten)
@@ -168,7 +178,7 @@ verandert je ingestelde model niet. Na accountcontrole tonen beide lijsten
 alleen de passende namen uit jouw account; ontbrekende namen worden niet als
 beschikbaar toegevoegd. Andere gevonden modellen blijven via Overige modellen
 bereikbaar als jouw account geen van de drie aanbevelingen aanbiedt.
-Zie docs/V32.1-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
+Zie docs/V32.2-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
 
 Omhoog/omlaag kiest een regel. Bij een model geeft F4 Info uitleg en bewaart
 F1 Kies, rechts of EXE de keuze. Overige modellen is een groepsregel, geen model;
@@ -285,7 +295,7 @@ de originele SDK 0.6-bibliotheken/linkerscript en mkg3a.
 ## Softwaretests en bekende grenzen
 
 Op Linux met een C-compiler: `sh tools/test.sh`. De tests gebruiken AddressSanitizer
-en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32.1-tests.log`.
+en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32.2-tests.log`.
 De regressieproeven uit V32 voor vroege annulering blijven behouden. Die controleren dat een
 annulering tijdens de voorbereiding geen W_ASK-verstuuropdracht laat volgen; de
 proeven gebruiken vertraagde host-UART-antwoorden, geen echte API-aanvraag.
