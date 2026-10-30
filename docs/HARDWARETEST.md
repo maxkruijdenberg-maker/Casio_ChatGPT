@@ -477,3 +477,20 @@ Casio-build en 18 ASan/UBSan-groepen geslaagd. De nieuwe matrix bevat 58 vroege
 annuleringen, twee na verzending, vier tijdens antwoordoverdracht en herstel
 bij bewust opnieuw proberen. Dezelfde regressietest faalt op de oorspronkelijke
 V31-code. Atom blijft bytegelijk V31. Geen echte hardware of live API getest.
+
+
+## V32.1 — antwoordbegin en opgeruimde bediening
+
+Een nieuw volledig ontvangen antwoord krijgt eenmalig focus op het ChatGPT-label
+en de eerste zin, ook bij vervolgvragen en onopgeslagen antwoorden. Daarna
+blijft handmatig scrollen behouden. Instellingen toont geen losse Open/Terug-
+hints meer; de fysieke toetsen blijven werken. In de zijbalk zijn F1 Wis en
+F2 Nieuw. Model kiezen toont drie aanbevelingen met daaronder Overige modellen;
+rechts/EXE opent de achttien overige namen, links/EXIT gaat terug. De gekozen
+model-ID verandert niet automatisch en accountfiltering blijft behouden.
+Na accountcontrole verschijnt circa 900 ms een groen vinkje of rood kruis in het
+laadscherm; zelf annuleren geldt niet als mislukte accountcontrole.
+
+Casio-build en 18 ASan/UBSan-groepen geslaagd, inclusief de vroeg-annulering-
+regressies van V32. Geen nieuwe live API-aanvraag of fysieke test uitgevoerd.
+Atom-code en alle vier firmwarebestanden blijven bytegelijk V31.

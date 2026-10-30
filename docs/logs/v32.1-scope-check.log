@@ -1,0 +1,7 @@
+PASS: 28 Atom source/firmware, native/raw-key helpers and font files byte-identical to v32.0.0.
+UART RPC and native-menu implementation unchanged; V32 early cancellation regression cases still pass.
+Casio V32.1 build passed; Atom remains V31 and does not need reflashing for existing V31 users.
+18 ASan/UBSan groups passed with detect_leaks=0 in sandbox (no LeakSanitizer).
+New UI tests: first-sentence pixels, long/short/follow-up/unsaved answers, scroll retention; grouped21 unique choices; sidebar F1/F2; success/empty/failure/cancel account feedback.
+Final header wording verified by the real UI preview runner after the full suite.
+No physical hardware or live API tested for this patch. User previously reported successful V32 hardware and three-model tests.

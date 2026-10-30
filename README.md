@@ -1,13 +1,17 @@
-# ChatGPT V32 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V32.1 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V32-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V32.pdf) · [Offline handleiding](docs/Handleiding-V32.html)
+[Installatiepakket](dist/ChatGPT-V32.1-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V32.1.pdf) · [Offline handleiding](docs/Handleiding-V32.1.html)
 
-- EXIT en F1 annuleren nu ook tijdens het voorbereiden, vóór het versturen van de vraag.
+- Nieuwe antwoorden openen bij de eerste zin, met het ChatGPT-label erboven.
+- Omhoog/omlaag blijft je gesprek lezen; typen laat de weergave niet naar het einde springen.
+- De vroege EXIT/F1-annulering uit V32 blijft behouden.
 - Een afgebroken voorbereiding gaat niet later alsnog automatisch verder met versturen.
 - Netwerkwerk houdt de bestaande totale tijdslimiet en annuleringscontrole.
 - Accountcontrole stoppen vraagt ook de Atom om te stoppen; een nog lopende afronding blijft zichtbaar.
-- Modelkeuze begint met drie aanbevolen keuzes; F3 wisselt naar alle 21 ondersteunde namen.
+- Modelkeuze toont drie GPT-6-aanbevelingen en daaronder Overige modellen voor de achttien andere keuzes.
+- De onderste Open/Terug-hints zijn weg; de fysieke pijlen blijven werken.
+- In Chats zijn F1 Wis en F2 Nieuw de twee actieknoppen.
 - EXIT gaat vanuit een gesprek lokaal naar het beginscherm; opgeslagen chats blijven bewaard.
 - Tekens bevat veertig basissymbolen; SP is spatie en het lage streepje (_) is zichtbaar.
 - Openen en teruggaan met rechts/links of EXE/EXIT; Hulp staat alleen in Instellingen.
@@ -18,13 +22,13 @@ laat CGPT3 staan en herstart de Casio eenmaal. De meegeleverde Atom-code en
 firmware zijn ongewijzigd V31. Voor een oudere Atom upload je eerst de
 meegeleverde V31-firmware zonder volledig wissen. Zo blijven wifi, API-sleutel en
 opgeslagen chats normaal behouden.
-[Bijwerken](UPGRADE-V32.md) · [Schermen](docs/design/V32-actual-screens.png).
+[Bijwerken](UPGRADE-V32.1.md) · [Schermen](docs/design/V32.1-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
-V32 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
+V32.1 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
 specifiek gebouwd apparaat klaar is voor verkoop. Er is in deze bouwomgeving geen
 fysieke Casio/Atom of live betaald API-account getest. Zie de
-[praktijk- en overdrachtscontrole](docs/V32-CONTROLE-VOOR-VERKOOP.md).
+[praktijk- en overdrachtscontrole](docs/V32.1-CONTROLE-VOOR-VERKOOP.md).
 
 ## Windows: installeren
 
@@ -115,6 +119,9 @@ en een controle iedere 10 seconden als de Atom online is. Het typen blijft
 beschikbaar. Verbinding controleren staat onder Instellingen → Hulp; verbinden vereist geen handmatige diagnose.
 
 Na versturen staat het antwoord boven de invoerbalk in hetzelfde gesprek.
+Een nieuw antwoord opent bij het ChatGPT-label en de eerste zin. Dit geldt ook
+voor een vervolgvraag. Scroll omlaag om verder te lezen en omhoog om eerdere
+berichten te bekijken. Een concept typen springt niet automatisch naar het einde.
 Omhoog/omlaag leest de historie; typ direct je vervolgvraag en gebruik F1 Stuur of EXE.
 Links/rechts verplaatst de cursor. F2 begint bewust een nieuw gesprek; de oude
 opgeslagen chat blijft behouden. EXIT gaat vanuit een chat lokaal terug naar het beginscherm,
@@ -144,23 +151,31 @@ de modelkeuze op de Atom. De interface is Nederlands.
 Instellingen probeert ook automatisch opnieuw verbinding te maken. Een korte
 vertraging sluit de poort niet. Hulp → Verbinding controleren geeft uitleg in gewone taal. Hulp staat alleen in
 Instellingen en heeft geen afzonderlijke F-sneltoets. Lijsten openen met EXE of
-rechts; links of EXIT gaat terug. De losse F-knoppen Open en Terug zijn verwijderd.
+rechts; links of EXIT gaat terug. De onderste Open/Terug-hints zijn verwijderd;
+deze navigatie werkt met de fysieke toetsen.
 Via **Wifi en account** kun je wifi en API-sleutel invullen via de tijdelijke
 installatiepagina. Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md) voor de stappen.
 
 ## Modellen en accountcontrole
 
-Instellingen → Model opent de aanbevolen keuzes GPT-6.1 Sol, GPT-6 Luna en
-GPT-6 Astra. Dit is appadvies, geen prijs- of prestatiegarantie. Met F3 Alles open je Alle modellen; F3 Advies gaat terug naar Aanbevolen.
-Alle 21 ondersteunde GPT-4/5/6-namen blijven bereikbaar.
-Je huidige model wordt door wisselen van weergave niet gewijzigd. Na accountcontrole
-worden in beide weergaven alleen de passende namen uit jouw account getoond.
-Zijn geen aanbevelingen beschikbaar maar andere ondersteunde namen wel, dan opent
-Alles automatisch.
-Zie docs/V32-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
+Instellingen → Model toont GPT-6.1 Sol, GPT-6 Luna en GPT-6 Astra, met daaronder
+Overige modellen →. Kies die vierde regel met rechts of EXE om de aparte lijst
+met de achttien andere ondersteunde modellen te openen. De drie aanbevelingen
+staan daar niet dubbel in. Links of EXIT gaat vanuit die lijst terug naar de
+drie aanbevelingen, en vanuit het hoofdmodelmenu terug naar Instellingen.
+De aanbevelingen zijn appadvies, geen prijs- of prestatiegarantie. Navigeren
+verandert je ingestelde model niet. Na accountcontrole tonen beide lijsten
+alleen de passende namen uit jouw account; ontbrekende namen worden niet als
+beschikbaar toegevoegd. Andere gevonden modellen blijven via Overige modellen
+bereikbaar als jouw account geen van de drie aanbevelingen aanbiedt.
+Zie docs/V32.1-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
 
-Omhoog/omlaag kiest een regel, F4 Info geeft uitleg en F1 Kies, rechts of EXE
-bewaart de keuze. F2 Account gebruikt één gestreamde GET met begrensd geheugen.
+Omhoog/omlaag kiest een regel. Bij een model geeft F4 Info uitleg en bewaart
+F1 Kies, rechts of EXE de keuze. Overige modellen is een groepsregel, geen model;
+rechts of EXE opent die lijst en Info is daar niet beschikbaar. F2 Account gebruikt één gestreamde GET met begrensd geheugen.
+Na afronden verschijnt kort een groen vinkje bij een geslaagde controle,
+ook als geen passende modellen zijn gevonden. Een rood kruis markeert een
+mislukte controle; daarna verschijnt de reden. Annuleren toont geen rood kruis.
 Bij succes verschijnt Account gecontroleerd; een fout laat herkenbare vaste,
 ongecontroleerde keuzes zien. Accountmetadata bewijst geen werkende chatvraag.
 Modelrechten, dienstcompatibiliteit, internet en tegoed moeten ook kloppen.
@@ -181,7 +196,9 @@ lokale chat en vervangt daarmee de oude Atom-context.
 
 ## Lokale chatgeschiedenis
 
-Open de zijbalk met **OPTN** of **F3 Chats**. Acht gesprekken met elk maximaal
+Open de zijbalk met **OPTN** of **F3 Chats**. In die zijbalk verwijdert **F1 Wis**
+na bevestiging het geselecteerde gesprek en begint **F2 Nieuw** een nieuw gesprek.
+Buiten de zijbalk blijven F1 Stuur en F2 Nieuw de normale chatknoppen. Acht gesprekken met elk maximaal
 acht complete vraag/antwoordparen blijven lokaal bewaard. Lees alle paren met
 omhoog/omlaag in dezelfde tijdlijn en typ een vervolgvraag onderaan. De recente
 API-context blijft begrensd. Bewaar verschijnt tijdelijk op F3 bij opslagfout.
@@ -268,8 +285,8 @@ de originele SDK 0.6-bibliotheken/linkerscript en mkg3a.
 ## Softwaretests en bekende grenzen
 
 Op Linux met een C-compiler: `sh tools/test.sh`. De tests gebruiken AddressSanitizer
-en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32-tests.log`.
-V32 voegt regressieproeven voor vroege annulering toe. Die controleren dat een
+en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32.1-tests.log`.
+De regressieproeven uit V32 voor vroege annulering blijven behouden. Die controleren dat een
 annulering tijdens de voorbereiding geen W_ASK-verstuuropdracht laat volgen; de
 proeven gebruiken vertraagde host-UART-antwoorden, geen echte API-aanvraag.
 Transport en UTF-8: 19748 asserts; aanvraagregistratie: 10000 cycli met herhaling,

@@ -59,6 +59,7 @@ static int keyAdvanceMs=0,connectAt=-1;
 static const char *servedAnswer=0;
 static const char *servedModels="gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-5.6-sol\ngpt-5.4-mini\ngpt-image-1\n";
 static int modelsLoading=0,modelRefreshes=0,modelServerError=0,modelReadError=0;
+static int observeAccountResult=0,accountGreenFrames=0,accountRedFrames=0;
 static int modelCancelRequests=0,modelCancelAt=-1,modelCancelDelay=0,modelCancelFailure=0;
 static int fakeApiCancelAt=-1,fakeApiCancelDelay=0;
 static int statusServerError=0,askResponseLost=0;
@@ -79,6 +80,11 @@ void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
  lastPaintLoading=loadingActive&&!closePromptActive;
+ if(observeAccountResult){
+  int green=0,red=0;
+  for(int y=75;y<141;y++)for(int x=160;x<225;x++){green+=deviceFramebuffer[y*384+x]==C_GREEN;red+=deviceFramebuffer[y*384+x]==C_RED;}
+  if(green>100)accountGreenFrames++;if(red>100)accountRedFrames++;
+ }
  if(verifyLogoOnly&&loadingActive&&!closePromptActive){
   for(int y=185;y<191;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
   logoFrames++;
@@ -385,6 +391,21 @@ static void testMathInput(void){
  char tiny[5]="a";const int noSpace[]={78,0,46,0,47,0,79};SCRIPT(noSpace);editor(tiny,sizeof(tiny),"Test",0,0,0,1);assert(!strcmp(tiny,"a"));
 }
 
+/* Exercise real two-level key navigation while retaining the selected model. */
+static void chooseTestModel(const char *id){
+ int path[MODEL_COUNT*2+20],n=0;modelShowAll=0;
+ int selected=modelSelection(publicModel),wanted=-1;
+ if(!isRecommendedModel(id)){
+  for(int i=selected;i<modelViewCount();i++){path[n++]=KEY_PRGM_DOWN;path[n++]=0;}
+  path[n++]=KEY_PRGM_RIGHT;path[n++]=0;modelShowAll=1;selected=modelSelection(publicModel);
+ }
+ for(int i=0;i<modelViewCount();i++)if(!strcmp(modelViewId(i),id))wanted=i;
+ assert(wanted>=0);
+ for(int i=selected;i!=wanted;i+=i<wanted?1:-1){path[n++]=i<wanted?KEY_PRGM_DOWN:KEY_PRGM_UP;path[n++]=0;}
+ path[n++]=KEY_PRGM_RETURN;script(path,n);assert(modelPicker());
+ assert(!strcmp(storedModel,id));
+}
+
 static void testV14NavigationAndModels(void){
  int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],devices=requestCount[W_DEVICE];
  char text[128]="";connected=1;replyDelay=0;quitting=0;activeChatSlot=-1;unsavedReply=0;modelShowAll=1;
@@ -423,14 +444,11 @@ static void testV14NavigationAndModels(void){
  for(int i=0;i<MODEL_COUNT;i++){
   strcpy(publicModel,modelChoices[i].id);strcpy(storedModel,modelChoices[i].id);
   char infoText[1024],tiny[4]="abc";modelDetails(i,infoText,sizeof(infoText));assert(strstr(infoText,modelChoices[i].label)&&strstr(infoText,modelChoices[i].id)&&strstr(infoText,modelChoices[i].description)&&strstr(infoText,modelChoices[i].advice));modelDetails(i,tiny,sizeof(tiny));assert(!tiny[0]);
-  int other=(i+1)%MODEL_COUNT,keysToPick[MODEL_COUNT*2+4],n=0;
-  for(int step=i;step!=other;step+=step<other?1:-1){keysToPick[n++]=step<other?37:28;keysToPick[n++]=0;}
-  keysToPick[n++]=79;keysToPick[n++]=0;keysToPick[n++]=47;
-  script(keysToPick,n);assert(modelPicker());assert(!strcmp(storedModel,modelChoices[other].id));
+  int other=(i+1)%MODEL_COUNT;chooseTestModel(modelChoices[other].id);
  }
  /* MENU-No in the picker retains its pending row before choosing it. */
  strcpy(publicModel,modelChoices[0].id);strcpy(storedModel,publicModel);
- const int pickerCancel[]={37,0,48,0,0,0,69,0,0,0,79,0,47};SCRIPT(pickerCancel);
+ const int pickerCancel[]={28,0,28,0,48,0,0,0,69,0,0,0,31};SCRIPT(pickerCancel);
  assert(modelPicker()&&!strcmp(storedModel,modelChoices[1].id)&&!quitting);
  const int explain[]={49,0,47,0,47};SCRIPT(explain);assert(!modelPicker());
  /* Normal F3 is unused: no duplicate Vraag button or modal; SHIFT still
@@ -516,9 +534,10 @@ static void testAccountModels(void){
  SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==8&&!loadingActive&&choiceCount()==7);
  char id[256];assert(!strcmp(choiceId(2,id),"gpt-6.1-terra"));
  strcpy(publicModel,"gpt-6-astra");strcpy(storedModel,publicModel);
- const int select[]={37,0,37,0,27};SCRIPT(select);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-terra"));
- const int pageForward[]={39,0,37,0,37,0,37,0,37,0,37,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-5.4-mini"));
- const int pageBack[]={28,0,28,0,28,0,28,0,28,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-sol"));
+ chooseTestModel("gpt-6.1-terra");
+ const int ignoredPaging[]={39,0,59,0,47};SCRIPT(ignoredPaging);assert(!modelPicker()&&!strcmp(storedModel,"gpt-6.1-terra"));
+ chooseTestModel("gpt-5.4-mini");
+ chooseTestModel("gpt-6.1-sol");
  /* Information never applies a model or dispatches a paid question. */
  int writes=requestCount[W_APPLY];const int info[]={49,0,47,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
  char details[1024];modelDetails(1,details,sizeof(details));
@@ -545,7 +564,7 @@ static void testAccountModels(void){
  /* No compatible model is a genuine empty view, not the unchecked base list.
   * EXE, F1, Right, Info and page navigation are safe with zero entries. */
  servedModels="gpt-image-1\nwhisper-1\n";SCRIPT(quiet);assert(fetchModels()&&remoteModelCount==2&&choiceCount()==0);
- writes=requestCount[W_APPLY];const int empty[]={31,0,79,0,27,0,49,0,39,0,59,0,47};SCRIPT(empty);assert(!modelPicker()&&requestCount[W_APPLY]==writes&&!strcmp(storedModel,"gpt-6-astra"));
+ writes=requestCount[W_APPLY];const int empty[]={31,0,79,0,27,0,49,0,39,0,59,0,47,0,47};SCRIPT(empty);assert(!modelPicker()&&requestCount[W_APPLY]==writes&&!strcmp(storedModel,"gpt-6-astra"));
  /* A successful account check can return zero accessible maintained models.
   * That stays empty, rather than falling back to unchecked fixed choices. */
  servedModels="";SCRIPT(quiet);assert(fetchModels()&&modelAccountChecked&&!remoteModelCount&&choiceCount()==0);
@@ -641,19 +660,26 @@ static void testV31ModelsAndCancellation(void){
  modelCheckFailed=0;modelAccountChecked=0;modelCancelAt=-1;modelShowAll=0;
  int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],writes=requestCount[W_APPLY];
  assert(modelViewCount()==3&&!strcmp(modelViewId(0),"gpt-6.1-sol")&&!strcmp(modelViewId(1),"gpt-6-luna")&&!strcmp(modelViewId(2),"gpt-6-astra"));
+ /* All21 appear exactly once, split into recommendations and other models. */
+ int seen[MODEL_COUNT]={0};
+ for(int view=0;view<2;view++){modelShowAll=view;for(int i=0;i<modelViewCount();i++){int preset=modelViewPreset(i);assert(preset>=0&&preset<MODEL_COUNT&&!seen[preset]);seen[preset]=1;}}
+ for(int i=0;i<MODEL_COUNT;i++)assert(seen[i]);modelShowAll=0;assert(otherModelCount()==MODEL_COUNT-3);
  /* Opening recommendations never changes an older selected model. */
  strcpy(publicModel,"gpt-4.1-mini");strcpy(storedModel,publicModel);
  const int leave[]={47};SCRIPT(leave);assert(!modelPicker()&&!strcmp(storedModel,"gpt-4.1-mini")&&requestCount[W_APPLY]==writes);
- const int all[]={59,0,47};SCRIPT(all);assert(!modelPicker()&&modelShowAll&&modelViewCount()==MODEL_COUNT);
- const int advise[]={59,0,47};SCRIPT(advise);assert(!modelPicker()&&!modelShowAll&&modelViewCount()==3&&!strcmp(storedModel,"gpt-4.1-mini"));
- /* Info and selection resolve the recommended view, not the full-list index. */
+ /* Open Others, go Left, then Right again: return retains the category row. */
+ const int othersBack[]={37,0,37,0,37,0,27,0,38,0,27,0,27};SCRIPT(othersBack);
+ assert(modelPicker()&&modelShowAll&&modelViewCount()==MODEL_COUNT-3&&!strcmp(storedModel,"gpt-4.1-mini")&&requestCount[W_APPLY]==writes);
+ const int noToggle[]={59,0,47};SCRIPT(noToggle);assert(!modelPicker()&&!modelShowAll);
+ /* Info and selection use the appropriate recommended/other view index. */
  const int info[]={49,0,38,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
- const int chooseLuna[]={37,0,27};SCRIPT(chooseLuna);assert(modelPicker()&&!strcmp(storedModel,"gpt-6-luna"));
+ chooseTestModel("gpt-6-luna");
  if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
  strcpy(remoteModels,"gpt-4.1-mini\n");assert(parseModelList(strlen(remoteModels)));modelShowAll=0;
- SCRIPT(leave);assert(!modelPicker()&&modelShowAll&&modelViewCount()==1&&!strcmp(modelViewId(0),"gpt-4.1-mini"));
+ assert(modelViewCount()==0&&otherModelCount()==1);
+ const int onlyOther[]={31,0,31};SCRIPT(onlyOther);assert(modelPicker()&&modelShowAll&&modelViewCount()==1&&!strcmp(storedModel,"gpt-4.1-mini"));
  strcpy(remoteModels,"gpt-6-luna\ngpt-4.1-mini\n");assert(parseModelList(strlen(remoteModels)));modelShowAll=0;
- assert(modelViewCount()==1&&!strcmp(modelViewId(0),"gpt-6-luna"));
+ assert(modelViewCount()==1&&!strcmp(modelViewId(0),"gpt-6-luna")&&otherModelCount()==1);
  /* Account cancellation waits for worker termination, with no loader or API request. */
  modelAccountChecked=0;modelCancelAt=-1;modelsLoading=1;modelCancelDelay=650;
  int cancels=modelCancelRequests,start=timeTicks;SCRIPT(leave);
@@ -772,6 +798,71 @@ static void testV32EarlyCancellation(void){
  emulateQuestion=0;servedAnswer=0;fakeApiCancelAt=-1;newLocalChat();Serial_ClearRX();
 }
 
+static const char answerStartFixture[]="Eerste zin.\nTweede regel.\nDerde regel.\nVierde regel.\nVijfde regel.\nZesde regel.\nZevende regel.\nAchtste regel.\nNegende regel.\nTiende regel.\nElfde regel.\nTwaalfde regel.\nLaatste zin.";
+static void assertFirstAnswerLineVisible(int visible){
+ assert(chatTimeline.count>0);int latest=chatTimeline.entries[chatTimeline.count-1].turn,found=0;
+ for(int row=0;row<visible;row++){
+  ConversationLine line;if(conversation_line(&chatTimeline,chatScroll+row,&line)&&line.turn==latest&&line.part==3&&line.row==0)found=1;
+ }
+ assert(found&&!chatFocusAnswer&&!chatFollowTail);
+}
+static void testNewAnswerStartsAtBeginning(void){
+ static const int quiet[6000]={0};const int leave[]={47};
+ connected=1;fakeAtomMajor=atomMajor=31;replyDelay=cancelReplyDelay=statusReplyDelay=0;
+ modelStopPending=questionStopPending=0;fakeApiCancelAt=-1;emulateQuestion=1;servedAnswer=answerStartFixture;
+ applyView(view_default());newLocalChat();emulatedStatus=0;strcpy(prompt,"Geef een lange uitleg.");SCRIPT(quiet);ask();
+ assert(chatFocusAnswer&&!unsavedReply&&activeChatSlot>=0&&savedChats[activeChatSlot].turns==1);int slot=activeChatSlot;
+ SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assertFirstAnswerLineVisible(7);
+ ConversationLine first;assert(conversation_line(&chatTimeline,chatScroll,&first)&&first.part==2&&first.turn==0);
+ assert(chatScroll<conversation_tail(&chatTimeline,7));
+ /* Verify the actual first sentence pixels, not just a target scroll number. */
+ const char *sentence="Eerste zin.";
+ for(size_t c=0;c<strlen(sentence);c++)for(int y=0;y<14;y++)for(int x=0;x<8;x++){
+  int ink=font_glyphs[glyphIndex(sentence[c])].rows[y]&(1<<(7-x));
+  assert(framebuffer[(CHAT_TEXT_TOP+14+y)*384+12+(int)c*8+x]==(ink?C_TEXT:C_BG));
+ }
+ int anchor=chatScroll;const int down[]={37,0,47};SCRIPT(down);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==anchor+1&&!chatFocusAnswer);
+ /* Typing a longer draft preserves a manually chosen position. */
+ memset(prompt,'a',90);prompt[90]=0;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==anchor+1);
+ const int up[]={28,0,47};SCRIPT(up);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assertFirstAnswerLineVisible(5);
+ /* A long follow-up question and existing history must focus the new answer. */
+ emulatedStatus=0;SCRIPT(quiet);ask();assert(savedChats[slot].turns==2&&chatFocusAnswer);
+ SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assertFirstAnswerLineVisible(7);
+ assert(conversation_line(&chatTimeline,chatScroll,&first)&&first.part==2&&first.turn==1&&chatScroll<conversation_tail(&chatTimeline,7));
+ /* Short answers remain fully readable even when clamped near the end. */
+ servedAnswer="Kort antwoord.";emulatedStatus=0;strcpy(prompt,"En kort?");SCRIPT(quiet);ask();
+ SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assertFirstAnswerLineVisible(7);
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();
+ /* A newly received answer must also start at its first line if saving fails. */
+ slot=freeSlot(savedChats);assert(slot>=0);
+ for(int bank=0;bank<2;bank++){free(testFiles[slot*2+bank].data);memset(&testFiles[slot*2+bank],0,sizeof(TestFile));}
+ int errorKeys[6000]={0};errorKeys[5999]=47;SCRIPT(errorKeys);failCreate=1;servedAnswer=answerStartFixture;emulatedStatus=0;strcpy(prompt,"Ook leesbaar zonder opslag.");ask();failCreate=0;
+ assert(unsavedReply&&chatFocusAnswer);SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assertFirstAnswerLineVisible(7);
+ anchor=chatScroll;assert(saveReply());SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);assert(chatScroll==anchor&&!chatFocusAnswer);
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();
+ newLocalChat();emulateQuestion=0;servedAnswer=0;fakeApiCancelAt=-1;
+}
+
+static void testAccountResultFeedback(void){
+ connected=1;fakeAtomMajor=atomMajor=31;questionStopPending=modelStopPending=0;fakeApiCancelAt=-1;modelCancelAt=-1;modelsLoading=0;
+ static const int quiet[1000]={0};const int dismiss[]={47};
+ int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],green=accountGreenFrames,red=accountRedFrames;
+ observeAccountResult=1;SCRIPT(quiet);assert(fetchModels()&&accountGreenFrames==green+1&&accountRedFrames==red&&!loadingActive);
+ /* A valid account with no matching models is still a successful check. */
+ const char *saved=servedModels;servedModels="";SCRIPT(quiet);assert(fetchModels()&&modelAccountChecked&&!remoteModelCount&&accountGreenFrames==green+2&&accountRedFrames==red);servedModels=saved;
+ modelServerError=E_AUTH;SCRIPT(dismiss);assert(!fetchModels()&&accountRedFrames==red+1&&accountGreenFrames==green+2);modelServerError=0;
+ /* Deliberately cancelling does not falsely label the account invalid. */
+ modelCancelAt=-1;modelsLoading=1;SCRIPT(dismiss);assert(!fetchModels()&&modelFetchCancelled&&accountRedFrames==red+1&&accountGreenFrames==green+2);
+ observeAccountResult=0;modelCancelAt=-1;modelsLoading=0;releaseModels();
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
+ /* F2 in Chats starts a new conversation; F1 remains guarded by confirmation. */
+ loadLibrary();int slot=freeSlot(savedChats);assert(slot>=0);assert(lib_append(&disk,slot,&savedChats[slot],"Bewaren","Antwoord",&savedChats[slot]));storageClose();
+ activeChatSlot=slot;assert(loadChatPair(slot,0));prompt[0]=0;
+ const int fresh[]={69};SCRIPT(fresh);assert(chatSidebar()==2&&activeChatSlot==-1&&savedChats[slot].used);
+ const int keep[]={37,0,79,0,0,0,69,0,47};SCRIPT(keep);assert(!chatSidebar()&&savedChats[slot].used);
+ assert(lib_delete(&disk,'C',slot));savedChats[slot]=lib_entry(&disk,'C',slot);storageClose();newLocalChat();
+}
+
 static void testSentenceInput(void){
  char input[128];int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
  const int letters[]={77,0,76,0,66,0,79};strcpy(input,"Een zin. ");SCRIPT(letters);
@@ -830,7 +921,7 @@ int main(int argc,char **argv){
  assert(beforeOpen==requestCount[W_ASK]+requestCount[W_CONTEXT]+requestCount[W_INFO]);
  const int questionView[]={78,0,47,0,47};SCRIPT(questionView);readAnswer(0);
  SCRIPT(leave);screenTest();assert(framebuffer[0]==C_MINT&&framebuffer[384*216-1]==C_MINT);
- const int deleteChat[]={37,0,69,0,0,0,79,0,47};SCRIPT(deleteChat);chatSidebar();assert(!savedChats[0].used&&!lib_entry(&disk,'C',0).used);
+ const int deleteChat[]={37,0,79,0,0,0,79,0,47};SCRIPT(deleteChat);chatSidebar();assert(!savedChats[0].used&&!lib_entry(&disk,'C',0).used);
  connected=1;
  /* Scale changes affect only this app, persist, can be cancelled and fail safely. */
  const int tune[]={38,0,37,0,27,0,37,0,27,0,79};SCRIPT(tune);screenSettings();
@@ -847,7 +938,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -895,6 +986,7 @@ int main(int argc,char **argv){
   int historyUp[81];for(int i=0;i<40;i++){historyUp[i*2]=28;historyUp[i*2+1]=0;}historyUp[80]=47;
   SCRIPT(historyUp);readAnswer(0);snprintf(path,sizeof(path),"%s/conversation-up.ppm",argv[2]);dumpFrame(path);
   chatFollowTail=1;strcpy(prompt,"Kun je nog een voorbeeld geven?");chatInputLetters=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/conversation-draft.ppm",argv[2]);dumpFrame(path);
+  activeChatSlot=-1;strcpy(lastQuestion,"Geef een lange uitleg.");strcpy(answer,answerStartFixture);prompt[0]=0;chatFocusAnswer=1;SCRIPT(leave);editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);snprintf(path,sizeof(path),"%s/answer-start.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=-1;strcpy(lastQuestion,"Controleer de rekenstappen");
   strcpy(answer,"23 + 42 ＝ 65\n1 / 3 ≈ 0,333\nx ≠ 3; x ≤ 8; x ≥ 2\nx ≡ y; a ≔ 5");SCRIPT(leave);readAnswer(0);snprintf(path,sizeof(path),"%s/math-answer.ppm",argv[2]);dumpFrame(path);
   activeChatSlot=0;assert(loadChatPair(0,savedChats[0].turns-1));prompt[0]=0;SCRIPT(leave);chatSidebar();snprintf(path,sizeof(path),"%s/sidebar.ppm",argv[2]);dumpFrame(path);
@@ -908,9 +1000,11 @@ int main(int argc,char **argv){
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
   SCRIPT(leave);helpAndDevice();snprintf(path,sizeof(path),"%s/help.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
-  remoteModelCount=0;modelAccountChecked=0;modelShowAll=1;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  remoteModelCount=0;modelAccountChecked=0;modelShowAll=0;paintModels(0);snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
   modelShowAll=0;paintModels(0);snprintf(path,sizeof(path),"%s/models-recommended.ppm",argv[2]);dumpFrame(path);modelShowAll=1;
   paintModelStopping();snprintf(path,sizeof(path),"%s/models-stopping.ppm",argv[2]);dumpFrame(path);
+  paintAccountResult(1);snprintf(path,sizeof(path),"%s/account-success.ppm",argv[2]);dumpFrame(path);
+  paintAccountResult(0);snprintf(path,sizeof(path),"%s/account-failure.ppm",argv[2]);dumpFrame(path);
   modelCheckFailed=1;paintModels(1);snprintf(path,sizeof(path),"%s/models-unchecked.ppm",argv[2]);dumpFrame(path);modelCheckFailed=0;
   strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(1);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
@@ -921,6 +1015,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }
