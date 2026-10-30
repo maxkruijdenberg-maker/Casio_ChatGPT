@@ -1,9 +1,9 @@
-# ChatGPT voor Casio — V30
+# ChatGPT voor Casio — V31
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V30.pdf of docs/Handleiding-V30.html.
+docs/Handleiding-V31.pdf of docs/Handleiding-V31.html.
 
-Werk voor V30 beide onderdelen bij: upload de meegeleverde Atom-firmware V30 en
+Werk voor V31 beide onderdelen bij: upload de meegeleverde Atom-firmware V31 en
 vervang dist/ChatGPT.g3a op de Casio. Laat Erase All Flash / volledig wissen
 uitgeschakeld, laat CGPT3 staan en herstart de Casio. Zo blijven je instellingen
 en chats normaal behouden. De volledige stappen staan in de handleiding.
@@ -30,9 +30,24 @@ De bestaande grens van acht paren per chat blijft behouden.
 Open lijsten met EXE of pijl rechts; links of EXIT gaat terug. De losse F-knoppen
 Open en Terug zijn weg. Hulp staat alleen als keuze in Instellingen.
 
-Modelnamen en Info helpen je kiezen. F2 Account gebruikt met Atom V30 één
-geheugenbegrensde controle. Succes toont Account gecontroleerd; bij fout staat
-er Account niet gecontroleerd en zie je de vaste keuzes. Metadata garandeert
-geen geslaagde chatvraag. Je gebruikt eigen API-toegang en tegoed.
+Model kiezen begint met drie aanbevolen opties. F3 Alles opent alle 21 ondersteunde
+namen; F3 Advies gaat terug naar Aanbevolen en F4 Info geeft uitleg. De aanbevelingen zijn appadvies, geen prijs- of
+prestatiegarantie. Je huidige keuze wordt niet stilzwijgend gewijzigd.
+
+F2 Account gebruikt met Atom V31 één geheugenbegrensde controle. Succes toont
+Account gecontroleerd; een fout toont ongecontroleerde vaste keuzes. EXIT of F1
+vraagt ook de Atom om te stoppen. De afronding kan nog even duren en blijft dan
+zichtbaar. Staat er Stoppen niet bevestigd, dan start de app geen nieuwe vraag
+voordat de Atom weer beschikbaar is. Als je zelf opnieuw probeert, controleert
+de app eerst of de oude taak is afgerond. Een naam in accountmetadata garandeert
+geen werkende chatvraag.
+
+Ook chatverzoeken hebben een totale tijdslimiet en een stopmogelijkheid; de app
+wacht ook daarbij op de bevestiging van de Atom. Er wordt
+geen nieuwe betaalde vraag gestart bij annuleren of een fout. Een al verzonden
+vraag kan nog kosten maken. Je gebruikt eigen API-toegang en tegoed.
 Deel je sleutel niet met een verkoper.
-Fysieke controles: docs/V30-CONTROLE-VOOR-VERKOOP.md.
+V31 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
+Echte apparaten en live betaalde antwoorden zijn hier niet getest.
+Fysieke controles en een proef met een nieuwe gebruiker:
+docs/V31-CONTROLE-VOOR-VERKOOP.md.

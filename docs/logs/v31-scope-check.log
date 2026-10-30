@@ -1,0 +1,6 @@
+PASS: native menu helpers, raw keyboard, UART RPC, wire framing, request ledger, upload/context storage, phone setup, trust roots and 21 model IDs unchanged from v30.0.0.
+Changed paid networking: bounded cancel-aware worker; one POST path, same completion parameters/endpoint, no new retry or auto model fallback.
+Casio V31 build passed; Atom V31 build passed (1127555 bytes flash, 55732 bytes globals).
+18 ASan/UBSan groups passed with detect_leaks=0 (sandbox); this does not include LeakSanitizer.
+Additional review covered MENU/EXIT both wait phases, failed admission ACK, status faults, pending cancellation retries, SDK timeout layers and DNS callback lifetime.
+No attached serial devices or configured live API test key. Physical hardware/model completion tests remain pending in V31-CONTROLE-VOOR-VERKOOP.md.

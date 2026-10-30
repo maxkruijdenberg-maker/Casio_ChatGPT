@@ -37,9 +37,13 @@ static int quitting=0,serialOpen=0,lastKey=0,errors=0,retries=0;
 static unsigned uartOpens=0,uartCloses=0;
 static int rpcDepth=0;
 static int autoConnectTick(void);
+static int ensureModelStopped(void);
+static int ensureQuestionStopped(void);
+static void cancelQuestion(void);
 static void animateLoading(void);
 static void paintLoading(int phase);
 static int loadingActive=0,loadingPhase=0,loadingAt=0;
+static int questionStopPending=0;
 static unsigned char oldSetup=0;
 static int heldTick=0,repeatTick=0;
 static uint8_t seq=0;
@@ -630,6 +634,7 @@ static unsigned settingsEpoch=0;
 static char *remoteModels=0;
 static unsigned short modelOffsets[1024];
 static int remoteModelCount=0,modelAccountChecked=0,modelCheckFailed=0;
+static int modelShowAll=0,modelStopPending=0;
 static void releaseModels(void){if(remoteModels)free(remoteModels);remoteModels=0;remoteModelCount=0;modelAccountChecked=0;modelCheckFailed=0;}
 static int fetchModels(void);
 static int atomMajor=0,atomMinor=0,settingsKnown=0;
@@ -692,6 +697,7 @@ static void screenSettings(void){
 }
 /* Phone setup is opt-in. Status polling never sends a paid request. */
 static void phoneSetup(void){
+ if(!ensureModelStopped()||!ensureQuestionStopped())return;
  WFrame r;uint8_t action=1;int tick,k;char network[32],password[13];
  if(!linkOnline&&!checkedRpc(W_HELLO,0,0,&r))return;
  if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De Atom reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];atomMinor=r.data[2];}
@@ -738,6 +744,22 @@ static int choicePreset(int index){
 static const char *choiceId(int index,char out[256]){
  (void)out;int i=choicePreset(index);return i>=0?modelChoices[i].id:"";
 }
+/* App advice, not a price/performance benchmark. All known choices stay available. */
+static const char *const recommendedModels[]={"gpt-6.1-sol","gpt-6-luna","gpt-6-astra"};
+static int modelViewCount(void){
+ if(modelShowAll)return choiceCount();int count=0;
+ for(int i=0;i<3;i++)count+=accountHasModel(recommendedModels[i]);return count;
+}
+static int modelViewPreset(int index){
+ if(modelShowAll)return choicePreset(index);
+ for(int i=0;i<3;i++)if(accountHasModel(recommendedModels[i])&&index--==0)return modelChoiceIndex(recommendedModels[i]);
+ return -1;
+}
+static const char *modelViewId(int index){int i=modelViewPreset(index);return i>=0?modelChoices[i].id:"";}
+static int modelSelection(const char *id){
+ for(int i=0;i<modelViewCount();i++)if(!strcmp(id,modelViewId(i)))return i;
+ return 0;
+}
 static void modelDetails(int preset,char *out,size_t cap){
  const ModelChoice *m=&modelChoices[preset];
  const char *access=modelAccountChecked?"Dit model staat in je account. Dat garandeert nog geen geslaagde chatvraag.":"Toegang met jouw sleutel is nog niet gecontroleerd.";
@@ -782,6 +804,38 @@ static int fetchModelsWork(void){
  }
  return !quitting&&parseModelList(total);
 }
+/* A stopped spinner is not proof that the background task has stopped. */
+static void paintModelStopping(void){
+ clear("Accountcontrole stoppen");centered(85,"De controle wordt gestopt.",C_TEXT);
+ centered(111,"Je gegevens blijven bewaard.",C_MUTED);show();
+}
+static int readModelStopStatus(void){
+ WFrame r;uint8_t action=0;
+ if(rpc(W_MODELS,&action,1,&r,0)==1&&r.len==5&&r.data[1]!=1&&r.data[1]<=4){modelStopPending=0;return 1;}
+ return 0;
+}
+static int stopModelCheck(void){
+ WFrame r;uint8_t action=3;int start=RTC_GetTicks(),leaving=quitting,modal=closePromptActive;
+ loadingActive=0;modelStopPending=1;
+ paintModelStopping();
+ /* Complete this bounded cleanup even after MENU was confirmed. No nested MENU. */
+ quitting=0;closePromptActive=1;
+ if(rpc(W_MODELS,&action,1,&r,0)==1&&r.len==5){
+  if(r.data[1]!=1&&r.data[1]<=4)modelStopPending=0;
+  while(modelStopPending&&!elapsed(start,8000)){
+   OS_InnerWait_ms(50);if(readModelStopStatus())break;
+  }
+ }
+ closePromptActive=modal;quitting=leaving;
+ return !modelStopPending;
+}
+static int ensureModelStopped(void){
+ if(!modelStopPending)return 1;
+ loadingActive=0;
+ if(readModelStopStatus()||stopModelCheck())return 1;
+ message("Controle wordt gestopt","De Atom heeft het stoppen van de accountcontrole nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er is geen chatvraag verstuurd.");
+ return 0;
+}
 static const char *modelCheckReason(int error){
  switch(error){
  case E_JSON:return atomMajor<22?"De modellenlijst van je account kon niet worden gelezen. Werk ook de Atom bij met de meegeleverde firmware.":"De modellenlijst van je account is onvolledig of heeft een onverwacht formaat. Controleer internet en probeer later opnieuw.";
@@ -793,12 +847,15 @@ static const char *modelCheckReason(int error){
  }
 }
 static int fetchModels(void){
+ if(!ensureModelStopped()||!ensureQuestionStopped())return 0;
  int ok;modelFetchCancelled=modelFetchError=0;remoteModelCount=0;modelAccountChecked=0;modelCheckFailed=0;
  if(!remoteModels){remoteModels=(char*)malloc(REMOTE_MODELS_CAP);if(!remoteModels){modelCheckFailed=1;message("Account niet gecontroleerd","Er is onvoldoende vrij geheugen. Je ziet de vaste modelkeuzes; je huidige model blijft bewaard.");return 0;}}
  loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
  ok=fetchModelsWork();loadingActive=0;
+ if(!ok)stopModelCheck();
  if(!ok){
   remoteModelCount=0;modelAccountChecked=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
+  if(!quitting&&modelFetchCancelled&&modelStopPending)message("Stoppen niet bevestigd","Het stoppen van de accountcontrole is nog niet bevestigd. Controleer de Atom-verbinding. Een nieuwe chatvraag wordt pas verstuurd zodra de Atom weer beschikbaar is.");
   if(!quitting&&!modelFetchCancelled){
    char reason[512];const char *why=modelCheckReason(modelFetchError);
    sprintf(reason,"%s\n\nJe ziet de vaste modelkeuzes, niet je accountlijst. Je huidige model blijft bewaard. F2 Account probeert opnieuw.",why);
@@ -808,39 +865,50 @@ static int fetchModels(void){
  return ok;
 }
 static void paintModels(int selected){
- int i,count=choiceCount(),first=selected-2;char id[256],label[80];if(first>count-5)first=count-5;if(first<0)first=0;clear("Model kiezen");
- if(modelAccountChecked)sprintf(label,"Account gecontroleerd · %d modellen",count);else sprintf(label,"%d chatmodellen · vaste lijst",count);printAt(14,38,label,modelAccountChecked?C_MINT:C_MUTED);
+ int i,count=modelViewCount(),first=selected-2;char label[80];if(first>count-5)first=count-5;if(first<0)first=0;clear("Model kiezen");
+ sprintf(label,"%s · %d modellen",modelShowAll?"Alle modellen":"Aanbevolen",count);printAt(14,38,label,C_MUTED);
  for(i=first;i<count&&i<first+5;i++){
-  int y=61+(i-first)*23;const char *name=choiceId(i,id);
+  int y=61+(i-first)*23;const char *name=modelViewId(i);
   choiceCard(8,y-3,368,21,i==selected,C_BLUE,C_BLUE_SOFT);
   clipped(18,y,modelDisplayName(name),33,i==selected?C_BLUE:C_TEXT);
   if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
  }
  if(!count){printAt(18,70,"Geen passende chatmodellen gevonden.",C_TEXT);printAt(18,96,"Controleer je account en vernieuw.",C_MUTED);}
- printAt(14,177,modelAccountChecked?(count?"Controle gelukt · kies je model":"Controle gelukt · geen passende modellen"):!count?"Je huidige keuze blijft bewaard.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
- scrollbar(378,58,114,first,5,count);footer(count?"Kies":"","Account","",count?"Info":"","","");show();
+ if(!modelShowAll&&publicModel[0]){
+  int shown=0;for(i=0;i<count;i++)if(!strcmp(publicModel,modelViewId(i)))shown=1;
+  if(!shown){printAt(14,145,"Actief:",C_MUTED);clipped(78,145,modelDisplayName(publicModel),36,C_TEXT);}
+ }
+ printAt(14,177,modelStopPending?"Stoppen accountcontrole niet bevestigd":modelAccountChecked?(count?"Account gecontroleerd · kies je model":"Account gecontroleerd · geen keuzes"):!count?"Je huidige keuze blijft bewaard.":modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
+ scrollbar(378,58,114,first,5,count);footer(count?"Kies":"","Account",modelShowAll?"Advies":"Alles",count?"Info":"","","");show();
 }
 static int modelPicker(void){
- int selected=0,k;char id[256],details[1024];
- for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
+ int selected,k;char details[1024];
+ if(!modelViewCount()&&choiceCount())modelShowAll=1;
+ selected=modelSelection(publicModel);
  while(!quitting){
-  int count=choiceCount();if(selected>=count)selected=0;
+  int count=modelViewCount();if(selected>=count)selected=0;
   paintModels(selected);k=waitEditorKey(1);if(quitting)return 0;
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return 0;
   if(k==KEY_PRGM_UP&&selected>0)selected--;
   if(k==KEY_PRGM_DOWN&&selected<count-1)selected++;
+  if(k==KEY_PRGM_F3){
+   const char *highlighted=modelViewId(selected);modelShowAll=!modelShowAll;
+   if(!modelViewCount()&&choiceCount())modelShowAll=1;
+   selected=modelSelection(highlighted);continue;
+  }
   if(k==KEY_PRGM_F2){
    if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];}}
-   if(atomMajor<30)message("Atom bijwerken","Werk ook de Atom bij naar V30 met de meegeleverde firmware. Deze versie controleert je account in één aanvraag zonder de hele lijst te bewaren. Wifi en sleutel blijven bewaard.");
+   if(atomMajor<31)message("Atom bijwerken","Werk ook de Atom bij naar V31 met de meegeleverde firmware. Deze versie kan de accountcontrole echt stoppen. Wifi en sleutel blijven bewaard.");
    else if(!fetchModels()&&modelFetchCancelled)return 0;
-   selected=0;for(int i=0;i<choiceCount();i++)if(!strcmp(publicModel,choiceId(i,id)))selected=i;
-   continue;
+   if(!modelViewCount()&&choiceCount())modelShowAll=1;
+   selected=modelSelection(publicModel);continue;
   }
-  if(k==KEY_PRGM_F4&&count){modelDetails(choicePreset(selected),details,sizeof(details));message("Over dit model",details);}
+  if(k==KEY_PRGM_F4&&count){modelDetails(modelViewPreset(selected),details,sizeof(details));message("Over dit model",details);}
   if(count&&(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)){
-   const char *name=choiceId(selected,id);
+   const char *name=modelViewId(selected);
    if(!setting_valid(4,name,strlen(name)))continue;
    if(!strcmp(publicModel,name))return 1;
+   if(!ensureModelStopped()||!ensureQuestionStopped())continue;
    if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;return 1;}
   }
  }
@@ -856,7 +924,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 30\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 31\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -948,18 +1016,40 @@ static void paintLoading(int phase){
  centered(196,"EXIT of F1: annuleren",C_MINT);show();
 }
 static void animateLoading(void){if(elapsed(loadingAt,120)){loadingAt=RTC_GetTicks();paintLoading(++loadingPhase);}}
-/* Remove the waiting screen before any cancellation handshake can block. */
+/* Hiding the spinner and stopping the worker are separate steps. */
+static int readQuestionStopStatus(void){
+ WFrame r;
+ if(rpc(W_STATUS,0,0,&r,0)==1&&r.len==10&&(r.data[1]==S_IDLE||r.data[1]==S_READY||r.data[1]==S_ERROR||r.data[1]==S_CANCELLED)){
+  questionStopPending=0;return 1;
+ }return 0;
+}
+static int ensureQuestionStopped(void){
+ if(!questionStopPending)return 1;
+ loadingActive=0;if(readQuestionStopStatus())return 1;
+ cancelQuestion();if(!questionStopPending)return 1;
+ message("Vorige vraag wordt gestopt","De Atom heeft het stoppen nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er wordt geen nieuwe vraag verstuurd. Een eerdere API-aanvraag kan nog kosten maken.");return 0;
+}
 static void cancelQuestion(void){
- WFrame ignored;loadingActive=0;
- if(!quitting){
-  int row,col,visible=hasConversation()?conversationRows(prompt):composerRows(prompt);
-  cursorPosition(prompt,strlen(prompt),MESSAGE_COLS,&row,&col);
-  renderEditor(prompt,sizeof(prompt),strlen(prompt),"ChatGPT",0,1,chatInputLetters,0,sentence_capital(prompt,strlen(prompt)),row>=visible?row-visible+1:0);
+ WFrame ignored;int start=RTC_GetTicks(),leaving=quitting,modal=closePromptActive;
+ loadingActive=0;questionStopPending=1;contextDirty=1;
+ {clear("Vraag stoppen");centered(85,"Je vraag wordt gestopt.",C_TEXT);centered(111,"Een eerdere aanvraag kan geld kosten.",C_MUTED);show();}
+ quitting=0;closePromptActive=1;
+ if(rpc(W_CANCEL,0,0,&ignored,0)==1){
+  while(questionStopPending&&!elapsed(start,8000)){
+   if(readQuestionStopStatus())break;OS_InnerWait_ms(50);
+  }
  }
- rpc(W_CANCEL,0,0,&ignored,0);
+ closePromptActive=modal;quitting=leaving;
+}
+static void questionCancelledMessage(void){
+ if(quitting)return;
+ message(questionStopPending?"Stoppen niet bevestigd":"Geannuleerd",questionStopPending?
+  "De Atom heeft het stoppen nog niet bevestigd. Controleer de verbinding. Een eerdere aanvraag kan geld kosten; er wordt geen nieuwe vraag verstuurd.":
+  "De Atom is gestopt met wachten op deze vraag. Een al verstuurde API-aanvraag kan nog kosten maken.");
 }
 static void askWork(void){
  WFrame r;uint8_t id[4];int start=RTC_GetTicks(),ok;uint8_t s,e;unsigned len;
+ if(!ensureModelStopped()||!ensureQuestionStopped())return;
  if(!prompt[0]){message("Geen vraag","Typ eerst een vraag.");return;}
  loadLibrary();
  if(unsavedReply){message("Bewaar het antwoord","Het vorige antwoord is nog niet opgeslagen. Open het gesprek en probeer F3 Bewaar, of verwerp het bewust via Nieuw.");return;}
@@ -968,11 +1058,18 @@ static void askWork(void){
  if(!restoreChat())return;
  if(!uploadText(0,prompt))return;
  if(!checkedRpc(W_ALLOC,0,0,&r)||r.len!=5)return;memcpy(id,r.data+1,4);
- if(!checkedRpc(W_ASK,id,4,&r))return;
+ ok=rpc(W_ASK,id,4,&r,0);
+ if(ok!=1){
+  uint8_t error=ok==0?r.data[0]:0;cancelQuestion();
+  if(!quitting){
+   if(error)message("Vraag niet gestart",error<sizeof(errNames)/sizeof(errNames[0])?errNames[error]:"Onbekende fout");
+   else message("Versturen niet bevestigd","De vraag kan al verstuurd zijn. Er is om stoppen gevraagd en er wordt niet automatisch opnieuw betaald aangevraagd.");
+  }return;
+ }
  while(!quitting){
   ok=rpc(W_STATUS,0,0,&r,1);
-  if(ok==-2){cancelQuestion();if(!quitting)message("Annulering aangevraagd","Een al verstuurde API-aanvraag kan nog kosten maken. De Atom moet de netwerkbewerking eerst afronden.");return;}
-  if(ok!=1||r.len!=10){if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
+  if(ok==-2){cancelQuestion();questionCancelledMessage();return;}
+  if(ok!=1||r.len!=10){cancelQuestion();if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
   if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
   if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){loadingActive=0;strcpy(lastQuestion,prompt);prompt[0]=0;unsavedReply=1;saveReply();chatFollowTail=1;invalidateConversation();(void)dropped;}return;}
@@ -980,8 +1077,9 @@ static void askWork(void){
   if(s==S_CANCELLED){message("Geannuleerd","Er wordt geen antwoord opgehaald.");return;}
   paintLoading(loadingPhase);
   {int wait=RTC_GetTicks();while(!elapsed(wait,250)&&!quitting){
-   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){cancelQuestion();message("Geannuleerd","Een al verstuurde vraag kan nog kosten maken.");return;}OS_InnerWait_ms(10);
+   animateLoading();int k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){cancelQuestion();questionCancelledMessage();return;}OS_InnerWait_ms(10);
   }}
+  if(quitting){cancelQuestion();return;}
   if(elapsed(start,150000)){cancelQuestion();message("Time-out","Geen antwoord binnen 150 seconden. Er wordt geen nieuwe API-aanvraag gestart.");return;}
  }
 }
@@ -997,7 +1095,7 @@ static void beginSession(void){
  quitting=0;closePromptActive=0;lastKey=0;heldTick=repeatTick=0;errors=retries=0;seq=0;
  memset(&parser,0,sizeof(parser));memset(savedChats,0,sizeof(savedChats));
  libraryReady=0;activeChatSlot=-1;contextDirty=1;viewTurn=0;unsavedReply=0;
- linkMisses=0;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomMinor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
+ linkMisses=0;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;modelShowAll=0;loadingActive=0;rpcDepth=0;atomMajor=0;atomMinor=0;atomBootKnown=0;lastAtomBoot=0;settingsEpoch=0;
  prompt[0]=answer[0]=lastQuestion[0]=publicSSID[0]=publicModel[0]=0;chatInputLetters=0;chatFollowTail=1;invalidateConversation();
  erase(field,sizeof(field));Bkey_ClrAllFlags();SetSetupSetting(0x14,0);
  SetQuitHandler(0);waitForKeyRelease();drainNativeKeys();Native_ClearKeyBuffer();
@@ -1014,7 +1112,7 @@ static void runSession(void){
   while(!quitting){
    k=editor(prompt,sizeof(prompt),"ChatGPT",0,1,0,1);
    if(k==KEY_PRGM_F1)ask();
-   else if(k==KEY_PRGM_F2){if(canLeaveReply()&&(!prompt[0]||confirm("De niet-verstuurde vraag wissen en opnieuw beginnen?")))newLocalChat();}
+   else if(k==KEY_PRGM_F2){if((!prompt[0]||confirm("De niet-verstuurde vraag wissen en opnieuw beginnen?"))&&canLeaveReply())newLocalChat();}
    else if(k==UI_CHATS){int changed=chatSidebar();if(changed){chatFollowTail=1;invalidateConversation();}}
    else if(k==KEY_PRGM_F6){epoch=settingsEpoch;settings();if(epoch!=settingsEpoch)contextDirty=1;}
    else if(k==KEY_PRGM_EXIT)chatHome();

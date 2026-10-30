@@ -1,0 +1,1 @@
+PASS network operation guards: actual client read/write/connect/peek overrides, stalled known/unknown bodies, partial data, per-read timeout, 120s total deadline, wraparound, cancellation during native calls, no late resurrection, bounded persistent DNS callback storage and fresh operation recovery.

@@ -29,3 +29,7 @@ build/tests/test_conversation
 # Single-GET catalog parser: fixed memory regardless of full account-list size.
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function tests/test_catalog_stream.cpp -o build/tests/test_catalog_stream
 build/tests/test_catalog_stream
+
+# Shared V31 API/account cancellation and total-deadline transport guards.
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function tests/test_network_operation.cpp -o build/tests/test_network_operation
+build/tests/test_network_operation

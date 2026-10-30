@@ -453,3 +453,22 @@ lege accountdoorsnede, offline EXIT, conceptbehoud en vertraagde annulering.
 Betaalde POST, ledger, UART en native menuhelpers blijven ongewijzigd.
 Fysieke Casio/Atom en live API-account niet in deze omgeving getest. Werk beide
 onderdelen bij en volg docs/V30-CONTROLE-VOOR-VERKOOP.md vóór levering.
+
+
+## V31 — bevestigde annulering en begrensde chatverzoeken
+
+Tijdslimiet: 120 s voor chatvragen en 60 s voor accountcontrole, bewaakt tijdens DNS/connect/header/read/write en
+bij publiceren; een lopende SDK-call kan beperkt uitlopen. Afzonderlijke native
+socket- en Stream-time-outs, begrensde persistente DNS-callbackopslag en sluiten
+van sockets alleen in de eigenaarstaak. Worker blijft bezet tot opruimen klaar is.
+W_MODELS-actie 3 stopt accountcontrole, status 4 bevestigt afronden. Casio wacht
+op terminale status; onbekende/verloren bevestiging blijft zichtbaar en voorkomt
+nieuwe betaalde aanvragen. Expliciet opnieuw proberen herhaalt de stopopdracht.
+MENU tijdens beide wachtfases, ontbrekende W_ASK-bevestiging en statusfout ruimen
+werk op zonder automatisch nieuwe betaalde ID/POST. Lokale context wordt na
+annulering bij de volgende vraag hersteld. Drie aanbevolen keuzes, F3 Alles/Advies;
+alle 21 bestaande IDs blijven bereikbaar en de gekozen instelling blijft intact.
+
+Beide builds en 18 ASan/UBSan-groepen geslaagd; lekcontrole uit in sandbox.
+Geen fysieke apparatuur of live API-sleutel beschikbaar. Gebruik V31 als
+praktijkkandidaat; volg V31-CONTROLE-VOOR-VERKOOP.md voor apparaatvrijgave.

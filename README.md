@@ -1,23 +1,26 @@
-# ChatGPT V30 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V31 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V30-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V30.pdf) · [Offline handleiding](docs/Handleiding-V30.html)
+[Installatiepakket](dist/ChatGPT-V31-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V31.pdf) · [Offline handleiding](docs/Handleiding-V31.html)
 
-- Geen losse OPTN/MENU-hint; invoerstand ín de berichtenbalk vóór het verstuurpijltje.
-- Automatische hoofdletter aan het begin van een zin; geen handmatige hoofdletterlock.
-- EXIT brengt je vanuit een gesprek terug naar het beginscherm; opgeslagen chats blijven bewaard.
-- Tekens bevat veertig basissymbolen zonder alfabet of cijfers; SP betekent spatie.
-- Modelkeuze zonder Vorig/Volgend: de lijst schuift mee met omhoog/omlaag.
-- Afgeronde Jij/ChatGPT-labels met pictogrammen en extra ruimte tussen vraag en antwoord.
-- Eén doorlopend gesprek, directe vervolginvoer en blijvende ALPHA-lock behouden.
+- Netwerkwerk heeft een totale tijdslimiet en controleert annulering tijdens de overdracht.
+- Accountcontrole stoppen vraagt ook de Atom om te stoppen; een nog lopende afronding blijft zichtbaar.
+- Modelkeuze begint met drie aanbevolen keuzes; F3 wisselt naar alle 21 ondersteunde namen.
+- EXIT gaat vanuit een gesprek lokaal naar het beginscherm; opgeslagen chats blijven bewaard.
+- Tekens bevat veertig basissymbolen; SP is spatie en het lage streepje (_) is zichtbaar.
+- Openen en teruggaan met rechts/links of EXE/EXIT; Hulp staat alleen in Instellingen.
+- Doorlopende chat, automatische zinshoofdletters en blijvende ALPHA-lock behouden.
 
-**Voor V30 werk je zowel de Atom als de Casio-app bij.** Upload de meegeleverde
-Atom-firmware V30 zonder volledig wissen en vervang dist/ChatGPT.g3a. Laat CGPT3
+**Voor V31 werk je zowel de Atom als de Casio-app bij.** Upload de meegeleverde
+Atom-firmware V31 zonder volledig wissen en vervang dist/ChatGPT.g3a. Laat CGPT3
 staan en herstart de Casio. Zo blijven wifi, API-sleutel en opgeslagen chats normaal behouden.
-[Bijwerken](UPGRADE-V30.md) · [Schermen](docs/design/V30-actual-screens.png).
+[Bijwerken](UPGRADE-V31.md) · [Schermen](docs/design/V31-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
-Geen live API-account of fysieke Casio in de bouwomgeving getest.
+V31 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
+specifiek gebouwd apparaat klaar is voor verkoop. Er is in deze bouwomgeving geen
+fysieke Casio/Atom of live betaald API-account getest. Zie de
+[praktijk- en overdrachtscontrole](docs/V31-CONTROLE-VOOR-VERKOOP.md).
 
 ## Windows: installeren
 
@@ -116,8 +119,13 @@ om bevestiging; een niet-opgeslagen antwoord geeft een aparte waarschuwing.
 Op het beginscherm blijft EXIT binnen de app en behoudt het je concept.
 EXIT tijdens wachten vraagt annulering aan en haalt de laadplaneet meteen weg,
 voordat de Atom de annulering verwerkt. Een al verstuurde
-API-aanvraag kan nog kosten maken. Een netwerkbewerking kan nog tot zijn
-netwerk-time-out bezig blijven; ondertussen wordt een nieuwe vraag geweigerd.
+API-aanvraag kan nog kosten maken. De Atom beëindigt zijn netwerkwerk bij annulering of de totale tijdslimiet.
+Een lopende netwerkleesactie kan nog enkele seconden nodig hebben om terug te
+keren. De app wacht op de bevestiging dat de Atom klaar is met stoppen.
+Zonder bevestiging verschijnt Stoppen niet bevestigd en blijft een nieuwe vraag
+geblokkeerd. Als je later zelf opnieuw Stuur kiest, controleert de app eerst de
+vorige taak en vraagt zo nodig nogmaals om stoppen; er start pas een nieuwe vraag
+als de Atom weer beschikbaar is.
 Bij onzekere transportuitkomst wordt niet automatisch opnieuw betaald gevraagd.
 
 Instellingen toont vier duidelijke keuzes. Wifi en account opent de telefooninstallatie; Model opent de keuzelijst. Je wifi-wachtwoord en API-sleutel worden niet teruggelezen of getoond.
@@ -134,18 +142,34 @@ installatiepagina. Zie [UPGRADE-V20.1.md](UPGRADE-V20.1.md) voor de stappen.
 
 ## Modellen en accountcontrole
 
-Instellingen → Model biedt herkenbare modelnamen uit de GPT-4-, GPT-5- en GPT-6-families;
-zie docs/V30-MODELLEN.md voor de gecontroleerde selectie en de keuzehulp. F4 Info
-geeft uitleg, F1 Kies of EXE bewaart de keuze en F2 Account controleert je account.
-De vaste lijst opent zonder internetaanvraag en bewijst geen accounttoegang.
+Instellingen → Model opent de aanbevolen keuzes GPT-6.1 Sol, GPT-6 Luna en
+GPT-6 Astra. Dit is appadvies, geen prijs- of prestatiegarantie. Met F3 Alles open je Alle modellen; F3 Advies gaat terug naar Aanbevolen.
+Alle 21 ondersteunde GPT-4/5/6-namen blijven bereikbaar.
+Je huidige model wordt door wisselen van weergave niet gewijzigd. Na accountcontrole
+worden in beide weergaven alleen de passende namen uit jouw account getoond.
+Zijn geen aanbevelingen beschikbaar maar andere ondersteunde namen wel, dan opent
+Alles automatisch.
+Zie docs/V31-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
 
-Voor de vernieuwde accountcontrole is Atom V30 nodig. Die gebruikt één gestreamde,
-geheugenbegrensde GET-aanvraag, in plaats van een afzonderlijke aanvraag per model.
-Bij succes verschijnt Account gecontroleerd. Bij fout verschijnt Account niet
-gecontroleerd en blijft de vaste lijst duidelijk als ongecontroleerd herkenbaar.
-Een metadataresultaat garandeert nog geen geslaagde chatvraag; daarvoor zijn ook
-modelrechten, internet en tegoed nodig. Er wordt geen betaalde chatvraag verstuurd.
-Een oudere Atom kan bestaande chats blijven gebruiken, maar F2 Account vraagt om V30.
+Omhoog/omlaag kiest een regel, F4 Info geeft uitleg en F1 Kies, rechts of EXE
+bewaart de keuze. F2 Account gebruikt één gestreamde GET met begrensd geheugen.
+Bij succes verschijnt Account gecontroleerd; een fout laat herkenbare vaste,
+ongecontroleerde keuzes zien. Accountmetadata bewijst geen werkende chatvraag.
+Modelrechten, dienstcompatibiliteit, internet en tegoed moeten ook kloppen.
+
+Voor accountcontrole en daadwerkelijk stoppen is Atom V31 nodig. EXIT of F1 tijdens
+de controle vraagt de Atom om te stoppen. De laadplaneet verdwijnt en de app laat
+zien wanneer de afronding nog bezig is; die wordt niet verborgen achter een normaal
+klaar-scherm. Zonder bevestiging verschijnt Stoppen niet bevestigd en wordt geen
+nieuwe vraag gestart voordat de Atom weer beschikbaar is. Een expliciete nieuwe
+poging controleert eerst de oude taak. Er wordt niets automatisch betaald herhaald.
+
+Chatverzoeken hebben een netwerkbudget van 120 seconden; accountcontrole heeft
+60 seconden. Een al begonnen SDK-lees- of verbindingsactie kan nog kort doorlopen
+binnen zijn eigen begrensde time-out. Dit is geen belofte dat de dienst altijd
+binnen die tijd antwoord geeft of dat annuleren op een exact aantal milliseconden
+klaar is. Een stop ruimt de oude Atom-context op; bij verdergaan herstelt de app
+de recente context uit de opgeslagen lokale chat.
 
 ## Lokale chatgeschiedenis
 
@@ -236,7 +260,7 @@ de originele SDK 0.6-bibliotheken/linkerscript en mkg3a.
 ## Softwaretests en bekende grenzen
 
 Op Linux met een C-compiler: `sh tools/test.sh`. De tests gebruiken AddressSanitizer
-en UndefinedBehaviorSanitizer. Resultaten staan in `docs/logs/tests.log`.
+en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v31-tests.log`.
 Transport en UTF-8: 19748 asserts; aanvraagregistratie: 10000 cycli met herhaling,
 reset en opslagfalen; editor: ALPHA-lock en eenmalige SHIFT-functies, hoofdletters, exacte sleutelletterkast,
 maskering, cijferstand en UTF-8-bewerking. De editor-test gebruikt expliciete

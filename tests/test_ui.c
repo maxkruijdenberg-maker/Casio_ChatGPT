@@ -59,6 +59,9 @@ static int keyAdvanceMs=0,connectAt=-1;
 static const char *servedAnswer=0;
 static const char *servedModels="gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-5.6-sol\ngpt-5.4-mini\ngpt-image-1\n";
 static int modelsLoading=0,modelRefreshes=0,modelServerError=0,modelReadError=0;
+static int modelCancelRequests=0,modelCancelAt=-1,modelCancelDelay=0,modelCancelFailure=0;
+static int fakeApiCancelAt=-1,fakeApiCancelDelay=0;
+static int statusServerError=0,askResponseLost=0;
 static uint32_t fakeBoot=100;
 static char storedSSID[33]="MijnHotspot",storedModel[256]="gpt-4.1-mini";
 static Upload fakeUpload;
@@ -66,7 +69,7 @@ static const int *keys;static size_t keyCount,keyAt;static int timeTicks;
 void *GetVRAMAddress(void){return deviceFramebuffer;}
 void Bdisp_AllClr_VRAM(void){for(size_t i=0;i<384*216;i++)framebuffer[i]=0xffff;}
 void Bdisp_PutDisp_DD(void){
- lastPaintLoading=loadingActive;
+ lastPaintLoading=loadingActive&&!closePromptActive;
  if(verifyLogoOnly&&loadingActive&&!closePromptActive){
   for(int y=185;y<191;y++)for(int x=0;x<384;x++)assert(deviceFramebuffer[y*384+x]==C_BG);
   logoFrames++;
@@ -149,13 +152,26 @@ int Serial_Write(const unsigned char*p,int n){
  switch(f.type){
  case W_MODELS:
   assert(fakeAtomMajor>=17);
-  if(modelServerError|| (modelReadError&&f.data[0]==2)){r.data[0]=modelServerError?modelServerError:modelReadError;break;}
+  if(f.data[0]==3){
+   assert(fakeAtomMajor>=31);modelCancelRequests++;
+   assert(!loadingActive&&!lastPaintLoading);
+   if(modelCancelFailure){r.data[0]=E_BUSY;break;}
+   modelCancelAt=timeTicks+modelCancelDelay;modelsLoading=0;
+  }
+  if(modelServerError&&f.data[0]!=3){r.data[0]=modelServerError;break;}
+  if(modelReadError&&f.data[0]==2){r.data[0]=modelReadError;break;}
   if(f.data[0]==2){size_t at=w_get16(f.data+1),n=strlen(servedModels)-at;if(n>WIRE_MAX-1)n=WIRE_MAX-1;r.len=n+1;memcpy(r.data+1,servedModels+at,n);}
-  else {if(f.data[0]==1){modelsLoading=2;modelRefreshes++;}r.len=5;r.data[1]=modelsLoading?1:2;if(modelsLoading)modelsLoading--;w_put16(r.data+3,strlen(servedModels));}
+  else {
+   if(f.data[0]==1){modelsLoading=2;modelRefreshes++;modelCancelAt=-1;}
+   r.len=5;r.data[1]=modelCancelAt>=0?(timeTicks<modelCancelAt?1:4):modelsLoading?1:2;
+   if(modelsLoading)modelsLoading--;w_put16(r.data+3,strlen(servedModels));
+  }
   break;
  case W_ALLOC:assert(emulateQuestion);r.len=5;w_put32(r.data+1,1234);break;
- case W_ASK:assert(emulateQuestion&&w_get32(f.data)==1234);break;
+ case W_ASK:assert(emulateQuestion&&w_get32(f.data)==1234);fakeApiCancelAt=-1;if(askResponseLost){busyUntil=timeTicks+800;return 0;}break;
  case W_STATUS:
+  if(fakeApiCancelAt>=0){r.len=10;r.data[1]=timeTicks<fakeApiCancelAt?S_API:S_CANCELLED;w_put32(r.data+6,1234);break;}
+  if(statusServerError){r.data[0]=statusServerError;break;}
   if(!emulateQuestion){r.data[0]=E_REQUEST;break;}
   r.len=10;r.data[1]=emulatedStatus<4?S_WIFI+emulatedStatus++:S_READY;
   w_put16(r.data+3,(uint16_t)strlen(servedAnswer));w_put32(r.data+6,1234);break;
@@ -169,7 +185,8 @@ int Serial_Write(const unsigned char*p,int n){
  case W_SETUP:
   assert(f.len==1);fakePortal=f.data[0]==1?1:f.data[0]==2?0:fakePortal;
   r.len=17;r.data[1]=fakePortal;w_put16(r.data+3,0x1234);if(fakePortal)memcpy(r.data+5,"EXAMPLE23456",12);break;
- case W_CONTEXT:case W_NEW:case W_CANCEL:break;
+ case W_CANCEL:fakeApiCancelAt=timeTicks+fakeApiCancelDelay;break;
+ case W_CONTEXT:case W_NEW:fakeApiCancelAt=-1;break;
  case W_GET_CONFIG:{
   if(f.data[0]!=1&&f.data[0]!=4){privateReads++;r.data[0]=E_REQUEST;break;}
   const char *value=f.data[0]==1?storedSSID:storedModel;size_t at=w_get16(f.data+1),len=strlen(value),amount=len-at;
@@ -346,7 +363,7 @@ static void testMathInput(void){
 
 static void testV14NavigationAndModels(void){
  int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],devices=requestCount[W_DEVICE];
- char text[128]="";connected=1;replyDelay=0;quitting=0;activeChatSlot=-1;unsavedReply=0;
+ char text[128]="";connected=1;replyDelay=0;quitting=0;activeChatSlot=-1;unsavedReply=0;modelShowAll=1;
  /* F3 and the physical SHIFT-dot route both insert a real printable '='. */
  const int equals[]={78,0,61,0,77,0,78,0,61,0,79};SCRIPT(equals);
  assert(editor(text,sizeof(text),"Test",0,1,0,1)==79&&!strcmp(text,"=="));
@@ -467,7 +484,7 @@ static void testV17BuyerInterface(void){
 }
 
 static void testAccountModels(void){
- connected=1;fakeAtomMajor=atomMajor=30;atomMinor=0;modelsLoading=1;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;
+ connected=1;fakeAtomMajor=atomMajor=31;modelShowAll=1;atomMinor=0;modelsLoading=1;remoteModelCount=0;modelAccountChecked=0;loadingActive=0;
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC];
  int quiet[300]={0};
  /* Merely opening the fixed list must not contact the model endpoint. */
@@ -476,7 +493,7 @@ static void testAccountModels(void){
  char id[256];assert(!strcmp(choiceId(2,id),"gpt-6.1-terra"));
  strcpy(publicModel,"gpt-6-astra");strcpy(storedModel,publicModel);
  const int select[]={37,0,37,0,27};SCRIPT(select);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-terra"));
- const int pageForward[]={39,0,59,0,37,0,37,0,37,0,37,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-5.4-mini"));
+ const int pageForward[]={39,0,37,0,37,0,37,0,37,0,37,0,31};SCRIPT(pageForward);assert(modelPicker()&&!strcmp(storedModel,"gpt-5.4-mini"));
  const int pageBack[]={28,0,28,0,28,0,28,0,28,0,31};SCRIPT(pageBack);assert(modelPicker()&&!strcmp(storedModel,"gpt-6.1-sol"));
  /* Information never applies a model or dispatches a paid question. */
  int writes=requestCount[W_APPLY];const int info[]={49,0,47,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
@@ -486,15 +503,15 @@ static void testAccountModels(void){
  int refresh[180]={69};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==1&&!strcmp(storedModel,"gpt-6.1-sol"));
  strcpy(remoteModels,"gpt-good\nbad name\n");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
  strcpy(remoteModels,"gpt-no-final-newline");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
- modelsLoading=1;const int cancel[]={47};SCRIPT(cancel);assert(!fetchModels()&&!loadingActive&&!remoteModelCount);
+ modelsLoading=1;modelCancelAt=-1;const int cancel[]={47};SCRIPT(cancel);assert(!fetchModels()&&!loadingActive&&!remoteModelCount);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
  /* Server error never leaves a partial/cached account list marked available.
   * The fixed choices remain explicit, without changing the model or paying. */
  assert(!strstr(modelCheckReason(E_JSON),"Antwoord")&&strstr(modelCheckReason(E_JSON),"modellenlijst"));
- modelServerError=E_JSON;int failedWrites=requestCount[W_APPLY];const int dismissFailure[]={47};SCRIPT(dismissFailure);
+ modelCancelAt=-1;modelServerError=E_JSON;int failedWrites=requestCount[W_APPLY];const int dismissFailure[]={47};SCRIPT(dismissFailure);
  assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT&&requestCount[W_APPLY]==failedWrites);
- assert(!strcmp(storedModel,"gpt-6.1-sol"));modelServerError=0;SCRIPT(quiet);assert(fetchModels()&&!modelCheckFailed&&remoteModelCount==8);
- int readFailureKeys[200]={0};readFailureKeys[199]=47;modelReadError=E_CONFIG;SCRIPT(readFailureKeys);assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT);modelReadError=0;
+ assert(!strcmp(storedModel,"gpt-6.1-sol"));modelServerError=0;modelCancelAt=-1;SCRIPT(quiet);assert(fetchModels()&&!modelCheckFailed&&remoteModelCount==8);
+ int readFailureKeys[200]={0};readFailureKeys[199]=47;modelReadError=E_CONFIG;SCRIPT(readFailureKeys);assert(!fetchModels()&&modelCheckFailed&&!remoteModelCount&&choiceCount()==MODEL_COUNT);modelReadError=0;modelCancelAt=-1;
  SCRIPT(quiet);assert(fetchModels()&&!modelCheckFailed&&remoteModelCount==8);
  /* Only exact maintained aliases are offered: no media, dated duplicate,
   * unknown, fine-tuned or retired model can leak into the picker. */
@@ -515,7 +532,7 @@ static void testAccountModels(void){
  assert(!memcmp(remoteModels,longList,sizeof(longList)));
  servedModels=previous;SCRIPT(quiet);endSession();assert(!remoteModels&&!remoteModelCount&&serialOpen);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
- fakeAtomMajor=atomMajor=11;modelsLoading=0;
+ fakeAtomMajor=atomMajor=11;modelsLoading=0;modelCancelAt=-1;
  assert(choiceCount()==MODEL_COUNT);modelDetails(1,details,sizeof(details));assert(strstr(details,"nog niet gecontroleerd"));
  assert(modelChoiceIndex("gpt-4.1-nano")==-1&&modelChoiceIndex("gpt-5.3-chat-latest")==-1&&modelChoiceIndex("gpt-5")>=0&&modelChoiceIndex("gpt-4.1")>=0);
 }
@@ -594,6 +611,63 @@ static void testV30NavigationAndSymbols(void){
  verifyCancelClean=0;cancelReplyDelay=0;emulateQuestion=0;servedAnswer=0;Serial_ClearRX();newLocalChat();
 }
 
+static void testV31ModelsAndCancellation(void){
+ connected=1;fakeAtomMajor=atomMajor=31;settingsKnown=1;loadingActive=0;modelStopPending=questionStopPending=0;
+ modelCheckFailed=0;modelAccountChecked=0;modelCancelAt=-1;modelShowAll=0;
+ int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC],writes=requestCount[W_APPLY];
+ assert(modelViewCount()==3&&!strcmp(modelViewId(0),"gpt-6.1-sol")&&!strcmp(modelViewId(1),"gpt-6-luna")&&!strcmp(modelViewId(2),"gpt-6-astra"));
+ /* Opening recommendations never changes an older selected model. */
+ strcpy(publicModel,"gpt-4.1-mini");strcpy(storedModel,publicModel);
+ const int leave[]={47};SCRIPT(leave);assert(!modelPicker()&&!strcmp(storedModel,"gpt-4.1-mini")&&requestCount[W_APPLY]==writes);
+ const int all[]={59,0,47};SCRIPT(all);assert(!modelPicker()&&modelShowAll&&modelViewCount()==MODEL_COUNT);
+ const int advise[]={59,0,47};SCRIPT(advise);assert(!modelPicker()&&!modelShowAll&&modelViewCount()==3&&!strcmp(storedModel,"gpt-4.1-mini"));
+ /* Info and selection resolve the recommended view, not the full-list index. */
+ const int info[]={49,0,38,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
+ const int chooseLuna[]={37,0,27};SCRIPT(chooseLuna);assert(modelPicker()&&!strcmp(storedModel,"gpt-6-luna"));
+ if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
+ strcpy(remoteModels,"gpt-4.1-mini\n");assert(parseModelList(strlen(remoteModels)));modelShowAll=0;
+ SCRIPT(leave);assert(!modelPicker()&&modelShowAll&&modelViewCount()==1&&!strcmp(modelViewId(0),"gpt-4.1-mini"));
+ strcpy(remoteModels,"gpt-6-luna\ngpt-4.1-mini\n");assert(parseModelList(strlen(remoteModels)));modelShowAll=0;
+ assert(modelViewCount()==1&&!strcmp(modelViewId(0),"gpt-6-luna"));
+ /* Account cancellation waits for worker termination, with no loader or API request. */
+ modelAccountChecked=0;modelCancelAt=-1;modelsLoading=1;modelCancelDelay=650;
+ int cancels=modelCancelRequests,start=timeTicks;SCRIPT(leave);
+ assert(!fetchModels()&&modelFetchCancelled&&!modelStopPending&&modelCancelRequests==cancels+1&&timeTicks-start>=650&&!loadingActive);
+ /* A late success cannot undo cancellation or publish a partial list on the Casio. */
+ assert(!modelAccountChecked&&!remoteModelCount);
+ modelCancelDelay=0;modelCancelFailure=1;modelsLoading=1;modelCancelAt=-1;
+ const int cancelFailure[]={47,0,47};SCRIPT(cancelFailure);assert(!fetchModels()&&modelStopPending&&!modelAccountChecked);
+ strcpy(prompt,"Niet dubbel versturen");modelsLoading=100;const int dismiss[]={47};SCRIPT(dismiss);ask();
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated&&modelStopPending);
+ modelsLoading=0;modelCancelFailure=0;modelCancelAt=timeTicks;assert(ensureModelStopped()&&!modelStopPending);
+ /* Pending API cancellation likewise gates the next paid submission. */
+ fakeApiCancelDelay=700;fakeApiCancelAt=-1;int quiet[300]={0};SCRIPT(quiet);start=timeTicks;cancelQuestion();
+ assert(!questionStopPending&&contextDirty&&timeTicks-start>=700&&!loadingActive);
+ fakeApiCancelAt=timeTicks+20000;fakeApiCancelDelay=20000;questionStopPending=1;SCRIPT(dismiss);ask();
+ assert(questionStopPending&&requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==allocated);
+ fakeApiCancelAt=timeTicks;assert(ensureQuestionStopped()&&!questionStopPending);
+ fakeApiCancelAt=-1;fakeApiCancelDelay=0;modelCancelAt=-1;modelsLoading=0;modelShowAll=1;newLocalChat();
+}
+
+static void testV31QuestionCleanupPaths(void){
+ connected=1;fakeAtomMajor=atomMajor=31;newLocalChat();questionStopPending=modelStopPending=0;modelCancelAt=-1;
+ emulateQuestion=verifyCancelClean=1;servedAnswer="Een testantwoord";emulatedStatus=0;
+ int cancels=requestCount[W_CANCEL],allocated=requestCount[W_ALLOC],asks=requestCount[W_ASK];
+ /* MENU confirmed during the interval after a successful status reply. */
+ strcpy(prompt,"Sluiten tijdens wachten");int menu[300]={48,0,0,0,79};SCRIPT(menu);ask();
+ assert(quitting&&!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+1&&requestCount[W_ASK]==asks+1&&requestCount[W_ALLOC]==allocated+1);
+ /* The same MENU during a delayed status RPC takes the other exit path. */
+ newLocalChat();strcpy(prompt,"Sluiten tijdens status");SCRIPT(menu);statusReplyDelay=300;emulatedStatus=0;ask();statusReplyDelay=0;
+ assert(quitting&&!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+2&&requestCount[W_ASK]==asks+2);
+ /* Transport/status failure also asks the existing worker to stop. */
+ const int dismiss[]={47};SCRIPT(dismiss);newLocalChat();strcpy(prompt,"Een statusfout");statusServerError=E_INTERNET;emulatedStatus=0;ask();statusServerError=0;
+ assert(!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+3&&requestCount[W_ASK]==asks+3);
+ /* Lost W_ASK ACKs replay the same request ID; cancellation never allocates a retry. */
+ SCRIPT(dismiss);newLocalChat();strcpy(prompt,"Bevestiging ontbreekt");askResponseLost=1;emulatedStatus=0;ask();askResponseLost=0;
+ assert(!questionStopPending&&!loadingActive&&requestCount[W_CANCEL]==cancels+4&&requestCount[W_ALLOC]==allocated+4&&requestCount[W_ASK]==asks+7);
+ verifyCancelClean=emulateQuestion=0;servedAnswer=0;fakeApiCancelAt=-1;newLocalChat();quitting=0;
+}
+
 static void testSentenceInput(void){
  char input[128];int paid=requestCount[W_ASK],allocated=requestCount[W_ALLOC];
  const int letters[]={77,0,76,0,66,0,79};strcpy(input,"Een zin. ");SCRIPT(letters);
@@ -669,7 +743,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();
+ testMenuFailures();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -730,7 +804,9 @@ int main(int argc,char **argv){
   strcpy(remoteModels,"gpt-4.1\ngpt-4.1-mini\ngpt-4.1-nano\ngpt-5\ngpt-5-mini\ngpt-5-nano\no3\no4-mini\n");assert(parseModelList(strlen(remoteModels)));
   SCRIPT(leave);helpAndDevice();snprintf(path,sizeof(path),"%s/help.ppm",argv[2]);dumpFrame(path);
   SCRIPT(leave);deviceSettings();snprintf(path,sizeof(path),"%s/more.ppm",argv[2]);dumpFrame(path);
-  remoteModelCount=0;modelAccountChecked=0;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  remoteModelCount=0;modelAccountChecked=0;modelShowAll=1;paintModels(modelChoiceIndex("gpt-6-astra"));snprintf(path,sizeof(path),"%s/models.ppm",argv[2]);dumpFrame(path);
+  modelShowAll=0;paintModels(0);snprintf(path,sizeof(path),"%s/models-recommended.ppm",argv[2]);dumpFrame(path);modelShowAll=1;
+  paintModelStopping();snprintf(path,sizeof(path),"%s/models-stopping.ppm",argv[2]);dumpFrame(path);
   modelCheckFailed=1;paintModels(1);snprintf(path,sizeof(path),"%s/models-unchecked.ppm",argv[2]);dumpFrame(path);modelCheckFailed=0;
   strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(1);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
   linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
@@ -741,6 +817,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }
