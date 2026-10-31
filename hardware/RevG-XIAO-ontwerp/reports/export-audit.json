@@ -1,0 +1,13 @@
+{
+  "errors": [],
+  "gerber_top_copper_pad_and_via_centers_matched": 174,
+  "plated_via_drills": 53,
+  "plated_xiao_drills": 14,
+  "profile_edges_matched": 6,
+  "bottom_solder_mask_hole_openings": 14,
+  "manual_xiao_in_bom_or_cpl": false,
+  "manual_xiao_paste": false,
+  "cpl_bom_factory_refs_match": true,
+  "common_origin": "X=0,Y=0 at board lower-left; X right, Y up",
+  "not_a_full_gerber_polygon_or_manufacturing_simulation": true
+}

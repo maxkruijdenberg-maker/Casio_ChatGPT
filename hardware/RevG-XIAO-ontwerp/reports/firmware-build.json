@@ -1,0 +1,16 @@
+{
+  "fqbn": "esp32:esp32:XIAO_ESP32C6:PartitionScheme=huge_app",
+  "core": "3.3.0",
+  "ArduinoJson": "7.4.2",
+  "compile_exit_code": 0,
+  "program_bytes": 1183883,
+  "static_ram_bytes": 52084,
+  "RX_gpio": 17,
+  "TX_gpio": 16,
+  "TX_inverted": false,
+  "heartbeat_gpio": 1,
+  "arm_gpio": 2,
+  "first_arm_idle_high_us": 200,
+  "low_line_guard_ms": 100,
+  "physical_Casio_power_state_measured": false
+}

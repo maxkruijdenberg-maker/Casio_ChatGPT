@@ -51,3 +51,9 @@ build/tests/test_idle_power
 # Rev F actual GPIO hooks; host stub follows Arduino 3.3.0 GPIO ownership.
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-unused-function -Itests/xiao_stubs tests/test_xiao_hardware.cpp -o build/tests/test_xiao_hardware
 build/tests/test_xiao_hardware
+
+# Three-wire Rev G GPIO and line-loss guards.
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-unused-function -Itests/xiao_stubs tests/test_xiao_revg_hardware.cpp -o build/tests/test_xiao_revg_hardware
+build/tests/test_xiao_revg_hardware
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_rx_idle_guard.cpp -o build/tests/test_rx_idle_guard
+build/tests/test_rx_idle_guard

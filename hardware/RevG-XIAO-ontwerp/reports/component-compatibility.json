@@ -1,0 +1,48 @@
+{
+  "errors": [],
+  "casio_wires": 3,
+  "external_VIO_required": false,
+  "factory_components": 38,
+  "bom_codes": 20,
+  "catalogue_MPN_and_manufacturer_J4": "JST SM03B-GHS-TB(LF)(SN) C514175",
+  "output_nominal_V": 4.9775456919060055,
+  "input_effective_capacitance_uF_assuming_80_percent_total_loss": 6.0,
+  "output_effective_capacitance_uF_assuming_80_percent_total_loss": 28.400000000000002,
+  "output_C_over_L_uF_per_uH": 14.564102564102566,
+  "TI_adjustable_minimum_ratio": 10,
+  "inductor_calculated_peak_A_at_0_5A_output": 0.9953338458906209,
+  "inductor_catalogue_Isat_A": 4.45,
+  "inductor_catalogue_rated_A": 1.98,
+  "TI_RNM0015A_copper_mask_stencil_checks": "pass; paired lands preserve all 15 logical pin numbers",
+  "uart_normal_push_pull_matches_working_Atom_signal_type": true,
+  "power_tracks": {
+    "/BAT+": {
+      "min_width_mm": 0.4,
+      "total_branch_length_mm": 6.190191193458119,
+      "upper_bound_all_tracks_series_ohms_at_35um_20C": 0.007622778298229853
+    },
+    "/VIN": {
+      "min_width_mm": 0.4,
+      "total_branch_length_mm": 47.3258014581341,
+      "upper_bound_all_tracks_series_ohms_at_35um_20C": 0.05774259165171454
+    },
+    "/REG5V": {
+      "min_width_mm": 0.4,
+      "total_branch_length_mm": 80.85687666763162,
+      "upper_bound_all_tracks_series_ohms_at_35um_20C": 0.09893154918897794
+    },
+    "/3V3": {
+      "min_width_mm": 0.4,
+      "total_branch_length_mm": 99.26352721806519,
+      "upper_bound_all_tracks_series_ohms_at_35um_20C": 0.1222359435171031
+    }
+  },
+  "sources": [
+    "TI SLVSC58B rev B, pin table p3; selection p16-19; RNM0015A 4222000/B p40-41",
+    "https://raw.githubusercontent.com/C7H10N2/TPS63070-Converter/739374ab235b3f08ab6fa69a90cf4c2b3f508a58/Doc/Datasheet/TPS63070RNMR_en.pdf",
+    "https://raw.githubusercontent.com/Seeed-Studio/wiki-documents/98874b6/sites/en/docs/Sensor/SeeedStudio_XIAO/SeeedStudio_XIAO_ESP32C6/XIAO_ESP32C6_Getting_Started.md"
+  ],
+  "physical_measurements_performed": false,
+  "manufacturer_SPICE_model_used": false,
+  "unmeasured_Casio_input_load_still_requires_hardware_confirmation": true
+}

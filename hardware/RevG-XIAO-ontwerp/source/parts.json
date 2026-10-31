@@ -1,0 +1,1027 @@
+[
+  {
+    "ref": "U5",
+    "value": "XIAO ESP32-C6 / HAND SOLDER, NO HEADERS",
+    "fp": "CG50:XIAO-C6-THT-14-Customer",
+    "nets": {
+      "1": "RX_WAKE",
+      "2": "HEARTBEAT",
+      "3": "TX_ARM",
+      "4": null,
+      "5": null,
+      "6": null,
+      "7": "TX_GPIO",
+      "8": "RX_WAKE",
+      "9": null,
+      "10": null,
+      "11": null,
+      "12": "3V3",
+      "13": "GND",
+      "14": "REG5V"
+    },
+    "xy": [
+      17,
+      20
+    ],
+    "rot": 270,
+    "mpn": "Seeed XIAO ESP32-C6 without headers",
+    "lcsc": "",
+    "maker": "Seeed Studio",
+    "pins": {
+      "1": [
+        "D0_GPIO0",
+        "input"
+      ],
+      "2": [
+        "D1_GPIO1",
+        "output"
+      ],
+      "3": [
+        "D2_GPIO2",
+        "output"
+      ],
+      "4": [
+        "D3_GPIO21",
+        "bidirectional"
+      ],
+      "5": [
+        "D4_GPIO22",
+        "bidirectional"
+      ],
+      "6": [
+        "D5_GPIO23",
+        "bidirectional"
+      ],
+      "7": [
+        "D6_GPIO16_TX",
+        "output"
+      ],
+      "8": [
+        "D7_GPIO17_RX",
+        "input"
+      ],
+      "9": [
+        "D8_GPIO19",
+        "bidirectional"
+      ],
+      "10": [
+        "D9_GPIO20",
+        "bidirectional"
+      ],
+      "11": [
+        "D10_GPIO18",
+        "bidirectional"
+      ],
+      "12": [
+        "3V3_OUT",
+        "power_out"
+      ],
+      "13": [
+        "GND",
+        "power_in"
+      ],
+      "14": [
+        "VBUS_5V",
+        "power_in"
+      ]
+    },
+    "manual": true,
+    "uuid": "655773b6-289b-5492-9ba7-7184a50f09dc"
+  },
+  {
+    "ref": "J3",
+    "value": "BAT JST SH 2P",
+    "fp": "Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal",
+    "nets": {
+      "1": "BAT+",
+      "2": "GND"
+    },
+    "xy": [
+      85.8,
+      4.8
+    ],
+    "rot": 90,
+    "mpn": "SM02B-SRSS-TB(LF)(SN)",
+    "lcsc": "C160402",
+    "maker": "JST",
+    "pins": {},
+    "manual": false,
+    "uuid": "067e12e1-b1dc-566d-b3e4-71334a86adf3"
+  },
+  {
+    "ref": "J4",
+    "value": "CASIO TX RX GND / JST GH 3P",
+    "fp": "Connector_JST:JST_GH_SM03B-GHS-TB_1x03-1MP_P1.25mm_Horizontal",
+    "nets": {
+      "1": "CASIO_TX",
+      "2": "CASIO_RX",
+      "3": "GND"
+    },
+    "xy": [
+      85.8,
+      13
+    ],
+    "rot": 90,
+    "mpn": "SM03B-GHS-TB(LF)(SN)",
+    "lcsc": "C514175",
+    "maker": "JST",
+    "pins": {},
+    "manual": false,
+    "uuid": "0613181c-e46a-5b36-951a-ac35e7bc4291"
+  },
+  {
+    "ref": "Q1",
+    "value": "AO3401A",
+    "fp": "Package_TO_SOT_SMD:SOT-23",
+    "nets": {
+      "1": "GND",
+      "2": "VIN",
+      "3": "BAT+"
+    },
+    "xy": [
+      79.5,
+      3
+    ],
+    "rot": 180,
+    "mpn": "AO3401A",
+    "lcsc": "C15127",
+    "maker": "Alpha Omega Semicon",
+    "pins": {
+      "1": [
+        "G",
+        "input"
+      ],
+      "2": [
+        "S",
+        "passive"
+      ],
+      "3": [
+        "D",
+        "passive"
+      ]
+    },
+    "manual": false,
+    "uuid": "89bccb7c-be1e-51f0-a1e3-b5e1d61c6858"
+  },
+  {
+    "ref": "U1",
+    "value": "TPS63070RNMR / 4.978V",
+    "fp": "CG50:RNM0015A",
+    "nets": {
+      "1": "PS",
+      "2": null,
+      "3": "VAUX",
+      "4": "GND",
+      "5": "FB",
+      "6": null,
+      "7": "REG5V",
+      "8": "REG5V",
+      "9": "SW2",
+      "10": "GND",
+      "11": "SW1",
+      "12": "VIN",
+      "13": "VIN",
+      "14": "EN",
+      "15": "GND"
+    },
+    "xy": [
+      48,
+      10
+    ],
+    "rot": 0,
+    "mpn": "TPS63070RNMR",
+    "lcsc": "C109322",
+    "maker": "Texas Instruments",
+    "pins": {
+      "1": [
+        "PS/SYNC",
+        "input"
+      ],
+      "2": [
+        "PG",
+        "open_collector"
+      ],
+      "3": [
+        "VAUX",
+        "power_out"
+      ],
+      "4": [
+        "GND",
+        "power_in"
+      ],
+      "5": [
+        "FB",
+        "input"
+      ],
+      "6": [
+        "FB2",
+        "passive"
+      ],
+      "7": [
+        "VOUT",
+        "power_out"
+      ],
+      "8": [
+        "VOUT",
+        "power_out"
+      ],
+      "9": [
+        "L2",
+        "passive"
+      ],
+      "10": [
+        "PGND",
+        "power_in"
+      ],
+      "11": [
+        "L1",
+        "passive"
+      ],
+      "12": [
+        "VIN",
+        "power_in"
+      ],
+      "13": [
+        "VIN",
+        "power_in"
+      ],
+      "14": [
+        "EN",
+        "input"
+      ],
+      "15": [
+        "VSEL",
+        "input"
+      ]
+    },
+    "manual": false,
+    "uuid": "f17e499c-351d-5369-b52d-56cfcc744ed5"
+  },
+  {
+    "ref": "L1",
+    "value": "1.5uH",
+    "fp": "Inductor_SMD:L_Sunlord_SWPA4020S",
+    "nets": {
+      "1": "SW1",
+      "2": "SW2"
+    },
+    "xy": [
+      52.5,
+      10
+    ],
+    "rot": 270,
+    "mpn": "SWPA4020S1R5NT",
+    "lcsc": "C42099",
+    "maker": "Sunlord",
+    "pins": {},
+    "manual": false,
+    "uuid": "fb28971d-afb7-56f4-8ed1-b6f6a01500bd"
+  },
+  {
+    "ref": "C1",
+    "value": "10uF 25V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "VIN",
+      "2": "GND"
+    },
+    "xy": [
+      48.3,
+      6.6
+    ],
+    "rot": 180,
+    "mpn": "TMK107BBJ106MA-T",
+    "lcsc": "C386081",
+    "maker": "Taiyo Yuden",
+    "pins": {},
+    "manual": false,
+    "uuid": "74cea0c9-a26b-5d56-93b9-3367fddb6bbe"
+  },
+  {
+    "ref": "C2",
+    "value": "10uF 25V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "VIN",
+      "2": "GND"
+    },
+    "xy": [
+      44.5,
+      4
+    ],
+    "rot": 90,
+    "mpn": "CL21A106KAYNNNE",
+    "lcsc": "C15850",
+    "maker": "Samsung Electro Mechanics",
+    "pins": {},
+    "manual": false,
+    "uuid": "a55ae02f-449e-5683-b9dd-364c5a9bb427"
+  },
+  {
+    "ref": "C3",
+    "value": "10uF 25V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "VIN",
+      "2": "GND"
+    },
+    "xy": [
+      47.5,
+      3
+    ],
+    "rot": 90,
+    "mpn": "CL21A106KAYNNNE",
+    "lcsc": "C15850",
+    "maker": "Samsung Electro Mechanics",
+    "pins": {},
+    "manual": false,
+    "uuid": "8ae3ee6a-ec9a-52c2-9141-2a3ec1b9d4f7"
+  },
+  {
+    "ref": "C4",
+    "value": "10uF 25V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      48.3,
+      13.5
+    ],
+    "rot": 0,
+    "mpn": "TMK107BBJ106MA-T",
+    "lcsc": "C386081",
+    "maker": "Taiyo Yuden",
+    "pins": {},
+    "manual": false,
+    "uuid": "c1d8eeed-27ba-5ccb-bf52-dcbc1d9afce4"
+  },
+  {
+    "ref": "C5",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      46,
+      16.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "1ac15309-bf92-5264-9f47-03730d89fbc5"
+  },
+  {
+    "ref": "C6",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      49,
+      16.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "33328b3c-0355-56e9-a8f4-6ec9108dbc44"
+  },
+  {
+    "ref": "C7",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      52,
+      16.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "1f747f89-e8ac-596a-94ad-55e9777f3bc1"
+  },
+  {
+    "ref": "C8",
+    "value": "100nF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "VAUX",
+      "2": "GND"
+    },
+    "xy": [
+      44.5,
+      10.5
+    ],
+    "rot": 270,
+    "mpn": "CC0603KRX7R9BB104",
+    "lcsc": "C14663",
+    "maker": "YAGEO",
+    "pins": {},
+    "manual": false,
+    "uuid": "30beaa3e-18d1-56f5-a917-d29c3f13ea3c"
+  },
+  {
+    "ref": "R1",
+    "value": "422k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "VIN",
+      "2": "EN"
+    },
+    "xy": [
+      42,
+      7
+    ],
+    "rot": 90,
+    "mpn": "0603WAF4223T5E",
+    "lcsc": "C23169",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "e24b4a65-c114-54cd-8ebc-c22835c4a924"
+  },
+  {
+    "ref": "R2",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "EN",
+      "2": "GND"
+    },
+    "xy": [
+      42,
+      10.5
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "8ad9211d-0c0a-530f-aae4-ac5fc142f64c"
+  },
+  {
+    "ref": "R3",
+    "value": "10k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "VIN",
+      "2": "PS"
+    },
+    "xy": [
+      45,
+      7
+    ],
+    "rot": 0,
+    "mpn": "0603WAF1002T5E",
+    "lcsc": "C25804",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "fb3f6fea-53fa-58da-809a-91deebaaf28a"
+  },
+  {
+    "ref": "C9",
+    "value": "1uF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      29,
+      24
+    ],
+    "rot": 90,
+    "mpn": "CL10A105KB8NNNC",
+    "lcsc": "C15849",
+    "maker": "Samsung Electro Mechanics",
+    "pins": {},
+    "manual": false,
+    "uuid": "800892d2-90e0-5a2e-8316-51f6eec18a0a"
+  },
+  {
+    "ref": "U3",
+    "value": "SN74LVC1G17DBVR",
+    "fp": "Package_TO_SOT_SMD:SOT-23-5",
+    "nets": {
+      "1": null,
+      "2": "RX_IN",
+      "3": "GND",
+      "4": "RX_WAKE",
+      "5": "3V3"
+    },
+    "xy": [
+      72,
+      10
+    ],
+    "rot": 0,
+    "mpn": "SN74LVC1G17DBVR",
+    "lcsc": "C7836",
+    "maker": "Texas Instruments",
+    "pins": {
+      "1": [
+        "NC",
+        "no_connect"
+      ],
+      "2": [
+        "A",
+        "input"
+      ],
+      "3": [
+        "GND",
+        "power_in"
+      ],
+      "4": [
+        "Y",
+        "output"
+      ],
+      "5": [
+        "VCC",
+        "power_in"
+      ]
+    },
+    "manual": false,
+    "uuid": "346f30b7-ecc1-5a42-bb55-53881565258f"
+  },
+  {
+    "ref": "C10",
+    "value": "100nF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "3V3",
+      "2": "GND"
+    },
+    "xy": [
+      68,
+      10.5
+    ],
+    "rot": 90,
+    "mpn": "CC0603KRX7R9BB104",
+    "lcsc": "C14663",
+    "maker": "YAGEO",
+    "pins": {},
+    "manual": false,
+    "uuid": "a201e56f-51e6-5b6a-b735-4cde34599924"
+  },
+  {
+    "ref": "R4",
+    "value": "1k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "CASIO_TX",
+      "2": "RX_IN"
+    },
+    "xy": [
+      74,
+      6.5
+    ],
+    "rot": 0,
+    "mpn": "0603WAF1001T5E",
+    "lcsc": "C21190",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "1a3c8afc-45b3-51b6-8524-50bf5357173c"
+  },
+  {
+    "ref": "R5",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "RX_IN",
+      "2": "GND"
+    },
+    "xy": [
+      69,
+      7
+    ],
+    "rot": 0,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "34e3c6be-086c-58c2-b0e3-21dca2412b3e"
+  },
+  {
+    "ref": "R6",
+    "value": "1k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "TX_OUT",
+      "2": "CASIO_RX"
+    },
+    "xy": [
+      79,
+      10
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1001T5E",
+    "lcsc": "C21190",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "24160133-34ef-5e4b-9ea8-b4203b27a238"
+  },
+  {
+    "ref": "R7",
+    "value": "100R",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "TX_GPIO",
+      "2": "TX_DATA"
+    },
+    "xy": [
+      64,
+      3
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1000T5E",
+    "lcsc": "C22775",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "015d1152-69c7-5d78-8451-87e7a0e47772"
+  },
+  {
+    "ref": "R8",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "TX_DATA",
+      "2": "3V3"
+    },
+    "xy": [
+      77,
+      16
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "3a539ce0-9975-5a2f-87e3-e9f1a9378fbe"
+  },
+  {
+    "ref": "R10",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "TX_ENABLE",
+      "2": "GND"
+    },
+    "xy": [
+      62.5,
+      15.5
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "66225aef-2b9f-5010-b488-04cd77d04b2f"
+  },
+  {
+    "ref": "C11",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      54,
+      5.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "1800ada9-f3c6-5b95-a0db-642fbee579d6"
+  },
+  {
+    "ref": "C12",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      57,
+      5.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "932b4cf2-79af-580f-9053-89162943ef7d"
+  },
+  {
+    "ref": "C13",
+    "value": "22uF 16V",
+    "fp": "Capacitor_SMD:C_0805_2012Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "GND"
+    },
+    "xy": [
+      60,
+      5.5
+    ],
+    "rot": 90,
+    "mpn": "GRM21BC81C226ME44L",
+    "lcsc": "C258782",
+    "maker": "Murata Electronics",
+    "pins": {},
+    "manual": false,
+    "uuid": "19195167-02ea-53e3-aba9-8911063afe99"
+  },
+  {
+    "ref": "U4",
+    "value": "SN74LVC1G123DCTR",
+    "fp": "Package_SO:SSOP-8_2.95x2.8mm_P0.65mm",
+    "nets": {
+      "1": "GND",
+      "2": "HEARTBEAT",
+      "3": "TX_ARM",
+      "4": "GND",
+      "5": "TX_ENABLE",
+      "6": "MONO_C",
+      "7": "MONO_RC",
+      "8": "3V3"
+    },
+    "xy": [
+      29,
+      5.0
+    ],
+    "rot": 0,
+    "mpn": "SN74LVC1G123DCTR",
+    "lcsc": "C123302",
+    "maker": "Texas Instruments",
+    "pins": {
+      "1": [
+        "A",
+        "input"
+      ],
+      "2": [
+        "B",
+        "input"
+      ],
+      "3": [
+        "CLR_N",
+        "input"
+      ],
+      "4": [
+        "GND",
+        "power_in"
+      ],
+      "5": [
+        "Q",
+        "output"
+      ],
+      "6": [
+        "CEXT",
+        "passive"
+      ],
+      "7": [
+        "REXT_CEXT",
+        "passive"
+      ],
+      "8": [
+        "VCC",
+        "power_in"
+      ]
+    },
+    "manual": false,
+    "uuid": "fdeab8a8-fae9-53ac-b7d3-0c8bc483e03b"
+  },
+  {
+    "ref": "R12",
+    "value": "200k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "3V3",
+      "2": "MONO_RC"
+    },
+    "xy": [
+      30,
+      1.0
+    ],
+    "rot": 0,
+    "mpn": "0603WAF2003T5E",
+    "lcsc": "C25811",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "11e6ff55-1ca9-5e68-ae92-9153a201cf33"
+  },
+  {
+    "ref": "R13",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "TX_ARM",
+      "2": "GND"
+    },
+    "xy": [
+      26,
+      1.7
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "d0bc4db8-b49f-5736-8aa9-b7cc4bc3f8a3"
+  },
+  {
+    "ref": "R14",
+    "value": "100k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "HEARTBEAT",
+      "2": "GND"
+    },
+    "xy": [
+      57.5,
+      2
+    ],
+    "rot": 90,
+    "mpn": "0603WAF1003T5E",
+    "lcsc": "C25803",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "bfaabcc2-49f7-5456-a888-729b4c564c89"
+  },
+  {
+    "ref": "C14",
+    "value": "1uF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "MONO_RC",
+      "2": "MONO_C"
+    },
+    "xy": [
+      32.5,
+      2.0
+    ],
+    "rot": 90,
+    "mpn": "CL10A105KB8NNNC",
+    "lcsc": "C15849",
+    "maker": "Samsung Electro Mechanics",
+    "pins": {},
+    "manual": false,
+    "uuid": "b7b51499-f243-596d-bbd0-314a7d9d1081"
+  },
+  {
+    "ref": "C15",
+    "value": "100nF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "3V3",
+      "2": "GND"
+    },
+    "xy": [
+      32.5,
+      8.0
+    ],
+    "rot": 90,
+    "mpn": "CC0603KRX7R9BB104",
+    "lcsc": "C14663",
+    "maker": "YAGEO",
+    "pins": {},
+    "manual": false,
+    "uuid": "f588a649-4e44-59a1-bf42-fd2a1d9b9c80"
+  },
+  {
+    "ref": "R15",
+    "value": "200k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "REG5V",
+      "2": "FB"
+    },
+    "xy": [
+      42,
+      13.2
+    ],
+    "rot": 0,
+    "lcsc": "C25811",
+    "mpn": "0603WAF2003T5E",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "a2251668-3f41-54e0-822b-c3dcb50e41ea"
+  },
+  {
+    "ref": "R16",
+    "value": "38.3k",
+    "fp": "Resistor_SMD:R_0603_1608Metric",
+    "nets": {
+      "1": "FB",
+      "2": "GND"
+    },
+    "xy": [
+      38.5,
+      12.5
+    ],
+    "rot": 0,
+    "lcsc": "C23034",
+    "mpn": "0603WAF3832T5E",
+    "maker": "UNI ROYAL Uniroyal Elec",
+    "pins": {},
+    "manual": false,
+    "uuid": "8d32f151-1c77-5161-8f08-0f0506e9f808"
+  },
+  {
+    "ref": "U6",
+    "value": "SN74LVC1G126DBVR",
+    "fp": "Package_TO_SOT_SMD:SOT-23-5",
+    "nets": {
+      "1": "TX_ENABLE",
+      "2": "TX_DATA",
+      "3": "GND",
+      "4": "TX_OUT",
+      "5": "3V3"
+    },
+    "xy": [
+      73,
+      15.5
+    ],
+    "rot": 0,
+    "mpn": "SN74LVC1G126DBVR",
+    "lcsc": "C7834",
+    "maker": "Texas Instruments",
+    "pins": {
+      "1": [
+        "OE",
+        "input"
+      ],
+      "2": [
+        "A",
+        "input"
+      ],
+      "3": [
+        "GND",
+        "power_in"
+      ],
+      "4": [
+        "Y",
+        "tri_state"
+      ],
+      "5": [
+        "VCC",
+        "power_in"
+      ]
+    },
+    "manual": false,
+    "uuid": "66aee5c4-3074-52c0-bc57-e4bd352047b3"
+  },
+  {
+    "ref": "C17",
+    "value": "100nF 50V",
+    "fp": "Capacitor_SMD:C_0603_1608Metric",
+    "nets": {
+      "1": "3V3",
+      "2": "GND"
+    },
+    "xy": [
+      69,
+      15.5
+    ],
+    "rot": 90,
+    "mpn": "CC0603KRX7R9BB104",
+    "lcsc": "C14663",
+    "maker": "YAGEO",
+    "pins": {},
+    "manual": false,
+    "uuid": "7b02bfde-bbf2-5609-a394-3ea041786fed"
+  }
+]

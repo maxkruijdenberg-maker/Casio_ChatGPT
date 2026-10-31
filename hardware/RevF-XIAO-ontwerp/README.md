@@ -1,3 +1,5 @@
+**LET OP: deze oudere Rev F vereist Casio-VIO als vierde signaaldraad. Voor alleen TX/RX/GND gebruik je [Rev G](../RevG-XIAO-ontwerp/README.md). Bestel Rev F niet voor een drie-draads aansluiting.**
+
 # Rev F — zelf te solderen XIAO ESP32-C6
 
 Nieuwe, goedkopere variant op Rev D. Gebruik voor deze print uitsluitend de drie bestanden in `hardware/RevF-XIAO-06mm-OSP` op GitHub: GERBER ZIP, BOM CSV en CPL CSV. Meng geen bestanden van Rev E met deze versie.

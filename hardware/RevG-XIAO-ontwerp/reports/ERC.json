@@ -1,0 +1,14 @@
+{
+    "$schema": "https://schemas.kicad.org/erc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-10-31T19:20:16+0000",
+    "kicad_version": "9.0.2",
+    "sheets": [
+        {
+            "path": "/",
+            "uuid_path": "/e5630150-5157-5974-b5fb-50dd018ea91d",
+            "violations": []
+        }
+    ],
+    "source": "CG50-WiFi.kicad_sch"
+}

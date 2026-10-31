@@ -1,0 +1,1 @@
+(fp_lib_table (lib (name "CG50")(type "KiCad")(uri "${KIPRJMOD}/CG50.pretty")(options "")(descr "Bundled verified land patterns")))

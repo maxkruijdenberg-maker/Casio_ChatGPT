@@ -6,7 +6,15 @@ Rustigere interface, modelinfo op F2 en een volledige verbindingscontrole. Na ie
 
 Werk de Casio-app én je wifi-module bij. Er zijn aparte builds voor de ATOM-testbench en de ESP32-C6 Rev E-print. Behoud CGPT3; volledig wissen is niet nodig. Internet/account/modelcontrole gebruikt een echte kleine aanvraag en geeft geen exact tegoedsaldo. Zie de handleiding voor kosten en annuleren.
 
-De builds en hosttests slagen; echte hardware/API-tests voor deze nieuwe versie moet je nog uitvoeren. De bestaande Rev E-productiebestanden blijven beschikbaar. Voor de nieuwe zelf te solderen XIAO-print gebruik je de aparte Rev F-bestanden hieronder.
+De builds en hosttests slagen; echte hardware/API-tests voor deze nieuwe versie moet je nog uitvoeren. De bestaande Rev E-productiebestanden blijven beschikbaar. Voor de nieuwe zelf te solderen XIAO-print gebruik je de aparte Rev G-bestanden hieronder.
+
+## Actuele PCB: Rev G, drie Casio-draden
+
+**Voor alleen Casio TX/RX/GND: gebruik Rev G. Rev F vereist een vierde VIO-draad en is daarvoor niet geschikt.**
+
+[Download JLCPCB-set](hardware/CG50-WiFi-RevG-3wire-JLCPCB.zip) · [Drie productie-bestanden](hardware/RevG-XIAO-3wire-06mm-OSP) · [Onderdeelcontrole](hardware/RevG-XIAO-ontwerp/ONDERDELENCONTROLE.md) · [Nieuwe XIAO-firmware + Casio-app](xiao-revg/ChatGPT-XIAO-RevG-3wire-installatie.zip)
+
+Rev G: eigen XIAO zonder headerrails; 38 fabriekscomponenten / 20 codes; 89×34mm, 0,6mm, 2 lagen, OSP. Driepolige JST GH-uitgang; geen VIO-draad. TI-voedingsland/mask/stencil-patroon verwerkt; nieuwe uitgang met normale 3V3 UART-polariteit. Alleen de bijbehorende Rev G-firmware gebruiken. 26 hosttestgroepen en XIAO-build slagen; digitale controles schoon. Eerste PCBA nog fysiek te testen. [Handleiding en schema](hardware/RevG-XIAO-ontwerp/README.md).
 
 ## Installeren en bouwen
 
@@ -20,7 +28,7 @@ Oudere versies blijven beschikbaar via de Git-tags en bestaande upgradegidsen.
 
 V40.1: Info op F2; Model toont de bevestigde naam. De statusbadge verschijnt alleen op het chatbeginscherm. Eindtekens en onzichtbare opmaak worden beter weergegeven. Na 35 seconden zonder Casio-contact schakelt de wifi-radio uit en gaat de CPU naar 80 MHz; UART-contact herstelt de normale werking. Deze stroom- en herverbindingswerking is nog niet fysiek gemeten.
 
-## Nieuwe PCB: Rev F met zelf te solderen XIAO ESP32-C6
+## Oudere PCB: Rev F, met vierde Casio-VIO-aansluiting
 
 [Download JLCPCB-pakket](hardware/CG50-WiFi-RevF-JLCPCB.zip) · [Alleen drie productie-bestanden](hardware/RevF-XIAO-06mm-OSP) · [Ontwerp, maatvoering en controles](hardware/RevF-XIAO-ontwerp/README.md) · [Download XIAO-firmware + Casio-app](xiao/ChatGPT-XIAO-RevF-installatie.zip)
 

@@ -1,0 +1,1467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>/workspace/pcb-rev-e/CG50-WiFi-RevG-XIAO-3wire/hardware/CG50-WiFi.kicad_sch</source>
+    <date>2026-10-31T19:20:12+0000</date>
+    <tool>Eeschema 9.0.2+dfsg-1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>Casio fx-CG50 - XIAO C6 3-wire UART</title>
+        <company/>
+        <rev>G - XIAO 3wire</rev>
+        <date>2026-10-31</date>
+        <source>CG50-WiFi.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>10uF 25V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">TMK107BBJ106MA-T</field>
+        <field name="LCSC">C386081</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C1" description=""/>
+      <property name="MPN" value="TMK107BBJ106MA-T"/>
+      <property name="LCSC" value="C386081"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>74cea0c9-a26b-5d56-93b9-3367fddb6bbe</tstamps>
+    </comp>
+    <comp ref="C2">
+      <value>10uF 25V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">CL21A106KAYNNNE</field>
+        <field name="LCSC">C15850</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C2" description=""/>
+      <property name="MPN" value="CL21A106KAYNNNE"/>
+      <property name="LCSC" value="C15850"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a55ae02f-449e-5683-b9dd-364c5a9bb427</tstamps>
+    </comp>
+    <comp ref="C3">
+      <value>10uF 25V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">CL21A106KAYNNNE</field>
+        <field name="LCSC">C15850</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C3" description=""/>
+      <property name="MPN" value="CL21A106KAYNNNE"/>
+      <property name="LCSC" value="C15850"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8ae3ee6a-ec9a-52c2-9141-2a3ec1b9d4f7</tstamps>
+    </comp>
+    <comp ref="C4">
+      <value>10uF 25V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">TMK107BBJ106MA-T</field>
+        <field name="LCSC">C386081</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C4" description=""/>
+      <property name="MPN" value="TMK107BBJ106MA-T"/>
+      <property name="LCSC" value="C386081"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c1d8eeed-27ba-5ccb-bf52-dcbc1d9afce4</tstamps>
+    </comp>
+    <comp ref="C5">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C5" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1ac15309-bf92-5264-9f47-03730d89fbc5</tstamps>
+    </comp>
+    <comp ref="C6">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C6" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>33328b3c-0355-56e9-a8f4-6ec9108dbc44</tstamps>
+    </comp>
+    <comp ref="C7">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C7" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1f747f89-e8ac-596a-94ad-55e9777f3bc1</tstamps>
+    </comp>
+    <comp ref="C8">
+      <value>100nF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+        <field name="LCSC">C14663</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C8" description=""/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>30beaa3e-18d1-56f5-a917-d29c3f13ea3c</tstamps>
+    </comp>
+    <comp ref="C9">
+      <value>1uF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CL10A105KB8NNNC</field>
+        <field name="LCSC">C15849</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C9" description=""/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>800892d2-90e0-5a2e-8316-51f6eec18a0a</tstamps>
+    </comp>
+    <comp ref="C10">
+      <value>100nF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+        <field name="LCSC">C14663</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C10" description=""/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a201e56f-51e6-5b6a-b735-4cde34599924</tstamps>
+    </comp>
+    <comp ref="C11">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C11" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1800ada9-f3c6-5b95-a0db-642fbee579d6</tstamps>
+    </comp>
+    <comp ref="C12">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C12" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>932b4cf2-79af-580f-9053-89162943ef7d</tstamps>
+    </comp>
+    <comp ref="C13">
+      <value>22uF 16V</value>
+      <footprint>CG50:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="MPN">GRM21BC81C226ME44L</field>
+        <field name="LCSC">C258782</field>
+        <field name="Footprint">CG50:C_0805_2012Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C13" description=""/>
+      <property name="MPN" value="GRM21BC81C226ME44L"/>
+      <property name="LCSC" value="C258782"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>19195167-02ea-53e3-aba9-8911063afe99</tstamps>
+    </comp>
+    <comp ref="C14">
+      <value>1uF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CL10A105KB8NNNC</field>
+        <field name="LCSC">C15849</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C14" description=""/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b7b51499-f243-596d-bbd0-314a7d9d1081</tstamps>
+    </comp>
+    <comp ref="C15">
+      <value>100nF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+        <field name="LCSC">C14663</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C15" description=""/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f588a649-4e44-59a1-bf42-fd2a1d9b9c80</tstamps>
+    </comp>
+    <comp ref="C17">
+      <value>100nF 50V</value>
+      <footprint>CG50:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+        <field name="LCSC">C14663</field>
+        <field name="Footprint">CG50:C_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_C17" description=""/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7b02bfde-bbf2-5609-a394-3ea041786fed</tstamps>
+    </comp>
+    <comp ref="J3">
+      <value>BAT JST SH 2P</value>
+      <footprint>CG50:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal</footprint>
+      <fields>
+        <field name="MPN">SM02B-SRSS-TB(LF)(SN)</field>
+        <field name="LCSC">C160402</field>
+        <field name="Footprint">CG50:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_J3" description=""/>
+      <property name="MPN" value="SM02B-SRSS-TB(LF)(SN)"/>
+      <property name="LCSC" value="C160402"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>067e12e1-b1dc-566d-b3e4-71334a86adf3</tstamps>
+    </comp>
+    <comp ref="J4">
+      <value>CASIO TX RX GND / JST GH 3P</value>
+      <footprint>CG50:JST_GH_SM03B-GHS-TB_1x03-1MP_P1.25mm_Horizontal</footprint>
+      <fields>
+        <field name="MPN">SM03B-GHS-TB(LF)(SN)</field>
+        <field name="LCSC">C514175</field>
+        <field name="Footprint">CG50:JST_GH_SM03B-GHS-TB_1x03-1MP_P1.25mm_Horizontal</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_J4" description=""/>
+      <property name="MPN" value="SM03B-GHS-TB(LF)(SN)"/>
+      <property name="LCSC" value="C514175"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0613181c-e46a-5b36-951a-ac35e7bc4291</tstamps>
+    </comp>
+    <comp ref="L1">
+      <value>1.5uH</value>
+      <footprint>CG50:L_Sunlord_SWPA4020S</footprint>
+      <fields>
+        <field name="MPN">SWPA4020S1R5NT</field>
+        <field name="LCSC">C42099</field>
+        <field name="Footprint">CG50:L_Sunlord_SWPA4020S</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_L1" description=""/>
+      <property name="MPN" value="SWPA4020S1R5NT"/>
+      <property name="LCSC" value="C42099"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fb28971d-afb7-56f4-8ed1-b6f6a01500bd</tstamps>
+    </comp>
+    <comp ref="Q1">
+      <value>AO3401A</value>
+      <footprint>CG50:SOT-23</footprint>
+      <fields>
+        <field name="MPN">AO3401A</field>
+        <field name="LCSC">C15127</field>
+        <field name="Footprint">CG50:SOT-23</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_Q1" description=""/>
+      <property name="MPN" value="AO3401A"/>
+      <property name="LCSC" value="C15127"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>89bccb7c-be1e-51f0-a1e3-b5e1d61c6858</tstamps>
+    </comp>
+    <comp ref="R1">
+      <value>422k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF4223T5E</field>
+        <field name="LCSC">C23169</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R1" description=""/>
+      <property name="MPN" value="0603WAF4223T5E"/>
+      <property name="LCSC" value="C23169"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e24b4a65-c114-54cd-8ebc-c22835c4a924</tstamps>
+    </comp>
+    <comp ref="R2">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R2" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8ad9211d-0c0a-530f-aae4-ac5fc142f64c</tstamps>
+    </comp>
+    <comp ref="R3">
+      <value>10k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1002T5E</field>
+        <field name="LCSC">C25804</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R3" description=""/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fb3f6fea-53fa-58da-809a-91deebaaf28a</tstamps>
+    </comp>
+    <comp ref="R4">
+      <value>1k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1001T5E</field>
+        <field name="LCSC">C21190</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R4" description=""/>
+      <property name="MPN" value="0603WAF1001T5E"/>
+      <property name="LCSC" value="C21190"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1a3c8afc-45b3-51b6-8524-50bf5357173c</tstamps>
+    </comp>
+    <comp ref="R5">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R5" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>34e3c6be-086c-58c2-b0e3-21dca2412b3e</tstamps>
+    </comp>
+    <comp ref="R6">
+      <value>1k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1001T5E</field>
+        <field name="LCSC">C21190</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R6" description=""/>
+      <property name="MPN" value="0603WAF1001T5E"/>
+      <property name="LCSC" value="C21190"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>24160133-34ef-5e4b-9ea8-b4203b27a238</tstamps>
+    </comp>
+    <comp ref="R7">
+      <value>100R</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1000T5E</field>
+        <field name="LCSC">C22775</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R7" description=""/>
+      <property name="MPN" value="0603WAF1000T5E"/>
+      <property name="LCSC" value="C22775"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>015d1152-69c7-5d78-8451-87e7a0e47772</tstamps>
+    </comp>
+    <comp ref="R8">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R8" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>3a539ce0-9975-5a2f-87e3-e9f1a9378fbe</tstamps>
+    </comp>
+    <comp ref="R10">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R10" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>66225aef-2b9f-5010-b488-04cd77d04b2f</tstamps>
+    </comp>
+    <comp ref="R12">
+      <value>200k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF2003T5E</field>
+        <field name="LCSC">C25811</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R12" description=""/>
+      <property name="MPN" value="0603WAF2003T5E"/>
+      <property name="LCSC" value="C25811"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>11e6ff55-1ca9-5e68-ae92-9153a201cf33</tstamps>
+    </comp>
+    <comp ref="R13">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R13" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d0bc4db8-b49f-5736-8aa9-b7cc4bc3f8a3</tstamps>
+    </comp>
+    <comp ref="R14">
+      <value>100k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF1003T5E</field>
+        <field name="LCSC">C25803</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R14" description=""/>
+      <property name="MPN" value="0603WAF1003T5E"/>
+      <property name="LCSC" value="C25803"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bfaabcc2-49f7-5456-a888-729b4c564c89</tstamps>
+    </comp>
+    <comp ref="R15">
+      <value>200k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF2003T5E</field>
+        <field name="LCSC">C25811</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R15" description=""/>
+      <property name="MPN" value="0603WAF2003T5E"/>
+      <property name="LCSC" value="C25811"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a2251668-3f41-54e0-822b-c3dcb50e41ea</tstamps>
+    </comp>
+    <comp ref="R16">
+      <value>38.3k</value>
+      <footprint>CG50:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="MPN">0603WAF3832T5E</field>
+        <field name="LCSC">C23034</field>
+        <field name="Footprint">CG50:R_0603_1608Metric</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_R16" description=""/>
+      <property name="MPN" value="0603WAF3832T5E"/>
+      <property name="LCSC" value="C23034"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8d32f151-1c77-5161-8f08-0f0506e9f808</tstamps>
+    </comp>
+    <comp ref="U1">
+      <value>TPS63070RNMR / 4.978V</value>
+      <footprint>CG50:RNM0015A</footprint>
+      <fields>
+        <field name="MPN">TPS63070RNMR</field>
+        <field name="LCSC">C109322</field>
+        <field name="Footprint">CG50:RNM0015A</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_U1" description=""/>
+      <property name="MPN" value="TPS63070RNMR"/>
+      <property name="LCSC" value="C109322"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f17e499c-351d-5369-b52d-56cfcc744ed5</tstamps>
+    </comp>
+    <comp ref="U3">
+      <value>SN74LVC1G17DBVR</value>
+      <footprint>CG50:SOT-23-5</footprint>
+      <fields>
+        <field name="MPN">SN74LVC1G17DBVR</field>
+        <field name="LCSC">C7836</field>
+        <field name="Footprint">CG50:SOT-23-5</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_U3" description=""/>
+      <property name="MPN" value="SN74LVC1G17DBVR"/>
+      <property name="LCSC" value="C7836"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>346f30b7-ecc1-5a42-bb55-53881565258f</tstamps>
+    </comp>
+    <comp ref="U4">
+      <value>SN74LVC1G123DCTR</value>
+      <footprint>CG50:SSOP-8_2.95x2.8mm_P0.65mm</footprint>
+      <fields>
+        <field name="MPN">SN74LVC1G123DCTR</field>
+        <field name="LCSC">C123302</field>
+        <field name="Footprint">CG50:SSOP-8_2.95x2.8mm_P0.65mm</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_U4" description=""/>
+      <property name="MPN" value="SN74LVC1G123DCTR"/>
+      <property name="LCSC" value="C123302"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fdeab8a8-fae9-53ac-b7d3-0c8bc483e03b</tstamps>
+    </comp>
+    <comp ref="U5">
+      <value>XIAO ESP32-C6 / HAND SOLDER, NO HEADERS</value>
+      <footprint>CG50:XIAO-C6-THT-14-Customer</footprint>
+      <fields>
+        <field name="MPN">Seeed XIAO ESP32-C6 without headers</field>
+        <field name="LCSC"/>
+        <field name="Footprint">CG50:XIAO-C6-THT-14-Customer</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_U5" description=""/>
+      <property name="MPN" value="Seeed XIAO ESP32-C6 without headers"/>
+      <property name="LCSC" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <property name="exclude_from_bom"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>655773b6-289b-5492-9ba7-7184a50f09dc</tstamps>
+    </comp>
+    <comp ref="U6">
+      <value>SN74LVC1G126DBVR</value>
+      <footprint>CG50:SOT-23-5</footprint>
+      <fields>
+        <field name="MPN">SN74LVC1G126DBVR</field>
+        <field name="LCSC">C7834</field>
+        <field name="Footprint">CG50:SOT-23-5</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="CG50" part="Part_U6" description=""/>
+      <property name="MPN" value="SN74LVC1G126DBVR"/>
+      <property name="LCSC" value="C7834"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="CG50-WiFi.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>66aee5c4-3074-52c0-bc57-e4bd352047b3</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="CG50" part="Part_C1">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">10uF 25V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C10">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">100nF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C11">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C12">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C13">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C14">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">1uF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C15">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">100nF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C17">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">100nF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C2">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">10uF 25V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C3">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">10uF 25V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C4">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">10uF 25V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C5">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C6">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C7">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">22uF 16V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C8">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">100nF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_C9">
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">1uF 50V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_J3">
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">BAT JST SH 2P</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_J4">
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">CASIO TX RX GND / JST GH 3P</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+        <pin num="3" name="3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_L1">
+      <fields>
+        <field name="Reference">L</field>
+        <field name="Value">1.5uH</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_Q1">
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">AO3401A</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="G" type="input"/>
+        <pin num="2" name="S" type="passive"/>
+        <pin num="3" name="D" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R1">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">422k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R10">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R12">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">200k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R13">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R14">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R15">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">200k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R16">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">38.3k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R2">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R3">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">10k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R4">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">1k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R5">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R6">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">1k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R7">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100R</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_R8">
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">100k</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_U1">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">TPS63070RNMR / 4.978V</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="PS/SYNC" type="input"/>
+        <pin num="2" name="PG" type="open_collector"/>
+        <pin num="3" name="VAUX" type="power_out"/>
+        <pin num="4" name="GND" type="power_in"/>
+        <pin num="5" name="FB" type="input"/>
+        <pin num="6" name="FB2" type="passive"/>
+        <pin num="7" name="VOUT" type="power_out"/>
+        <pin num="8" name="VOUT" type="passive"/>
+        <pin num="9" name="L2" type="passive"/>
+        <pin num="10" name="PGND" type="power_in"/>
+        <pin num="11" name="L1" type="passive"/>
+        <pin num="12" name="VIN" type="power_in"/>
+        <pin num="13" name="VIN" type="power_in"/>
+        <pin num="14" name="EN" type="input"/>
+        <pin num="15" name="VSEL" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_U3">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">SN74LVC1G17DBVR</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="NC" type="no_connect"/>
+        <pin num="2" name="A" type="input"/>
+        <pin num="3" name="GND" type="power_in"/>
+        <pin num="4" name="Y" type="output"/>
+        <pin num="5" name="VCC" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_U4">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">SN74LVC1G123DCTR</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="A" type="input"/>
+        <pin num="2" name="B" type="input"/>
+        <pin num="3" name="CLR_N" type="input"/>
+        <pin num="4" name="GND" type="power_in"/>
+        <pin num="5" name="Q" type="output"/>
+        <pin num="6" name="CEXT" type="passive"/>
+        <pin num="7" name="REXT_CEXT" type="passive"/>
+        <pin num="8" name="VCC" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_U5">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">XIAO ESP32-C6 / HAND SOLDER, NO HEADERS</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="D0_GPIO0" type="input"/>
+        <pin num="2" name="D1_GPIO1" type="output"/>
+        <pin num="3" name="D2_GPIO2" type="output"/>
+        <pin num="4" name="D3_GPIO21" type="bidirectional"/>
+        <pin num="5" name="D4_GPIO22" type="bidirectional"/>
+        <pin num="6" name="D5_GPIO23" type="bidirectional"/>
+        <pin num="7" name="D6_GPIO16_TX" type="output"/>
+        <pin num="8" name="D7_GPIO17_RX" type="input"/>
+        <pin num="9" name="D8_GPIO19" type="bidirectional"/>
+        <pin num="10" name="D9_GPIO20" type="bidirectional"/>
+        <pin num="11" name="D10_GPIO18" type="bidirectional"/>
+        <pin num="12" name="3V3_OUT" type="power_out"/>
+        <pin num="13" name="GND" type="power_in"/>
+        <pin num="14" name="VBUS_5V" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="CG50" part="Part_U6">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">SN74LVC1G126DBVR</field>
+        <field name="Footprint"/>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <pins>
+        <pin num="1" name="OE" type="input"/>
+        <pin num="2" name="A" type="input"/>
+        <pin num="3" name="GND" type="power_in"/>
+        <pin num="4" name="Y" type="tri_state"/>
+        <pin num="5" name="VCC" type="power_in"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="CG50">
+      <uri>/workspace/pcb-rev-e/CG50-WiFi-RevG-XIAO-3wire/hardware/CG50.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="/3V3" class="Default">
+      <node ref="C10" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C15" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C17" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R12" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R8" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U3" pin="5" pinfunction="VCC" pintype="power_in"/>
+      <node ref="U4" pin="8" pinfunction="VCC" pintype="power_in"/>
+      <node ref="U5" pin="12" pinfunction="3V3_OUT" pintype="power_out"/>
+      <node ref="U6" pin="5" pinfunction="VCC" pintype="power_in"/>
+    </net>
+    <net code="2" name="/BAT+" class="Default">
+      <node ref="J3" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="Q1" pin="3" pinfunction="D" pintype="passive"/>
+    </net>
+    <net code="3" name="/CASIO_RX" class="Default">
+      <node ref="J4" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R6" pin="2" pinfunction="2" pintype="passive"/>
+    </net>
+    <net code="4" name="/CASIO_TX" class="Default">
+      <node ref="J4" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R4" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="5" name="/EN" class="Default">
+      <node ref="R1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R2" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="14" pinfunction="EN" pintype="input"/>
+    </net>
+    <net code="6" name="/FB" class="Default">
+      <node ref="R15" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R16" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="5" pinfunction="FB" pintype="input"/>
+    </net>
+    <net code="7" name="/GND" class="Default">
+      <node ref="C1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C10" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C11" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C12" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C13" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C15" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C17" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C2" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C3" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C4" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C5" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C6" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C7" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C8" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="C9" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="J3" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="J4" pin="3" pinfunction="3" pintype="passive"/>
+      <node ref="Q1" pin="1" pinfunction="G" pintype="input"/>
+      <node ref="R10" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R13" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R14" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R16" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R2" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R5" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U1" pin="10" pinfunction="PGND" pintype="power_in"/>
+      <node ref="U1" pin="15" pinfunction="VSEL" pintype="input"/>
+      <node ref="U1" pin="4" pinfunction="GND" pintype="power_in"/>
+      <node ref="U3" pin="3" pinfunction="GND" pintype="power_in"/>
+      <node ref="U4" pin="1" pinfunction="A" pintype="input"/>
+      <node ref="U4" pin="4" pinfunction="GND" pintype="power_in"/>
+      <node ref="U5" pin="13" pinfunction="GND" pintype="power_in"/>
+      <node ref="U6" pin="3" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="8" name="/HEARTBEAT" class="Default">
+      <node ref="R14" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U4" pin="2" pinfunction="B" pintype="input"/>
+      <node ref="U5" pin="2" pinfunction="D1_GPIO1" pintype="output"/>
+    </net>
+    <net code="9" name="/MONO_C" class="Default">
+      <node ref="C14" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U4" pin="6" pinfunction="CEXT" pintype="passive"/>
+    </net>
+    <net code="10" name="/MONO_RC" class="Default">
+      <node ref="C14" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R12" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U4" pin="7" pinfunction="REXT_CEXT" pintype="passive"/>
+    </net>
+    <net code="11" name="/PS" class="Default">
+      <node ref="R3" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U1" pin="1" pinfunction="PS/SYNC" pintype="input"/>
+    </net>
+    <net code="12" name="/REG5V" class="Default">
+      <node ref="C11" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C12" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C13" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C4" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C5" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C6" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C7" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C9" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R15" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="7" pinfunction="VOUT" pintype="power_out"/>
+      <node ref="U1" pin="8" pinfunction="VOUT" pintype="passive"/>
+      <node ref="U5" pin="14" pinfunction="VBUS_5V" pintype="power_in"/>
+    </net>
+    <net code="13" name="/RX_IN" class="Default">
+      <node ref="R4" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R5" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U3" pin="2" pinfunction="A" pintype="input"/>
+    </net>
+    <net code="14" name="/RX_WAKE" class="Default">
+      <node ref="U3" pin="4" pinfunction="Y" pintype="output"/>
+      <node ref="U5" pin="1" pinfunction="D0_GPIO0" pintype="input"/>
+      <node ref="U5" pin="8" pinfunction="D7_GPIO17_RX" pintype="input"/>
+    </net>
+    <net code="15" name="/SW1" class="Default">
+      <node ref="L1" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="11" pinfunction="L1" pintype="passive"/>
+    </net>
+    <net code="16" name="/SW2" class="Default">
+      <node ref="L1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U1" pin="9" pinfunction="L2" pintype="passive"/>
+    </net>
+    <net code="17" name="/TX_ARM" class="Default">
+      <node ref="R13" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U4" pin="3" pinfunction="CLR_N" pintype="input"/>
+      <node ref="U5" pin="3" pinfunction="D2_GPIO2" pintype="output"/>
+    </net>
+    <net code="18" name="/TX_DATA" class="Default">
+      <node ref="R7" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R8" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U6" pin="2" pinfunction="A" pintype="input"/>
+    </net>
+    <net code="19" name="/TX_ENABLE" class="Default">
+      <node ref="R10" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U4" pin="5" pinfunction="Q" pintype="output"/>
+      <node ref="U6" pin="1" pinfunction="OE" pintype="input"/>
+    </net>
+    <net code="20" name="/TX_GPIO" class="Default">
+      <node ref="R7" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U5" pin="7" pinfunction="D6_GPIO16_TX" pintype="output"/>
+    </net>
+    <net code="21" name="/TX_OUT" class="Default">
+      <node ref="R6" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U6" pin="4" pinfunction="Y" pintype="tri_state"/>
+    </net>
+    <net code="22" name="/VAUX" class="Default">
+      <node ref="C8" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="3" pinfunction="VAUX" pintype="power_out"/>
+    </net>
+    <net code="23" name="/VIN" class="Default">
+      <node ref="C1" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C2" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="C3" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="Q1" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="R1" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="R3" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U1" pin="12" pinfunction="VIN" pintype="power_in"/>
+      <node ref="U1" pin="13" pinfunction="VIN" pintype="power_in"/>
+    </net>
+    <net code="24" name="unconnected-(U1-FB2-Pad6)" class="Default">
+      <node ref="U1" pin="6" pinfunction="FB2" pintype="passive+no_connect"/>
+    </net>
+    <net code="25" name="unconnected-(U1-PG-Pad2)" class="Default">
+      <node ref="U1" pin="2" pinfunction="PG" pintype="open_collector+no_connect"/>
+    </net>
+    <net code="26" name="unconnected-(U3-NC-Pad1)" class="Default">
+      <node ref="U3" pin="1" pinfunction="NC" pintype="no_connect"/>
+    </net>
+    <net code="27" name="unconnected-(U5-D3_GPIO21-Pad4)" class="Default">
+      <node ref="U5" pin="4" pinfunction="D3_GPIO21" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="28" name="unconnected-(U5-D4_GPIO22-Pad5)" class="Default">
+      <node ref="U5" pin="5" pinfunction="D4_GPIO22" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="29" name="unconnected-(U5-D5_GPIO23-Pad6)" class="Default">
+      <node ref="U5" pin="6" pinfunction="D5_GPIO23" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="30" name="unconnected-(U5-D8_GPIO19-Pad9)" class="Default">
+      <node ref="U5" pin="9" pinfunction="D8_GPIO19" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="31" name="unconnected-(U5-D9_GPIO20-Pad10)" class="Default">
+      <node ref="U5" pin="10" pinfunction="D9_GPIO20" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="32" name="unconnected-(U5-D10_GPIO18-Pad11)" class="Default">
+      <node ref="U5" pin="11" pinfunction="D10_GPIO18" pintype="bidirectional+no_connect"/>
+    </net>
+  </nets>
+</export>

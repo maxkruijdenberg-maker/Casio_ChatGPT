@@ -1,0 +1,1490 @@
+{
+  "source": "https://yaqwsx.github.io/jlcparts/",
+  "created": "2026-10-31T10:17:22+00:00",
+  "manifest_sha256": "5b2075886c139c2ba0c2a420f7bcb3c4f19e32fa244d771685dd43ec902e0e37",
+  "parts": {
+    "C258782": {
+      "lcsc": "C258782",
+      "mfr": "GRM21BC81C226ME44L",
+      "joints": 2,
+      "description": "16V 22uF X6S ±20% 0805 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8588910856528932864",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.3126
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.26
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.2344
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2999,
+          "price": 0.2115
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.1715
+        },
+        {
+          "qFrom": 6000,
+          "qTo": null,
+          "price": 0.1677
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        8341,
+        10749,
+        601,
+        8334,
+        4,
+        8165,
+        6,
+        7109
+      ],
+      "stock": 31370,
+      "subcategory": 48,
+      "source_file": "components-capacitors_multilayer_ceramic_capacitors_mlcc_smdakasmt__1e11addb-004.jsonl.gz",
+      "source_sha256": "f08710aa46ae1ce5ed817211c878bc7d3bc128474c434aa14003eebf4a73bf77",
+      "decoded_attributes": {
+        "Capacitance": 2.2e-05,
+        "Temperature Coefficient": "X6S",
+        "Tolerance": -20.0,
+        "Rated Voltage": 16.0,
+        "Basic/Extended": "Extended",
+        "Package": "0805",
+        "Status": "Active",
+        "Manufacturer": "Murata Electronics"
+      }
+    },
+    "C14663": {
+      "lcsc": "C14663",
+      "mfr": "CC0603KRX7R9BB104",
+      "joints": 2,
+      "description": "100nF 50V X7R ±10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8667086713681608704",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 499,
+          "price": 0.0141
+        },
+        {
+          "qFrom": 500,
+          "qTo": 1499,
+          "price": 0.0106
+        },
+        {
+          "qFrom": 1500,
+          "qTo": 3999,
+          "price": 0.0091
+        },
+        {
+          "qFrom": 4000,
+          "qTo": 23999,
+          "price": 0.0076
+        },
+        {
+          "qFrom": 24000,
+          "qTo": 47999,
+          "price": 0.0072
+        },
+        {
+          "qFrom": 48000,
+          "qTo": null,
+          "price": 0.0069
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        8426,
+        10165,
+        9482,
+        8322,
+        1983,
+        8169,
+        6,
+        10168
+      ],
+      "stock": 50349394,
+      "subcategory": 48,
+      "source_file": "components-capacitors_multilayer_ceramic_capacitors_mlcc_smdakasmt__1e11addb-001.jsonl.gz",
+      "source_sha256": "1615bb05723a5a7a6ee93c2e48a90804086b2e14c4fb7583797ee38003662f32",
+      "decoded_attributes": {
+        "Capacitance": 1.0000000000000001e-07,
+        "Temperature Coefficient": "X7R",
+        "Tolerance": -10.0,
+        "Rated Voltage": 50.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "YAGEO"
+      }
+    },
+    "C160402": {
+      "lcsc": "C160402",
+      "mfr": "SM02B-SRSS-TB(LF)(SN)",
+      "joints": 4,
+      "description": "-25℃~+85℃ 1 1A 1mm 1x2P 2 2.9mm 2P 4.32mm 4mm 50V Auxiliary Solder Pin Copper alloy PA SH Surface Mount, Right Angle Tin UL94V-0 White SMD,P=1mm,卧贴 Wire To Board Connector ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8588905384618962944",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.1327
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.1092
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.0971
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2999,
+          "price": 0.0871
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.0836
+        },
+        {
+          "qFrom": 6000,
+          "qTo": null,
+          "price": 0.0813
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        21832,
+        21703,
+        21683,
+        8175,
+        22477,
+        22028,
+        22066,
+        21773,
+        21921,
+        1260,
+        23997,
+        22245,
+        24013,
+        25861,
+        26808,
+        8322,
+        28496,
+        28683,
+        28582,
+        4,
+        22516,
+        6,
+        21973
+      ],
+      "stock": 63871,
+      "subcategory": 171,
+      "source_file": "components-connectors_wire_to_board_connector__3933a707-001.jsonl.gz",
+      "source_sha256": "e2606c01a87574fa37b25391d130ee9db7cc8b0cdcc185b62ef19cc46e233381",
+      "decoded_attributes": {
+        "Color": "White",
+        "Contact Material": "Copper Alloy",
+        "Contact Plating": "Tin",
+        "Rated Current": 1.0,
+        "Flame Retardant Rating": "UL94V-0",
+        "Mounting Type": "Surface Mount",
+        "Number of Pins Per Row": 2,
+        "Number of Pins": "NaN",
+        "Number of Rows": 1,
+        "Operating Temperature": -25.0,
+        "Pin Structure": "1x2P",
+        "Pitch": 0.001,
+        "Plastic Material": "PA",
+        "Reference Series": "SH",
+        "Supplementary Features": "Auxiliary Solder Pin",
+        "Rated Voltage": 50.0,
+        "X-Length of Bottom Edge on Board (Spacing Line)": 0.004,
+        "Y-Width of Bottom Edge on Board": 0.00432,
+        "Z-Height of the Board": 0.0029,
+        "Basic/Extended": "Extended",
+        "Package": "SMD,P=1mm,卧贴",
+        "Status": "Active",
+        "Manufacturer": "JST"
+      }
+    },
+    "C123302": {
+      "lcsc": "C123302",
+      "mfr": "SN74LVC1G123DCTR",
+      "joints": 8,
+      "description": "-40℃~+125℃ 1 1.65V~5.5V 18.5ns 20uA 32mA 32mA 74LVC Monostable Reset input、Adjustable pulse width、Retriggerable function Schmitt trigger SSOP-8 Monostable Multivibrators ROHS",
+      "datasheet": "https://www.ti.com/cn/lit/ds/symlink/sn74lvc1g123.pdf",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 9,
+          "price": 0.659
+        },
+        {
+          "qFrom": 10,
+          "qTo": 29,
+          "price": 0.5459
+        },
+        {
+          "qFrom": 30,
+          "qTo": 99,
+          "price": 0.4656
+        },
+        {
+          "qFrom": 100,
+          "qTo": 499,
+          "price": 0.4
+        },
+        {
+          "qFrom": 500,
+          "qTo": 999,
+          "price": 0.3803
+        },
+        {
+          "qFrom": 1000,
+          "qTo": null,
+          "price": 0.3672
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        42854,
+        42148,
+        43228,
+        43204,
+        42150,
+        43229,
+        8,
+        1,
+        58750,
+        2582,
+        41,
+        4,
+        2671,
+        6,
+        7
+      ],
+      "stock": 13260,
+      "subcategory": 388,
+      "source_file": "components-logic_monostable_multivibrators__cbdb7473-001.jsonl.gz",
+      "source_sha256": "8943db96b5d8d622f57168023b075095f96b207a47716d6c5d6020f438a097e5",
+      "decoded_attributes": {
+        "Current - Output High(Ioh)": 0.032,
+        "Current - Output Low(Iol)": 0.032,
+        "Function": "Reset input",
+        "Input Type": "Schmitt trigger",
+        "Logic Family": "74LVC",
+        "Logic Type": "Monostable",
+        "Number of Channels": 1,
+        "Operating Temperature": -40.0,
+        "Propagation Delay": 1.85e-08,
+        "Quiescent Current": 1.9999999999999998e-05,
+        "Supply Voltage": 5.5,
+        "Basic/Extended": "Extended",
+        "Package": "SSOP-8",
+        "Status": "Active",
+        "Manufacturer": "Texas Instruments"
+      }
+    },
+    "C23034": {
+      "lcsc": "C23034",
+      "mfr": "0603WAF3832T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 38.3kΩ 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8586178090196209664",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.002
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0016
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.0014
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0012
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 50199,
+          "price": 0.0011
+        },
+        {
+          "qFrom": 50200,
+          "qTo": null,
+          "price": 0.0011
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        84846,
+        32751,
+        576,
+        42154,
+        42267,
+        4,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 33200,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-002.jsonl.gz",
+      "source_sha256": "5460417cc3b12f83339f75d450fb544fe35db52e4b8be63d9f629966a9819cf9",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 38300.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Extended",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C23169": {
+      "lcsc": "C23169",
+      "mfr": "0603WAF4223T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 422kΩ 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8586178150568480768",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 99,
+          "price": 0.0023
+        },
+        {
+          "qFrom": 100,
+          "qTo": 299,
+          "price": 0.0018
+        },
+        {
+          "qFrom": 300,
+          "qTo": 999,
+          "price": 0.0015
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0014
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 5019,
+          "price": 0.0012
+        },
+        {
+          "qFrom": 5020,
+          "qTo": null,
+          "price": 0.0012
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        84864,
+        32751,
+        576,
+        42154,
+        42267,
+        4,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 1678,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-002.jsonl.gz",
+      "source_sha256": "5460417cc3b12f83339f75d450fb544fe35db52e4b8be63d9f629966a9819cf9",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 422000.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Extended",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C25803": {
+      "lcsc": "C25803",
+      "mfr": "0603WAF1003T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100kΩ 100mW 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706350726930432",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.0031
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0024
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.0021
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0017
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 50199,
+          "price": 0.0016
+        },
+        {
+          "qFrom": 50200,
+          "qTo": null,
+          "price": 0.0016
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        43675,
+        32751,
+        576,
+        42154,
+        42267,
+        1983,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 19748113,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-003.jsonl.gz",
+      "source_sha256": "169cc44972cf7c87419b8e6c8b9ddebeddc77dbb16d0b2d10545daae6769a380",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 100000.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C15850": {
+      "lcsc": "C15850",
+      "mfr": "CL21A106KAYNNNE",
+      "joints": 2,
+      "description": "10uF 25V X5R ±10% 0805 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706853615591424",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 199,
+          "price": 0.0692
+        },
+        {
+          "qFrom": 200,
+          "qTo": 599,
+          "price": 0.051
+        },
+        {
+          "qFrom": 600,
+          "qTo": 1999,
+          "price": 0.0418
+        },
+        {
+          "qFrom": 2000,
+          "qTo": 9999,
+          "price": 0.0341
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 19999,
+          "price": 0.0314
+        },
+        {
+          "qFrom": 20000,
+          "qTo": null,
+          "price": 0.0296
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        8305,
+        10658,
+        9482,
+        7007,
+        1983,
+        8165,
+        6,
+        10674
+      ],
+      "stock": 3710191,
+      "subcategory": 48,
+      "source_file": "components-capacitors_multilayer_ceramic_capacitors_mlcc_smdakasmt__1e11addb-001.jsonl.gz",
+      "source_sha256": "1615bb05723a5a7a6ee93c2e48a90804086b2e14c4fb7583797ee38003662f32",
+      "decoded_attributes": {
+        "Capacitance": 9.999999999999999e-06,
+        "Temperature Coefficient": "X5R",
+        "Tolerance": -10.0,
+        "Rated Voltage": 25.0,
+        "Basic/Extended": "Basic",
+        "Package": "0805",
+        "Status": "Active",
+        "Manufacturer": "Samsung Electro Mechanics"
+      }
+    },
+    "C15849": {
+      "lcsc": "C15849",
+      "mfr": "CL10A105KB8NNNC",
+      "joints": 2,
+      "description": "1uF 50V X5R ±10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8556213788459761664",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 499,
+          "price": 0.0152
+        },
+        {
+          "qFrom": 500,
+          "qTo": 1499,
+          "price": 0.0119
+        },
+        {
+          "qFrom": 1500,
+          "qTo": 3999,
+          "price": 0.0104
+        },
+        {
+          "qFrom": 4000,
+          "qTo": 23999,
+          "price": 0.0093
+        },
+        {
+          "qFrom": 24000,
+          "qTo": 47999,
+          "price": 0.0088
+        },
+        {
+          "qFrom": 48000,
+          "qTo": null,
+          "price": 0.0085
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        8328,
+        10658,
+        9482,
+        8322,
+        1983,
+        8169,
+        6,
+        10674
+      ],
+      "stock": 9868521,
+      "subcategory": 48,
+      "source_file": "components-capacitors_multilayer_ceramic_capacitors_mlcc_smdakasmt__1e11addb-001.jsonl.gz",
+      "source_sha256": "1615bb05723a5a7a6ee93c2e48a90804086b2e14c4fb7583797ee38003662f32",
+      "decoded_attributes": {
+        "Capacitance": 1e-06,
+        "Temperature Coefficient": "X5R",
+        "Tolerance": -10.0,
+        "Rated Voltage": 50.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "Samsung Electro Mechanics"
+      }
+    },
+    "C42099": {
+      "lcsc": "C42099",
+      "mfr": "SWPA4020S1R5NT",
+      "joints": 2,
+      "description": "1.5uH 1.98A 35mΩ 4.45A ±30% SMD,4x4mm Power Inductors ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8755190307959263232",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 99,
+          "price": 0.0645
+        },
+        {
+          "qFrom": 100,
+          "qTo": 299,
+          "price": 0.0527
+        },
+        {
+          "qFrom": 300,
+          "qTo": 2999,
+          "price": 0.0468
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.0423
+        },
+        {
+          "qFrom": 6000,
+          "qTo": 8999,
+          "price": 0.0387
+        },
+        {
+          "qFrom": 9000,
+          "qTo": null,
+          "price": 0.0369
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        48595,
+        48596,
+        40813,
+        41499,
+        589,
+        4,
+        7035,
+        6,
+        8166
+      ],
+      "stock": 4487,
+      "subcategory": 292,
+      "source_file": "components-inductors_coils_chokes_power_inductors__f0dc5b41-001.jsonl.gz",
+      "source_sha256": "a33a0ff5ba78b86e379ff8968b7daed5c72892f65ef56431a3546f781129ccd3",
+      "decoded_attributes": {
+        "Saturation Current (Isat)": 4.45,
+        "Rated Current": 1.98,
+        "DC Resistance": 0.035,
+        "Inductance": 1.5e-06,
+        "Tolerance": -30.0,
+        "Basic/Extended": "Extended",
+        "Package": "SMD,4x4mm",
+        "Status": "Active",
+        "Manufacturer": "Sunlord"
+      }
+    },
+    "C109322": {
+      "lcsc": "C109322",
+      "mfr": "TPS63070RNMR",
+      "joints": 17,
+      "description": "-40℃~+125℃@(TJ) 1 2.4MHz 2.5V~9V 2A 2V~16V 50uA Adjustable Buck-Boost Buck-Boost Built-in Yes VQFN-15-HR(2.5x3) DC-DC Converters ROHS",
+      "datasheet": "https://www.ti.com/cn/lit/gpn/tps63070",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 9,
+          "price": 1.3195
+        },
+        {
+          "qFrom": 10,
+          "qTo": 29,
+          "price": 1.1491
+        },
+        {
+          "qFrom": 30,
+          "qTo": 99,
+          "price": 0.9884
+        },
+        {
+          "qFrom": 100,
+          "qTo": 499,
+          "price": 0.8688
+        },
+        {
+          "qFrom": 500,
+          "qTo": 999,
+          "price": 0.8196
+        },
+        {
+          "qFrom": 1000,
+          "qTo": null,
+          "price": 0.795
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        71777,
+        45727,
+        42302,
+        20337,
+        1,
+        4966,
+        38060,
+        71457,
+        2648,
+        6118,
+        38062,
+        42303,
+        788,
+        4,
+        71778,
+        6,
+        7
+      ],
+      "stock": 18859,
+      "subcategory": 489,
+      "source_file": "components-power_management_pmic_dc_dc_converters__1fbf1ca9-001.jsonl.gz",
+      "source_sha256": "c3b0afafad57613786ae29780b83039210f22445a6eaaf028cda2c8dc0f7baf4",
+      "decoded_attributes": {
+        "Features": "Light load efficient mode",
+        "Frequency - Switching": 2400000.0,
+        "Function": "Buck-Boost",
+        "Number of Outputs": 1,
+        "Operating Temperature": -40.0,
+        "Output Current": 2.0,
+        "Output Type": "Adjustable",
+        "Output Voltage": 9.0,
+        "Quiescent Current": 4.9999999999999996e-05,
+        "Switch Tube (Built-in/External)": "Built-In",
+        "Synchronous Rectifier": 1,
+        "Topology": "Buck-Boost",
+        "Supply Voltage": 16.0,
+        "Basic/Extended": "Extended",
+        "Package": "VQFN-15-HR(2.5x3)",
+        "Status": "Active",
+        "Manufacturer": "Texas Instruments"
+      }
+    },
+    "C7836": {
+      "lcsc": "C7836",
+      "mfr": "SN74LVC1G17DBVR",
+      "joints": 5,
+      "description": "-40℃~+125℃ 1 1 1.65V~5.5V 10uA 32mA 32mA 4.6ns@3.3V,15pF 74LVC Power-off isolation、Level shifting Push-pull Schmitt trigger Unidirectional SOT-23-5 Buffers, Drivers, Receivers, Transceivers ROHS",
+      "datasheet": "https://www.ti.com/cn/lit/ds/symlink/sn74lvc1g17.pdf",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.1693
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.1294
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.1097
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2999,
+          "price": 0.0923
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.0876
+        },
+        {
+          "qFrom": 6000,
+          "qTo": null,
+          "price": 0.0846
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        6028,
+        42854,
+        42148,
+        16812,
+        43204,
+        42150,
+        6032,
+        6033,
+        1,
+        57066,
+        2267,
+        41,
+        1996,
+        4,
+        871,
+        6,
+        7
+      ],
+      "stock": 40527,
+      "subcategory": 380,
+      "source_file": "components-logic_buffers_drivers_receivers_transceivers__8b8a10ef-001.jsonl.gz",
+      "source_sha256": "e8113ccf60f39f9721e468b35804caff1dba499ec091eda40d5fa1c23f34ccc7",
+      "decoded_attributes": {
+        "Channel Type": "Unidirectional",
+        "Current - Output High(Ioh)": 0.032,
+        "Current - Output Low(Iol)": 0.032,
+        "Features": "Power-off isolation",
+        "Input Type": "Schmitt trigger",
+        "Logic Family": "74LVC",
+        "Number of Bits Per Element": 1,
+        "Number of Elements": 1,
+        "Operating Temperature": -40.0,
+        "Propagation Delay": 4.6e-09,
+        "Quiescent Current": 9.999999999999999e-06,
+        "Supply Voltage": 5.5,
+        "Output Type": "Push-Pull",
+        "Basic/Extended": "Extended",
+        "Package": "SOT-23-5",
+        "Status": "Active",
+        "Manufacturer": "Texas Instruments"
+      }
+    },
+    "C386081": {
+      "lcsc": "C386081",
+      "mfr": "TMK107BBJ106MA-T",
+      "joints": 2,
+      "description": "10uF 25V X5R ±20% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8559506049507495936",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.0799
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.0579
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.0468
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2499,
+          "price": 0.0386
+        },
+        {
+          "qFrom": 2500,
+          "qTo": 3999,
+          "price": 0.032
+        },
+        {
+          "qFrom": 4000,
+          "qTo": null,
+          "price": 0.023
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        8305,
+        10658,
+        601,
+        7007,
+        4,
+        8169,
+        6,
+        9155
+      ],
+      "stock": 70766,
+      "subcategory": 48,
+      "source_file": "components-capacitors_multilayer_ceramic_capacitors_mlcc_smdakasmt__1e11addb-008.jsonl.gz",
+      "source_sha256": "f241b22a418466ea695b2d1ac5d892866abd15cb7ec6603851115e2b633021d7",
+      "decoded_attributes": {
+        "Capacitance": 9.999999999999999e-06,
+        "Temperature Coefficient": "X5R",
+        "Tolerance": -20.0,
+        "Rated Voltage": 25.0,
+        "Basic/Extended": "Extended",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "Taiyo Yuden"
+      }
+    },
+    "C25804": {
+      "lcsc": "C25804",
+      "mfr": "0603WAF1002T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 10kΩ 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706381320323072",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.0052
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0043
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.004
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0037
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 99999,
+          "price": 0.0035
+        },
+        {
+          "qFrom": 100000,
+          "qTo": null,
+          "price": 0.0035
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        42752,
+        32751,
+        576,
+        42154,
+        42267,
+        1983,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 32380385,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-003.jsonl.gz",
+      "source_sha256": "169cc44972cf7c87419b8e6c8b9ddebeddc77dbb16d0b2d10545daae6769a380",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 10000.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C15127": {
+      "lcsc": "C15127",
+      "mfr": "AO3401A",
+      "joints": 3,
+      "description": "1 P-Channel 14nC@10V 30V 47mΩ@10V、60mΩ@4.5V、85mΩ@2.5V 4A 55pF 645pF 80pF 900mV SOT-23 MOSFETs ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8776572966224044032",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.1025
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.0828
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.0727
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2999,
+          "price": 0.0643
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.0614
+        },
+        {
+          "qFrom": 6000,
+          "qTo": null,
+          "price": 0.0594
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        44443,
+        38065,
+        90817,
+        90822,
+        90825,
+        16643,
+        88615,
+        95089,
+        90827,
+        1983,
+        2859,
+        6,
+        15502
+      ],
+      "stock": 587250,
+      "subcategory": 657,
+      "source_file": "components-transistorsakathyristors_mosfets__a8475b8a-001.jsonl.gz",
+      "source_sha256": "af4d1e15e65fcc14765be55ec1187375c726935ee9e696652ae50c756d235a9e",
+      "decoded_attributes": {
+        "Continuous Drain Current (Id)": 4.0,
+        "Drain to Source Voltage": 30.0,
+        "Total Gate Charge (Qg @ Vgs)": 1.4000000000000001e-08,
+        "Gate Threshold Voltage (Vgs(th) @ Id)": "NaN",
+        "Input Capacitance (Ciss @ Vds)": 6.449999999999999e-10,
+        "Number": 1,
+        "Output Capacitance (Coss @ Vds)": 8e-11,
+        "Drain-Source On Resistance (RDS(on))": 0.047,
+        "Reverse Transfer Capacitance (Crss @ Vds)": 5.5e-11,
+        "Basic/Extended": "Basic",
+        "Package": "SOT-23",
+        "Status": "Active",
+        "Manufacturer": "Alpha Omega Semicon"
+      }
+    },
+    "C22775": {
+      "lcsc": "C22775",
+      "mfr": "0603WAF1000T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 100Ω 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706114222985216",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.0026
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.002
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.0018
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0014
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 50199,
+          "price": 0.0013
+        },
+        {
+          "qFrom": 50200,
+          "qTo": null,
+          "price": 0.0013
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        41707,
+        32751,
+        576,
+        42154,
+        42267,
+        1983,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 11248464,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-002.jsonl.gz",
+      "source_sha256": "5460417cc3b12f83339f75d450fb544fe35db52e4b8be63d9f629966a9819cf9",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 100.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C21190": {
+      "lcsc": "C21190",
+      "mfr": "0603WAF1001T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 1kΩ 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706098733010944",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.002
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0016
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.0014
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0011
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 50199,
+          "price": 0.001
+        },
+        {
+          "qFrom": 50200,
+          "qTo": null,
+          "price": 0.001
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        42696,
+        32751,
+        576,
+        42154,
+        42267,
+        1983,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 24277749,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-001.jsonl.gz",
+      "source_sha256": "4dfb9bce04eab361e9e0aff646420b8e36dccd9c2f745c622e59f6453ed43ee0",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 1000.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C25811": {
+      "lcsc": "C25811",
+      "mfr": "0603WAF2003T5E",
+      "joints": 2,
+      "description": "-55℃~+155℃ 100mW 200kΩ 75V Thick Film Resistor ±1% ±100ppm/℃ 0603 Chip Resistor - Surface Mount ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8579706361900556288",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 999,
+          "price": 0.0021
+        },
+        {
+          "qFrom": 1000,
+          "qTo": 4999,
+          "price": 0.0016
+        },
+        {
+          "qFrom": 5000,
+          "qTo": 9999,
+          "price": 0.0013
+        },
+        {
+          "qFrom": 10000,
+          "qTo": 49999,
+          "price": 0.0012
+        },
+        {
+          "qFrom": 50000,
+          "qTo": 50199,
+          "price": 0.001
+        },
+        {
+          "qFrom": 50200,
+          "qTo": null,
+          "price": 0.001
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        13270,
+        42265,
+        84778,
+        32751,
+        576,
+        42154,
+        42267,
+        1983,
+        8169,
+        6,
+        84481
+      ],
+      "stock": 2578190,
+      "subcategory": 557,
+      "source_file": "components-resistors_chip_resistor_surface_mount__b1111123-003.jsonl.gz",
+      "source_sha256": "169cc44972cf7c87419b8e6c8b9ddebeddc77dbb16d0b2d10545daae6769a380",
+      "decoded_attributes": {
+        "Operating Temperature": -55.0,
+        "Power": 0.1,
+        "Resistance": 200000.0,
+        "Temperature Coefficient": -100.0,
+        "Tolerance": -1.0,
+        "Type": "Thick Film Resistor",
+        "Supply Voltage (Max)": 75.0,
+        "Basic/Extended": "Basic",
+        "Package": "0603",
+        "Status": "Active",
+        "Manufacturer": "UNI ROYAL Uniroyal Elec"
+      }
+    },
+    "C514175": {
+      "lcsc": "C514175",
+      "mfr": "SM03B-GHS-TB(LF)(SN)",
+      "joints": 5,
+      "description": "-25℃~+85℃ 1 1.25mm 1A 1x3P 3 3P 4.13mm 4.25mm 50V 7mm Auxiliary Solder Pin GH PA9T Phosphor bronze Surface Mount, Right Angle Tin UL94V-0 White SMD,P=1.25mm,卧贴 Wire To Board Connector ROHS",
+      "datasheet": "https://jlcpcb.com/api/file/downloadByFileSystemAccessId/8588920014422888448",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 49,
+          "price": 0.3417
+        },
+        {
+          "qFrom": 50,
+          "qTo": 149,
+          "price": 0.2754
+        },
+        {
+          "qFrom": 150,
+          "qTo": 499,
+          "price": 0.2469
+        },
+        {
+          "qFrom": 500,
+          "qTo": 2499,
+          "price": 0.2115
+        },
+        {
+          "qFrom": 2500,
+          "qTo": 4999,
+          "price": 0.1956
+        },
+        {
+          "qFrom": 5000,
+          "qTo": null,
+          "price": 0.1861
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        22381,
+        22226,
+        22233,
+        8264,
+        23022,
+        22577,
+        22566,
+        22322,
+        22470,
+        1297,
+        24613,
+        22838,
+        28928,
+        26482,
+        27348,
+        8544,
+        29220,
+        29218,
+        29219,
+        4,
+        23033,
+        6,
+        22522
+      ],
+      "stock": 25240,
+      "subcategory": 173,
+      "decoded_attributes": {
+        "Color": "White",
+        "Contact Material": "Phosphor Bronze",
+        "Contact Plating": "Tin",
+        "Rated Current": 1.0,
+        "Flame Retardant Rating": "UL94V-0",
+        "Mounting Type": "Surface Mount",
+        "Number of Pins Per Row": 3,
+        "Number of Pins": "NaN",
+        "Number of Rows": 1,
+        "Operating Temperature": -25.0,
+        "Pin Structure": "1x3P",
+        "Pitch": 0.00125,
+        "Plastic Material": "PA9T",
+        "Reference Series": "GH",
+        "Supplementary Features": "Auxiliary Solder Pin",
+        "Rated Voltage": 50.0,
+        "X-Length of Bottom Edge on Board (Spacing Line)": 0.007,
+        "Y-Width of Bottom Edge on Board": 0.00413,
+        "Z-Height of the Board": 0.00425,
+        "Basic/Extended": "Extended",
+        "Package": "SMD,P=1.25mm,卧贴",
+        "Status": "Active",
+        "Manufacturer": "JST"
+      },
+      "source_file": "components-connectors_wire_to_board_connector__3933a707-005.jsonl.gz",
+      "source_sha256": "7d0e8b72061a762ca03890b9e8616841f6c73fa53beac41755dbbc78b6c1d181",
+      "source_catalog_commit": "be1a7596ec087c35a57ca87087ecd3e7058b5785",
+      "source_attributes_sha256": "68d1c023636e4415ba281b1e51eab77b4409e96154df6946b8015d14d54906b4"
+    },
+    "C7834": {
+      "lcsc": "C7834",
+      "mfr": "SN74LVC1G126DBVR",
+      "joints": 5,
+      "description": "-40℃~+125℃ 1 1 1.65V~5.5V 10uA 3.7ns@3.3V,15pF 32mA 32mA 74LVC Tri-State Unidirectional SOT-23-5 Buffers, Drivers, Receivers, Transceivers ROHS",
+      "datasheet": "https://www.ti.com/cn/lit/gpn/sn74lvc1g126",
+      "price": [
+        {
+          "qFrom": 1,
+          "qTo": 99,
+          "price": 0.0753
+        },
+        {
+          "qFrom": 100,
+          "qTo": 299,
+          "price": 0.0591
+        },
+        {
+          "qFrom": 300,
+          "qTo": 2999,
+          "price": 0.0509
+        },
+        {
+          "qFrom": 3000,
+          "qTo": 5999,
+          "price": 0.0423
+        },
+        {
+          "qFrom": 6000,
+          "qTo": 8999,
+          "price": 0.0374
+        },
+        {
+          "qFrom": 9000,
+          "qTo": null,
+          "price": 0.035
+        }
+      ],
+      "img": null,
+      "url": null,
+      "attributes": [
+        6028,
+        42854,
+        42148,
+        42716,
+        42150,
+        6032,
+        6033,
+        1,
+        57065,
+        2267,
+        41,
+        42157,
+        4,
+        871,
+        6,
+        7
+      ],
+      "stock": 54942,
+      "subcategory": 380,
+      "source_file": "components-logic_buffers_drivers_receivers_transceivers__8b8a10ef-001.jsonl.gz",
+      "source_sha256": "e8113ccf60f39f9721e468b35804caff1dba499ec091eda40d5fa1c23f34ccc7",
+      "decoded_attributes": {
+        "Channel Type": "Unidirectional",
+        "Current - Output High(Ioh)": 0.032,
+        "Current - Output Low(Iol)": 0.032,
+        "Features": "Power-off isolation",
+        "Logic Family": "74LVC",
+        "Number of Bits Per Element": 1,
+        "Number of Elements": 1,
+        "Operating Temperature": -40.0,
+        "Propagation Delay": 3.7000000000000005e-09,
+        "Quiescent Current": 9.999999999999999e-06,
+        "Supply Voltage": 5.5,
+        "Output Type": "Tri-State",
+        "Basic/Extended": "Extended",
+        "Package": "SOT-23-5",
+        "Status": "Active",
+        "Manufacturer": "Texas Instruments"
+      }
+    }
+  },
+  "note": "Existing parts retain original snapshot; new C514175 and its attribute table are pinned together to source_catalog_commit to prevent mixed LUT versions."
+}
