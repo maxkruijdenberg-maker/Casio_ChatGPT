@@ -1,7 +1,10 @@
 {
-  "ChatGPT.g3a": "11fd8362caef0fbf04e890a9e9d5d894f3ae627cfcfd8fe71c0e4f61b535894a",
-  "ChatGPTAtom.ino.bin": "bdaa85757300a8e5a9307b361b55d3f566a291c3421748e72197c16026014390",
+  "ChatGPT.g3a": "69f47d3f5e5a73ae0136952ef38416673eaf82ae46b636f6d141939d919c4dcf",
+  "ChatGPTAtom.ino.bin": "e15aeed21102cc64c0b3ac4560f7a41091907291e22ca9ede38800760ad4422b",
   "ChatGPTAtom.ino.bootloader.bin": "17a546b0b936fce668e35c8428b1806f9cb9e09f41f7eb86613cff68dfab8f2e",
   "ChatGPTAtom.ino.partitions.bin": "aaae2888c5a6a348004b5b436f47abb25ae32e72d9003902955a998eda723edd",
-  "boot_app0.bin": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+  "boot_app0.bin": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0",
+  "ChatGPTC6.ino.bin": "1e3772d2ad640475611216cb8f82b28af2ca43fca3625c01ad3a99e8f32a6abc",
+  "ChatGPTC6.ino.bootloader.bin": "6cb6768f77018107ba6ed8f934470adfef4b51cd5500b39778a7740486e4650f",
+  "ChatGPTC6.ino.partitions.bin": "aaae2888c5a6a348004b5b436f47abb25ae32e72d9003902955a998eda723edd"
 }

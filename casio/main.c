@@ -65,6 +65,9 @@ static int loadChatPair(int slot,int turn);
 static int requestClose(void);
 static void diagnose(void);
 static void modelProof(void);
+static int runConnectionCheck(void);
+static void checkModelChoice(void);
+static int readModelField(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete);
 static int ensureDiagnosticStopped(void);
 static void screenSettings(void);
 static void settings(void);
@@ -80,11 +83,11 @@ static const char *const errNames[]={
  "Internet of DNS niet bereikbaar","De klok kan niet worden bijgewerkt","Beveiligde internetverbinding mislukt",
  "API-sleutel ongeldig of geen toegang","Je API-tegoed of gebruikslimiet is bereikt",
  "Kies een ander model via Instellingen","API gaf een fout terug","Antwoord of invoer te groot",
- "Antwoord niet leesbaar","Antwoord-time-out","Atom is nog bezig",
- "Upload mislukt","Atom herstart; vraag niet opnieuw verstuurd",
+ "Antwoord niet leesbaar","Antwoord-time-out","wifi-module is nog bezig",
+ "Upload mislukt","wifi-module herstart; vraag niet opnieuw verstuurd",
  "Geheugen of opslag niet beschikbaar","Ongeldig bericht",
  "De API kon deze vraag niet beantwoorden","Hotspot niet gevonden: controleer naam en 2,4 GHz",
- "Wifi-verbinding mislukt: controleer wachtwoord"};
+ "Wifi-verbinding mislukt: controleer wachtwoord","Vul je API-tegoed aan"};
 
 static void erase(void *p,size_t n){volatile unsigned char *v=p;while(n--)*v++=0;}
 static int elapsed(int start,int ms){return RTC_Elapsed_ms(start,ms);}
@@ -340,7 +343,6 @@ static void cursorPosition(const char *s,size_t cursor,int columns,int *row,int 
 static void message(const char *title,const char *body){
  int first=0,lines=line_count(body,COLS),k,max=scroll_limit(lines,ROWS);
  while(!quitting){clear(title);paragraph(body,first,12,52,COLS,ROWS);scrollbar(376,52,112,first,ROWS,lines);
-  if(max)printAt(12,175,"Pijlen: lezen · EXIT: terug",C_MUTED);
   footer("","","","","","");show();k=waitKey();
   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT||k==KEY_PRGM_RETURN)return;
   if(k==KEY_PRGM_DOWN&&first<max)first++;if(k==KEY_PRGM_UP&&first>0)first--;
@@ -413,8 +415,8 @@ static int rpc(int type,const uint8_t *data,size_t len,WFrame *reply,int cancell
 static int checkedRpcEx(int type,const uint8_t *data,size_t len,WFrame *reply,int cancellable){
  int ok=rpc(type,data,len,reply,cancellable);
  if(ok==1)return 1;if(quitting||ok==-2)return 0;
- if(ok==0){uint8_t e=reply->data[0];message("Atom meldt",e<sizeof(errNames)/sizeof(errNames[0])?errNames[e]:"Onbekende fout");}
- else message("Geen verbinding","Controleer of de Atom stroom krijgt en goed is aangesloten. Probeer daarna opnieuw. Er is geen nieuwe betaalde vraag verstuurd.");
+ if(ok==0){uint8_t e=reply->data[0];message("wifi-module meldt",e<sizeof(errNames)/sizeof(errNames[0])?errNames[e]:"Onbekende fout");}
+ else message("Geen verbinding","Controleer of de wifi-module stroom krijgt en goed is aangesloten. Probeer daarna opnieuw. Er is geen nieuwe betaalde vraag verstuurd.");
  return 0;
 }
 static int checkedRpc(int type,const uint8_t *data,size_t len,WFrame *reply){return checkedRpcEx(type,data,len,reply,0);}
@@ -694,7 +696,7 @@ static int editor(char *buf,size_t cap,const char *title,int secret,int autoCapi
  erase(editObserved,sizeof(editObserved));erase(editUndo,sizeof(editUndo));editUndoReady=editOverwrite=0;
  return result;
 }
-static char publicSSID[33],publicModel[256];
+static char publicSSID[33],publicModel[256],pickerConfirmedModel[256];
 static unsigned settingsEpoch=0;
 #define REMOTE_MODELS_CAP 4096
 static char *remoteModels=0;
@@ -766,8 +768,8 @@ static void phoneSetup(void){
  if(!ensureModelStopped()||!ensureQuestionStopped())return;
  WFrame r;uint8_t action=1;int tick,k;char network[32],password[13];
  if(!linkOnline&&!checkedRpc(W_HELLO,0,0,&r))return;
- if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De Atom reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];atomMinor=r.data[2];}
- if(atomMajor<11){message("Atom-update nodig","Werk de Atom bij met de meegeleverde firmware om via je telefoon in te stellen. De bestaande instellingen blijven behouden.");return;}
+ if(!atomMajor){if(rpc(W_DEVICE,0,0,&r,0)!=1||r.len<4){message("Geen verbinding","De wifi-module reageert nog niet. Controleer de aansluiting en probeer opnieuw.");return;}atomMajor=r.data[1];atomMinor=r.data[2];}
+ if(atomMajor<11){message("wifi-module-update nodig","Werk de wifi-module bij met de meegeleverde firmware om via je telefoon in te stellen. De bestaande instellingen blijven behouden.");return;}
  if(!checkedRpc(W_SETUP,&action,1,&r)||r.len!=17)return;
  settingsEpoch++;tick=RTC_GetTicks();
  while(!quitting){
@@ -909,12 +911,12 @@ static int ensureModelStopped(void){
  if(!modelStopPending)return 1;
  loadingActive=0;
  if(readModelStopStatus()||stopModelCheck())return 1;
- message("Controle wordt gestopt","De Atom heeft het stoppen van de accountcontrole nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er is geen chatvraag verstuurd.");
+ message("Controle wordt gestopt","De wifi-module heeft het stoppen van de accountcontrole nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er is geen chatvraag verstuurd.");
  return 0;
 }
 static const char *modelCheckReason(int error){
  switch(error){
- case E_JSON:return atomMajor<22?"De modellenlijst van je account kon niet worden gelezen. Werk ook de Atom bij met de meegeleverde firmware.":"De modellenlijst van je account is onvolledig of heeft een onverwacht formaat. Controleer internet en probeer later opnieuw.";
+ case E_JSON:return atomMajor<22?"De modellenlijst van je account kon niet worden gelezen. Werk ook de wifi-module bij met de meegeleverde firmware.":"De modellenlijst van je account is onvolledig of heeft een onverwacht formaat. Controleer internet en probeer later opnieuw.";
  case E_BIG:return "De modellenlijst van je account is te groot voor dit apparaat.";
  case E_MEMORY:return "Er is onvoldoende vrij geheugen om de accountlijst te verwerken.";
  case E_TIMEOUT:return "Het ophalen van de accountlijst duurde te lang. Controleer je internetverbinding.";
@@ -933,10 +935,10 @@ static int fetchModels(void){
  if(!quitting&&(ok||!modelFetchCancelled))showAccountResult(ok);
  if(!ok){
   remoteModelCount=0;modelAccountChecked=0;remoteModels[0]=0;modelCheckFailed=!modelFetchCancelled;
-  if(!quitting&&modelFetchCancelled&&modelStopPending)message("Stoppen niet bevestigd","Het stoppen van de accountcontrole is nog niet bevestigd. Controleer de Atom-verbinding. Een nieuwe chatvraag wordt pas verstuurd zodra de Atom weer beschikbaar is.");
+  if(!quitting&&modelFetchCancelled&&modelStopPending)message("Stoppen niet bevestigd","Het stoppen van de accountcontrole is nog niet bevestigd. Controleer de wifi-module-verbinding. Een nieuwe chatvraag wordt pas verstuurd zodra de wifi-module weer beschikbaar is.");
   if(!quitting&&!modelFetchCancelled){
    char reason[512];const char *why=modelCheckReason(modelFetchError);
-   sprintf(reason,"%s\n\nJe ziet de vaste modelkeuzes, niet je accountlijst. Je huidige model blijft bewaard. F2 Account probeert opnieuw.",why);
+   sprintf(reason,"%s\n\nJe modelkeuze blijft bewaard.",why);
    message("Account niet gecontroleerd",reason);
   }
  }
@@ -952,7 +954,7 @@ static void paintModels(int selected){
    printAt(18,y,"Overige modellen",i==selected?C_BLUE:C_TEXT);glyph(362,y,'>',C_MUTED);
   }else{
    const char *name=modelViewId(i);clipped(18,y,modelDisplayName(name),33,i==selected?C_BLUE:C_TEXT);
-   if(!strcmp(publicModel,name))printAt(310,y,"Actief",C_MINT);
+   if(!strcmp(publicModel,name))printAt(310,y,!strcmp(pickerConfirmedModel,name)?"Actief":"Keuze",C_MUTED);
   }
  }
  if(!count){
@@ -961,13 +963,17 @@ static void paintModels(int selected){
  }
  if(!modelShowAll&&publicModel[0]){
   int shown=0;for(i=0;i<count;i++)if(!strcmp(publicModel,modelViewId(i)))shown=1;
-  if(!shown){printAt(14,155,"Actief:",C_MUTED);clipped(78,155,modelDisplayName(publicModel),36,C_TEXT);}
+  if(!shown){printAt(14,155,"Keuze:",C_MUTED);clipped(78,155,modelDisplayName(publicModel),36,C_TEXT);}
  }
- printAt(14,177,modelStopPending?"Stoppen accountcontrole niet bevestigd":modelAccountChecked?(choiceCount()?"Account gecontroleerd · kies je model":"Account gecontroleerd · geen keuzes"):modelCheckFailed?"Account niet gecontroleerd · vaste lijst":"Vaste keuzes · F2 controleert je account",C_MUTED);
- scrollbar(378,58,114,first,5,rows);footer(selected<count?"Kies":"","Account","",selected<count?"Info":"","","");show();
+ if(modelStopPending)printAt(14,177,"Accountcontrole stopt...",C_MUTED);
+ else if(modelCheckFailed)printAt(14,177,"Accountcontrole mislukt",C_MUTED);
+ scrollbar(378,58,114,first,5,rows);footer(selected<count?"Kies":"","",selected<count?"Info":"","","","");show();
 }
 static int modelPicker(void){
- int selected,k;char details[1024];modelShowAll=0;
+ int selected,k;char details[1024];modelShowAll=0;pickerConfirmedModel[0]=0;
+ if(atomMajor>=40){uint32_t owner=0;int verified=0;char candidate[256],reported[256];
+  if(readModelField(W_ACTIVE,0,&owner,candidate,sizeof(candidate),&verified)&&readModelField(W_ACTIVE,1,&owner,reported,sizeof(reported),&verified)&&verified&&reported[0]&&!strcmp(candidate,publicModel))strcpy(pickerConfirmedModel,candidate);
+ }
  selected=modelSelection(publicModel);
  while(!quitting){
   int count=modelViewCount(),rows=count+!modelShowAll;if(selected>=rows)selected=0;
@@ -978,23 +984,17 @@ static int modelPicker(void){
   }
   if(k==KEY_PRGM_UP&&selected>0)selected--;
   if(k==KEY_PRGM_DOWN&&selected<rows-1)selected++;
-  if(k==KEY_PRGM_F2){
-   if(!atomMajor){WFrame r;if(rpc(W_DEVICE,0,0,&r,0)==1&&r.len>=4){atomMajor=r.data[1];atomMinor=r.data[2];}}
-   if(atomMajor<31)message("Atom bijwerken","Werk ook de Atom bij naar V31 met de meegeleverde firmware. Deze versie kan de accountcontrole echt stoppen. Wifi en sleutel blijven bewaard.");
-   else if(!fetchModels()&&modelFetchCancelled)return 0;
-   selected=modelSelection(publicModel);continue;
-  }
   if(!modelShowAll&&selected==count){
    if(k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){modelShowAll=1;selected=modelSelection(publicModel);}
    continue;
   }
-  if(k==KEY_PRGM_F4&&count){modelDetails(modelViewPreset(selected),details,sizeof(details));message("Over dit model",details);}
+  if(k==KEY_PRGM_F3&&count){modelDetails(modelViewPreset(selected),details,sizeof(details));message("Over dit model",details);}
   if(count&&(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)){
    const char *name=modelViewId(selected);
    if(!setting_valid(4,name,strlen(name)))continue;
-   if(!strcmp(publicModel,name))return 1;
+   if(!strcmp(publicModel,name)){checkModelChoice();return 1;}
    if(!ensureModelStopped()||!ensureQuestionStopped())continue;
-   if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;return 1;}
+   if(uploadText(4,name)){strcpy(publicModel,name);settingsEpoch++;checkModelChoice();return 1;}
   }
  }
  return 0;
@@ -1009,18 +1009,19 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 32.4\n\nChats staan op je Casio. Wifi en je sleutel staan op de Atom.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 40.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de wifi-module.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
  }
 }
 static void helpAndDevice(void){
- int selected=0,k,i;const char *names[]={"Aan de slag","Typen en toetsen","Antwoorden en kosten","Verbinding controleren","Gebruikt model"};
+ int selected=0,k,i;const char *names[]={"Aan de slag","Typen en toetsen","Antwoorden en kosten","Verbinding controleren","Actief model"};
  const char *body[]={
- "1. Open Wifi en account.\n2. Volg de stappen op je telefoon.\n3. Kies een model.\n4. Typ je vraag en kies Stuur.\n\nJe hebt eigen OpenAI API-tegoed nodig. Een ChatGPT-abonnement bevat dit niet.",
- "ALPHA zet letters aan of uit en blijft actief na versturen. SHIFT werkt een keer voor wiskundefuncties. F4 opent speciale tekens. Links/rechts verplaatst de cursor; omhoog/omlaag leest je gesprek.\n\nEXIT gaat vanuit een chat terug naar het beginscherm. Rechts of EXE opent een keuze; links of EXIT gaat terug. MENU vraagt om afsluiten. Tijdens laden annuleert EXIT of F1 het wachten.",
- "Typ onderaan verder in hetzelfde gesprek. Omhoog/omlaag leest eerdere berichten. F1 Stuur of EXE verstuurt je bericht. Chats blijven lokaal op je Casio.\n\nAPI-gebruik kost geld via je eigen account. Controleer prijzen en antwoorden. Een al verstuurde vraag kan ook na annuleren kosten maken."
+ "1. Open Wifi en account.\n2. Volg de stappen op je telefoon.\n3. Kies een model.\n4. Typ je vraag en kies Stuur.\n\nJe hebt eigen OpenAI API-tegoed nodig.",
+ "ALPHA: letters aan of uit. SHIFT: een wiskundefunctie. F4: tekens.\n\nLinks en rechts verplaatsen de cursor. Omhoog en omlaag scrollen door je gesprek.",
+ "Typ verder voor een vervolgvraag. Je chats worden op je Casio bewaard.\n\nElke vraag gebruikt API-tegoed. Een verstuurde vraag kan ook na annuleren geld kosten. Ook modelkeuzes en controles gebruiken een klein beetje tegoed. Controleer belangrijke antwoorden."
+
  };
  while(!quitting){
   clear("Hulp");
@@ -1059,9 +1060,11 @@ static void settings(void){
   if(selected==3){deviceSettings();if(!settingsKnown&&linkOnline)refreshSettings(configured);}
  }
 }
+static int diagnosisCommand=W_DIAG;
+static int diagnosisAttempted=0,diagnosisInternet=0,diagnosisAccount=0,diagnosisModel=0;
 static int diagnosisWifiKnown=0,diagnosisWifiQuality=0,diagnosisWifiError=0,diagnosisNeedsUpdate=0,diagnosisStopPending=0;
 static const char *diagnosisWifiText(void){
- if(diagnosisNeedsUpdate)return "Atom bijwerken";
+ if(diagnosisNeedsUpdate)return "wifi-module bijwerken";
  if(!diagnosisWifiKnown)return "Niet gecontroleerd";
  if(diagnosisWifiQuality==3)return "Sterke verbinding";
  if(diagnosisWifiQuality==2)return "Goede verbinding";
@@ -1069,36 +1072,54 @@ static const char *diagnosisWifiText(void){
  if(diagnosisWifiError==E_CONFIG)return "Nog niet ingesteld";
  if(diagnosisWifiError==E_WIFI_NOT_FOUND)return "Hotspot niet gevonden";
  if(diagnosisWifiError==E_WIFI_AUTH)return "Wachtwoord controleren";
- if(diagnosisWifiError==E_BUSY)return "Atom is nog bezig";
+ if(diagnosisWifiError==E_BUSY)return "wifi-module is nog bezig";
  return "Geen verbinding";
 }
+static void diagnosisRow(int y,const char *name,const char *value){
+ choiceCard(8,y-3,368,25,0,C_MINT,C_RAISED);printAt(18,y,name,C_MUTED);clipped(158,y,value,26,C_TEXT);
+}
+static const char *diagnosisAccountText(void){
+ if(diagnosisAccount)return "Klaar voor gebruik";
+ if(diagnosisWifiError==E_AUTH)return "Sleutel controleren";
+ if(diagnosisWifiError==E_CREDIT)return "Tegoed aanvullen";
+ if(diagnosisWifiError==E_LIMIT)return "Even wachten";
+ if(diagnosisWifiError==E_CONFIG)return "Nog instellen";
+ return "Controle mislukt";
+}
 static void paintDiagnosis(int successes,int checked){
- clear("Verbinding controleren");
+ int y=47;clear("Verbinding controleren");
  const char *contact=successes==checked&&successes?"Goede verbinding":successes?"Contact wisselt":"Geen verbinding";
- choiceCard(8,45,368,46,0,C_MINT,C_RAISED);printAt(18,51,"Casio en Atom",C_MUTED);printAt(18,70,contact,C_TEXT);
- choiceCard(8,99,368,46,0,C_BLUE,C_RAISED);printAt(18,105,"Wifi / hotspot",C_MUTED);printAt(18,124,diagnosisWifiText(),C_TEXT);
- paragraph(diagnosisNeedsUpdate?"Werk ook de Atom bij voor de wifi-controle.":"Internet, API-account en tegoed zijn niet getest.",0,14,154,44,2);
+ diagnosisRow(y,"Rekenmachine",contact);y+=27;
+ if(diagnosisWifiKnown){diagnosisRow(y,"Wifi",diagnosisWifiText());y+=27;}
+ if(diagnosisAttempted&2){diagnosisRow(y,"Internet",diagnosisInternet?"Verbonden":"Verbinding mislukt");y+=27;}
+ if(diagnosisAttempted&4){diagnosisRow(y,"API-account",diagnosisAccountText());y+=27;}
+ if(diagnosisAttempted&8){diagnosisRow(y,"Model",diagnosisModel?"Bevestigd":"Niet bevestigd");y+=27;}
+ if(diagnosisNeedsUpdate)printAt(18,165,"Werk de wifi-module bij naar V40.",C_MUTED);
+ else if(diagnosisWifiError==E_CONFIG&&!(diagnosisAttempted&4))printAt(18,165,"Stel wifi en je API-sleutel in.",C_MUTED);
+ else if(diagnosisWifiError==E_TIME)printAt(18,165,"Tijd bijwerken mislukt.",C_MUTED);
+ else if(!(diagnosisAttempted&4)&&diagnosisWifiError&&y<=155)printAt(18,165,diagnosisWifiError==E_MODEL?"Dit model is niet beschikbaar.":diagnosisWifiError==E_BUSY?"De wifi-module is nog bezig.":"Controle mislukt. Probeer opnieuw.",C_MUTED);
  footer("Opnieuw","","","","","");show();
 }
 static void stopWifiDiagnostic(void){
  uint8_t action=3;WFrame r;int leaving=quitting,modal=closePromptActive;
  diagnosisStopPending=1;quitting=0;closePromptActive=1;
- if(rpc(W_DIAG,&action,1,&r,0)==1&&r.len==5&&r.data[1]!=1)diagnosisStopPending=0;
+ if(rpc(diagnosisCommand,&action,1,&r,0)==1&&r.len==(diagnosisCommand==W_CHECK?8:5)&&r.data[1]!=1)diagnosisStopPending=0;
  closePromptActive=modal;quitting=leaving;
 }
 static int ensureDiagnosticStopped(void){
  if(!diagnosisStopPending)return 1;
  uint8_t action=0;WFrame r;
- if(rpc(W_DIAG,&action,1,&r,0)==1&&r.len==5&&r.data[1]!=1){diagnosisStopPending=0;return 1;}
+ if(rpc(diagnosisCommand,&action,1,&r,0)==1&&r.len==(diagnosisCommand==W_CHECK?8:5)&&r.data[1]!=1){diagnosisStopPending=0;return 1;}
  stopWifiDiagnostic();
- if(!quitting)message("Wifi-controle stopt","De Atom rondt de controle nog af. Probeer je vraag straks opnieuw. Er is niets verstuurd.");
+ if(!quitting)message("Wifi-controle stopt","De wifi-module rondt de controle nog af. Probeer je vraag straks opnieuw. Er is niets verstuurd.");
  return 0;
 }
-static void diagnose(void){
+static void diagnoseLegacy(void){
  int k,successes,checked,i,beforeRetries,beforeErrors;WFrame reply;
  do {
+  diagnosisCommand=W_DIAG;diagnosisAttempted=diagnosisInternet=diagnosisAccount=diagnosisModel=0;
   diagnosisWifiKnown=diagnosisWifiQuality=diagnosisWifiError=diagnosisNeedsUpdate=0;
-  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");drawLogo(172,61,40);centered(127,"Casio en Atom controleren...",C_TEXT);show();
+  successes=checked=0;beforeRetries=retries;beforeErrors=errors;clear("Verbinding controleren");drawLogo(172,61,40);centered(127,"Casio en wifi-module controleren...",C_TEXT);show();
   for(i=0;i<3&&!quitting;i++){
    int result=rpc(W_HELLO,0,0,&reply,1);if(quitting||result==-2)return;checked++;
    if(result==1&&reply.len>=2&&reply.data[1]==1)successes++;else if(!successes)break;
@@ -1112,7 +1133,7 @@ static void diagnose(void){
    if(device==1&&reply.len>=4&&(reply.data[3]&64)){
     if(!ensureDiagnosticStopped())return;
     uint8_t action=1;int started=RTC_GetTicks(),result;
-    clear("Verbinding controleren");drawLogo(172,61,40);centered(127,"Wifi controleren...",C_TEXT);centered(151,"EXIT annuleert · geen API-aanvraag",C_MUTED);show();
+    clear("Verbinding controleren");drawLogo(172,61,40);centered(127,"Wifi controleren...",C_TEXT);show();
     diagnosisStopPending=1;
     result=rpc(W_DIAG,&action,1,&reply,1);
     if(result==0){diagnosisStopPending=0;diagnosisWifiKnown=1;diagnosisWifiError=reply.data[0];}
@@ -1135,27 +1156,81 @@ static void diagnose(void){
   }
  }while(!quitting);
 }
-static int readReceiptField(int target,uint32_t *owner,char *out,size_t cap,int *complete){
+/* 1 finished, 0 failure/update needed, -2 cancelled. Each click/selection
+ * allocates a distinct durable check ID; retransmission cannot repeat its POST. */
+static int runConnectionCheck(void){
+ WFrame r;uint8_t action=0,b[5];int result,started,k;
+ if(!ensureDiagnosticStopped()||!ensureQuestionStopped()||!ensureModelStopped()||quitting)return 0;
+ diagnosisWifiKnown=diagnosisWifiQuality=diagnosisWifiError=diagnosisNeedsUpdate=0;
+ diagnosisAttempted=diagnosisInternet=diagnosisAccount=diagnosisModel=0;
+ result=rpc(W_DEVICE,0,0,&r,1);if(result==-2||quitting)return -2;
+ if(result!=1||r.len<4){diagnosisWifiError=result==0?r.data[0]:E_TIMEOUT;return 0;}
+ if(r.data[1]<40){diagnosisNeedsUpdate=1;return 0;}
+ atomMajor=r.data[1];atomMinor=r.data[2];diagnosisCommand=W_CHECK;
+ k=keyEvent();if(quitting||k==KEY_PRGM_EXIT||k==KEY_PRGM_F1)return -2;
+ loadingActive=1;loadingPhase=0;loadingAt=RTC_GetTicks();paintLoading(0);
+ action=2;diagnosisStopPending=1;result=rpc(W_CHECK,&action,1,&r,1);
+ if(result!=1||r.len!=5){diagnosisWifiError=result==0?r.data[0]:E_TIMEOUT;loadingActive=0;stopWifiDiagnostic();return result==-2?-2:0;}
+ b[0]=1;w_put32(b+1,w_get32(r.data+1));
+ k=keyEvent();if(quitting||k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){loadingActive=0;stopWifiDiagnostic();return -2;}
+ started=RTC_GetTicks();result=rpc(W_CHECK,b,5,&r,1);
+ while(result==1&&r.len==8&&r.data[1]==1&&!quitting&&!elapsed(started,95000)){
+  int wait=RTC_GetTicks();while(!elapsed(wait,100)&&!quitting){
+   k=keyEvent();if(k==KEY_PRGM_EXIT||k==KEY_PRGM_F1){loadingActive=0;stopWifiDiagnostic();return -2;}
+   animateLoading();OS_InnerWait_ms(10);
+  }
+  action=0;if(!quitting)result=rpc(W_CHECK,&action,1,&r,1);
+ }
+ loadingActive=0;
+ if(quitting||result==-2){stopWifiDiagnostic();return -2;}
+ if(result!=1||r.len!=8||(r.data[1]!=2&&r.data[1]!=3)){diagnosisWifiError=result==0?r.data[0]:E_TIMEOUT;stopWifiDiagnostic();return 0;}
+ diagnosisStopPending=0;diagnosisAttempted=r.data[4]&15;diagnosisWifiKnown=(diagnosisAttempted&1)!=0;
+ diagnosisWifiQuality=r.data[2]<=3?r.data[2]:0;diagnosisWifiError=r.data[3];
+ diagnosisInternet=r.data[5]==1;diagnosisAccount=r.data[6]==1;diagnosisModel=r.data[7]==1;
+ return 1;
+}
+static void checkModelChoice(void){
+ int result=runConnectionCheck();if(result==-2||quitting)return;
+ if(diagnosisNeedsUpdate)return;
+ paintAccountResult(result==1&&diagnosisAccount&&diagnosisModel);
+ rect(0,145,384,34,C_BG);
+ centered(157,result==1&&diagnosisModel?"Model bevestigd":diagnosisWifiError==E_CREDIT?"Vul je API-tegoed aan":"Model niet bevestigd",C_TEXT);
+ show();OS_InnerWait_ms(900);
+}
+static void diagnose(void){
+ WFrame r;int k,ok=rpc(W_DEVICE,0,0,&r,1);
+ if(quitting||ok==-2)return;
+ if(ok==1&&r.len>=4&&r.data[1]<40){diagnoseLegacy();return;}
+ do{
+  int result=runConnectionCheck();if(result==-2||quitting)return;
+  while(!quitting){paintDiagnosis(linkOnline?1:0,1);k=waitKey();
+   if(k==KEY_PRGM_EXIT||k==KEY_PRGM_LEFT)return;
+   if(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)break;
+  }
+ }while(!quitting);
+}
+static int readModelField(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete){
  size_t at=0,total=0;uint8_t b[7];WFrame r;out[0]=0;
  do{
   b[0]=(uint8_t)target;w_put16(b+1,(uint16_t)at);w_put32(b+3,*owner);
-  if(rpc(W_RECEIPT,b,sizeof(b),&r,0)!=1||r.len<7)return 0;
+  if(rpc(command,b,sizeof(b),&r,0)!=1||r.len<7)return 0;
   if(!at){if(*owner&&w_get32(r.data+2)!=*owner)return 0;*owner=w_get32(r.data+2);*complete=r.data[1];total=r.data[6];}
   if(r.data[1]>1||(r.data[1]&&!w_get32(r.data+2))||w_get32(r.data+2)!=*owner||r.data[1]!=*complete||r.data[6]!=total||total>=cap||at+r.len-7>total||(r.len==7&&at<total))return 0;
   memcpy(out+at,r.data+7,r.len-7);at+=r.len-7;
  }while(at<total&&!quitting);
  out[at]=0;return !quitting;
 }
+static int readReceiptField(int target,uint32_t *owner,char *out,size_t cap,int *complete){return readModelField(W_RECEIPT,target,owner,out,cap,complete);}
 static void modelProof(void){
- WFrame r;char requested[256],reported[256],selected[256],body[1400];uint32_t owner=0;int complete=0;
+ WFrame r;char requested[256],reported[256],body[700];uint32_t owner=0;int complete=0;
  if(rpc(W_DEVICE,0,0,&r,0)!=1)return;
- if(r.len<4||!(r.data[3]&128)){message("Atom bijwerken","Werk ook de Atom bij om modelgegevens van het API-antwoord te kunnen bekijken.");return;}
- if(!readPublic(4,selected,sizeof(selected)))strcpy(selected,"Niet opgehaald");
- if(!readReceiptField(0,&owner,requested,sizeof(requested),&complete)||!readReceiptField(1,&owner,reported,sizeof(reported),&complete)){
-  if(!quitting)message("Model niet gecontroleerd","De modelgegevens konden niet betrouwbaar worden opgehaald. Er is geen nieuwe API-vraag verstuurd.");return;
+ if(r.len<4||r.data[1]<40){message("Actief model","Werk de wifi-module bij naar V40.");return;}
+ if(!readModelField(W_ACTIVE,0,&owner,requested,sizeof(requested),&complete)||!readModelField(W_ACTIVE,1,&owner,reported,sizeof(reported),&complete)){
+  if(!quitting)message("Actief model","Controle mislukt. Probeer opnieuw.");return;
  }
- sprintf(body,"Nu ingesteld: %s\n\nLaatste API-antwoord:\nAangevraagd: %s\nAPI-model: %s\n\nEen API-versie-ID kan anders zijn dan de gekozen modelnaam. Dit scherm hoort niet automatisch bij een geopende oude chat. Na een herstart, nieuwe chat of contextwissel kan deze informatie ontbreken. Vraag het model zelf niet om bewijs: zijn tekst is geen modelbevestiging.",selected,complete?requested:"Nog geen antwoord",complete&&reported[0]?reported:"Niet meegeleverd");
- message("Gebruikt model",body);
+ if(complete&&reported[0])sprintf(body,"%s\n\nBevestigd door de API.",modelDisplayName(requested));
+ else sprintf(body,"Keuze: %s\n\nNog niet bevestigd. Open Verbinding controleren.",requested[0]?modelDisplayName(requested):"Nog geen model");
+ message("Actief model",body);
 }
 static int fetchAnswer(unsigned int len){
  size_t pos=0;uint8_t b[2];WFrame r;if(len>ANSWER_MAX)return 0;answer[0]=0;
@@ -1182,7 +1257,7 @@ static int ensureQuestionStopped(void){
  if(!questionStopPending)return 1;
  loadingActive=0;if(readQuestionStopStatus())return 1;
  cancelQuestion();if(!questionStopPending)return 1;
- message("Vorige vraag wordt gestopt","De Atom heeft het stoppen nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er wordt geen nieuwe vraag verstuurd. Een eerdere API-aanvraag kan nog kosten maken.");return 0;
+ message("Vorige vraag wordt gestopt","De wifi-module heeft het stoppen nog niet bevestigd. Controleer de verbinding en probeer straks opnieuw. Er wordt geen nieuwe vraag verstuurd. Een eerdere API-aanvraag kan nog kosten maken.");return 0;
 }
 static void cancelQuestion(void){
  questionActive=0;questionAbortHandled=1;
@@ -1200,8 +1275,8 @@ static void cancelQuestion(void){
 static void questionCancelledMessage(void){
  if(quitting)return;
  message(questionStopPending?"Stoppen niet bevestigd":"Geannuleerd",questionStopPending?
-  "De Atom heeft het stoppen nog niet bevestigd. Controleer de verbinding. Een eerdere aanvraag kan geld kosten; er wordt geen nieuwe vraag verstuurd.":
-  "De Atom is gestopt met wachten op deze vraag. Een al verstuurde API-aanvraag kan nog kosten maken.");
+  "De wifi-module heeft het stoppen nog niet bevestigd. Controleer de verbinding. Een eerdere aanvraag kan geld kosten; er wordt geen nieuwe vraag verstuurd.":
+  "De wifi-module is gestopt met wachten op deze vraag. Een al verstuurde API-aanvraag kan nog kosten maken.");
 }
 static void askWork(void){
  WFrame r;uint8_t id[4];int start=RTC_GetTicks(),ok;uint8_t s,e;unsigned len;
@@ -1227,7 +1302,7 @@ static void askWork(void){
   if(ok==-2){if(questionAbort)return;cancelQuestion();questionCancelledMessage();return;}
   if(ok!=1||r.len!=10){cancelQuestion();if(!quitting)message("Verbinding onderbroken","De aanvraag kan al verstuurd zijn. Er wordt niet automatisch een nieuwe API-aanvraag gedaan. Open Instellingen, Hulp en Verbinding controleren.");return;}
   s=r.data[1];e=r.data[2];len=w_get16(r.data+3);
-  if(w_get32(r.data+6)!=w_get32(id)){message("Atom herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
+  if(w_get32(r.data+6)!=w_get32(id)){message("wifi-module herstart","Aanvraagstatus hoort niet meer bij deze vraag. Er is geen automatische herhaling bij de API.");return;}
   if(s==S_READY){int dropped=(r.data[5]&0x80)!=0;if(fetchAnswer(len)){loadingActive=0;strcpy(lastQuestion,prompt);prompt[0]=0;unsavedReply=1;saveReply();chatFollowTail=0;chatFocusAnswer=1;invalidateConversation();(void)dropped;}return;}
   if(s==S_ERROR){message("Aanvraag mislukt",e<sizeof(errNames)/sizeof(errNames[0])?errNames[e]:"Onbekende fout");return;}
   if(s==S_CANCELLED){message("Geannuleerd","Er wordt geen antwoord opgehaald.");return;}
@@ -1342,7 +1417,7 @@ int main(void){
    if(nativeMainMenu())break;
    /* Do not strand a white-rimmed closing dialog on an unsupported path. */
    quitting=0;
-   message("MENU niet geopend","De OS-menuovergang kon niet worden gestart. Je sessie en Atom-verbinding blijven beschikbaar. Probeer MENU opnieuw.");
+   message("MENU niet geopend","De OS-menuovergang kon niet worden gestart. Je sessie en wifi-module-verbinding blijven beschikbaar. Probeer MENU opnieuw.");
   }
   /* Restart UI only after SaveAndOpenMainMenu/native key-wait returns. */
  }

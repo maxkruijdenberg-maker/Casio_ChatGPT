@@ -38,3 +38,9 @@ for name in wifi_check model_receipt; do
  c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function "tests/test_$name.cpp" -o "build/tests/test_$name"
  "build/tests/test_$name"
 done
+
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function -I"$ARDUINOJSON_HOME/src" tests/test_connection_check.cpp -o build/tests/test_connection_check
+build/tests/test_connection_check
+
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_tx_lease.cpp -o build/tests/test_tx_lease
+build/tests/test_tx_lease

@@ -13,7 +13,7 @@ static bool saveConfiguration(const String values[4]){
  JsonDocument doc;for(int i=0;i<4;i++)doc["v"][i]=values[i];
  String blob;if(!serializeJson(doc,blob)||doc.overflowed())return false;
  if(prefs.putString("config11",blob)!=blob.length())return false;
- for(int i=0;i<4;i++)cfg[i]=values[i];return true;
+ for(int i=0;i<4;i++)cfg[i]=values[i];active_reset(&activeModel,cfg[3].c_str());return true;
 }
 static void loadConfiguration(){
  String blob=prefs.getString("config11","");if(!blob.length())return;
@@ -39,7 +39,7 @@ static void setupPage(){
  setupHeaders();
  String html=R"HTML(<!doctype html><html lang="nl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ChatGPT instellen</title><style>body{background:#171717;color:#eee;font:16px system-ui;margin:0;padding:24px}main{max-width:440px;margin:auto}h1{font-size:28px}p{color:#bbb;line-height:1.5}label{display:block;margin:20px 0 8px}input,button{box-sizing:border-box;width:100%;padding:14px;border-radius:12px;border:1px solid #555;background:#262626;color:#fff;font:inherit}button{background:#a3ecd5;color:#152820;border:0;margin-top:28px;font-weight:700}small{color:#bbb}</style><main><h1>Welkom bij ChatGPT</h1><p>Verbind je Casio met je eigen wifi. Plak daarna je OpenAI API-sleutel. Je hoeft niets op je rekenmachine over te typen.</p><form method="post" action="/save"><input type="hidden" name="token" value=")HTML";
  html+=portalToken;
- html+=R"HTML("><label for="ssid">Wifi-netwerk (2,4 GHz)</label><input id="ssid" name="ssid" required maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false"><label for="pass">Wifi-wachtwoord</label><input id="pass" name="pass" type="password" maxlength="63" autocomplete="new-password"><label for="key">OpenAI API-sleutel</label><input id="key" name="key" type="password" required maxlength="256" autocomplete="new-password" spellcheck="false" autocapitalize="none"><button>Opslaan en verbinden</button></form><p><small>Een eigen OpenAI API-account met tegoed is nodig. ChatGPT Plus bevat geen API-tegoed. De gegevens worden lokaal op je Atom opgeslagen. Dit tijdelijke netwerk sluit na opslaan of na 10 minuten. Opslaan verstuurt geen betaalde vraag.</small></p></main></html>)HTML";
+ html+=R"HTML("><label for="ssid">Wifi-netwerk (2,4 GHz)</label><input id="ssid" name="ssid" required maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false"><label for="pass">Wifi-wachtwoord</label><input id="pass" name="pass" type="password" maxlength="63" autocomplete="new-password"><label for="key">OpenAI API-sleutel</label><input id="key" name="key" type="password" required maxlength="256" autocomplete="new-password" spellcheck="false" autocapitalize="none"><button>Opslaan en verbinden</button></form><p><small>Een eigen OpenAI API-account met tegoed is nodig. ChatGPT Plus bevat geen API-tegoed. De gegevens worden lokaal op de wifi-module opgeslagen. Dit tijdelijke netwerk sluit na opslaan of na 10 minuten. Opslaan verstuurt geen betaalde vraag.</small></p></main></html>)HTML";
  setupWeb.send(200,"text/html; charset=utf-8",html);
 }
 static void setupSave(){

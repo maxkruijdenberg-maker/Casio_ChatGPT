@@ -1,0 +1,46 @@
+In file included from /workspace/casio-tools/ArduinoJson/src/ArduinoJson.hpp:50,
+                 from /workspace/casio-tools/ArduinoJson/src/ArduinoJson.h:9,
+                 from /workspace/Casio_ChatGPT/tests/test_connection_check.cpp:5:
+In member function ‘ArduinoJson::V742HB42::detail::CollectionData::iterator ArduinoJson::V742HB42::detail::ObjectData::findKey(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:16:20,
+    inlined from ‘static ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(const ArduinoJson::V742HB42::detail::ObjectData*, TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectData.hpp:30:29,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::VariantData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Variant/VariantData.hpp:332:33:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:36:21: warning: ‘<anonymous>.ArduinoJson::V742HB42::detail::CollectionIterator::nextId_’ may be used uninitialized [-Wmaybe-uninitialized]
+   36 |     return iterator();
+      |                     ^
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp: In member function ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::VariantData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:36:12: note: ‘<anonymous>’ declared here
+   36 |     return iterator();
+      |            ^~~~~~~~~~
+In member function ‘ArduinoJson::V742HB42::detail::CollectionData::iterator ArduinoJson::V742HB42::detail::ObjectData::findKey(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:16:20,
+    inlined from ‘static ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(const ArduinoJson::V742HB42::detail::ObjectData*, TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectData.hpp:30:29,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::VariantData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Variant/VariantData.hpp:332:33:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:43:19: warning: ‘<anonymous>.ArduinoJson::V742HB42::detail::CollectionIterator::nextId_’ may be used uninitialized [-Wmaybe-uninitialized]
+   43 |   return iterator();
+      |                   ^
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp: In member function ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::VariantData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:43:10: note: ‘<anonymous>’ declared here
+   43 |   return iterator();
+      |          ^~~~~~~~~~
+In member function ‘ArduinoJson::V742HB42::detail::CollectionData::iterator ArduinoJson::V742HB42::detail::ObjectData::findKey(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:16:20,
+    inlined from ‘ArduinoJson::V742HB42::DeserializationError::Code ArduinoJson::V742HB42::detail::JsonDeserializer<TReader>::parseObject(ArduinoJson::V742HB42::detail::ObjectData&, TFilter, ArduinoJson::V742HB42::DeserializationOption::NestingLimit) [with TFilter = ArduinoJson::V742HB42::detail::AllowAllFilter; TReader = ArduinoJson::V742HB42::detail::Reader<const char*, void>]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Json/JsonDeserializer.hpp:276:39:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:36:21: warning: ‘<anonymous>.ArduinoJson::V742HB42::detail::CollectionIterator::nextId_’ may be used uninitialized [-Wmaybe-uninitialized]
+   36 |     return iterator();
+      |                     ^
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp: In member function ‘ArduinoJson::V742HB42::DeserializationError::Code ArduinoJson::V742HB42::detail::JsonDeserializer<TReader>::parseObject(ArduinoJson::V742HB42::detail::ObjectData&, TFilter, ArduinoJson::V742HB42::DeserializationOption::NestingLimit) [with TFilter = ArduinoJson::V742HB42::detail::AllowAllFilter; TReader = ArduinoJson::V742HB42::detail::Reader<const char*, void>]’:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:36:12: note: ‘<anonymous>’ declared here
+   36 |     return iterator();
+      |            ^~~~~~~~~~
+In member function ‘ArduinoJson::V742HB42::detail::CollectionData::iterator ArduinoJson::V742HB42::detail::ObjectData::findKey(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’,
+    inlined from ‘ArduinoJson::V742HB42::detail::VariantData* ArduinoJson::V742HB42::detail::ObjectData::getMember(TAdaptedString, const ArduinoJson::V742HB42::detail::ResourceManager*) const [with TAdaptedString = ArduinoJson::V742HB42::detail::RamString]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:16:20,
+    inlined from ‘ArduinoJson::V742HB42::DeserializationError::Code ArduinoJson::V742HB42::detail::JsonDeserializer<TReader>::parseObject(ArduinoJson::V742HB42::detail::ObjectData&, TFilter, ArduinoJson::V742HB42::DeserializationOption::NestingLimit) [with TFilter = ArduinoJson::V742HB42::detail::AllowAllFilter; TReader = ArduinoJson::V742HB42::detail::Reader<const char*, void>]’ at /workspace/casio-tools/ArduinoJson/src/ArduinoJson/Json/JsonDeserializer.hpp:276:39:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:43:19: warning: ‘<anonymous>.ArduinoJson::V742HB42::detail::CollectionIterator::nextId_’ may be used uninitialized [-Wmaybe-uninitialized]
+   43 |   return iterator();
+      |                   ^
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp: In member function ‘ArduinoJson::V742HB42::DeserializationError::Code ArduinoJson::V742HB42::detail::JsonDeserializer<TReader>::parseObject(ArduinoJson::V742HB42::detail::ObjectData&, TFilter, ArduinoJson::V742HB42::DeserializationOption::NestingLimit) [with TFilter = ArduinoJson::V742HB42::detail::AllowAllFilter; TReader = ArduinoJson::V742HB42::detail::Reader<const char*, void>]’:
+/workspace/casio-tools/ArduinoJson/src/ArduinoJson/Object/ObjectImpl.hpp:43:10: note: ‘<anonymous>’ declared here
+   43 |   return iterator();
+      |          ^~~~~~~~~~
+PASS V40 connection/model verification: real JSON parser, empty one-token completions, exact/date aliases, mismatches, missing/invalid metadata, stale settings epochs, pre/during-call cancellation/deadlines, no late POST, quota versus rate limit, no retries, durable diagnostic replay ledger.

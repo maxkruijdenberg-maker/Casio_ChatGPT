@@ -44,6 +44,8 @@ static int clears=0;static void clearHistory(){clears++;}
 struct{bool restoring;String pending;}context;
 struct{}upload;static void upload_clear(decltype(upload)*){}
 struct{int allocated;}ledger;
+#include "../atom/ChatGPTAtom/active_model.h"
+static ActiveModel activeModel;
 #include "../atom/ChatGPTAtom/phone_setup.h"
 static void form(const String&token,const String&key="sk-new-key"){
  setupWeb.args={{"token",token},{"ssid","newwifi"},{"pass","newpassword"},{"key",key}};

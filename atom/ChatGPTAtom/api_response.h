@@ -4,10 +4,18 @@
 #include "wire.h"
 #include "utf8.h"
 #include "model_receipt.h"
+#include "connection_check.h"
 static const char *completion_model(JsonVariantConst root){
  if(!root["model"].is<const char*>())return "";
  JsonString value=root["model"].as<JsonString>();
  return receipt_model_valid(value.c_str(),value.size())?value.c_str():"";
+}
+static CheckHttpResult completion_check_response(int status,JsonVariantConst root,bool parsed){
+ CheckHttpResult result;result.status=status;
+ if(status!=200){const char *code=parsed?(root["error"]["code"]|""):"";result.error=check_http_error(status,code);return result;}
+ if(!parsed){result.error=E_JSON;return result;}
+ result.valid=!strcmp(root["object"]|"","chat.completion")&&root["choices"].is<JsonArrayConst>()&&root["choices"].size()>0;
+ const char *reported=completion_model(root);memcpy(result.reported,reported,strlen(reported)+1);return result;
 }
 struct CompletionView {const char *text;size_t size;bool truncated;};
 static int completion_view(JsonVariantConst root,size_t max,CompletionView *out){
