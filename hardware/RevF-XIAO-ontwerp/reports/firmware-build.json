@@ -1,0 +1,16 @@
+{
+  "compile_exit_code": 0,
+  "fqbn": "esp32:esp32:XIAO_ESP32C6:PartitionScheme=huge_app",
+  "esp32_core": "3.3.0",
+  "ArduinoJson": "7.4.2",
+  "program_bytes": 1183641,
+  "static_ram_bytes": 52076,
+  "uart": 1,
+  "rx_gpio": 17,
+  "tx_gpio": 16,
+  "tx_inverted": true,
+  "heartbeat_gpio": 1,
+  "arm_gpio": 2,
+  "application_and_common_headers_identical_to_V40_1_C6": true,
+  "physical_upload_and_uart_verified": false
+}

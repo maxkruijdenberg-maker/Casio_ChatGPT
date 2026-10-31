@@ -1,0 +1,37 @@
+{
+  "errors": [],
+  "footprints": 42,
+  "assembled_components": 41,
+  "bom_groups": 22,
+  "physical_pads_audited": 127,
+  "layers": 2,
+  "board_thickness_mm": 0.6,
+  "surface_finish": "OSP",
+  "overall_outline_mm": [
+    89,
+    34
+  ],
+  "head_mm": [
+    34,
+    34
+  ],
+  "arm_mm": [
+    55,
+    19
+  ],
+  "manual_xiao_holes": 14,
+  "hole_drill_mm": 1.05,
+  "hole_pitch_mm": 2.54,
+  "hole_row_spacing_mm": 15.24,
+  "via_count": 56,
+  "via_in_smt_pad_intersections": [],
+  "minimum_via_diameter_mm": 0.6,
+  "minimum_via_drill_mm": 0.3,
+  "usb_front_conservative_y_mm": 33.5,
+  "inventory_snapshot": "2026-10-31T10:17:22+00:00",
+  "inventory_lowest_stock": 1678,
+  "factory_model_rotations_verified_in_customer_jlc_preview": false,
+  "physical_fit_height_supply_usb_uart_rf_verified": false,
+  "battery_usb_simultaneously_allowed": false,
+  "switch_present": false
+}
