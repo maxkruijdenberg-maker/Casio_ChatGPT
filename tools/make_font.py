@@ -5,6 +5,8 @@ font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',13
 chars=''.join(chr(i) for i in range(32,127))+'·éëèêáàâäíïìîóöòôúüùûçñÉËÈÊÁÀÂÄÍÏÌÎÓÖÒÔÚÜÙÛÇÑπθαβγδμωφ∞√≤≥≠×÷±∑∫∆→←↑↓²³°•…‘’“”–—€�'
 # Keep mathematical relations distinct; unknown-glyph replacement looks like '?'.
 chars+='≈≃≅≔≕≡≝≜≟≢≉∛∠'
+# Native end-of-answer symbols and common mathematical notation.
+chars+='✓✔✗✘☑☐■□●○★☆∎♥☺ℕℤℚℝℂ∈∉∅∪∩⊂⊆⊃⊇∀∃∂∇∏λστυ⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾₀₁₂₃₄₅₆₇₈₉'
 chars=''.join(dict.fromkeys(chars))
 rows=['/* Generated DejaVu Sans Mono 13px. See docs/FONT-LICENSE.txt. */','#ifndef CHATGPT_FONT_H','#define CHATGPT_FONT_H','#include <stdint.h>','typedef struct {uint32_t code;uint8_t rows[14];} Glyph;','static const Glyph font_glyphs[]={']
 for ch in chars:

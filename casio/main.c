@@ -67,6 +67,7 @@ static void diagnose(void);
 static void modelProof(void);
 static int runConnectionCheck(void);
 static void checkModelChoice(void);
+static int readModelFieldEx(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete,int cancellable,int *wasCancelled);
 static int readModelField(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete);
 static int ensureDiagnosticStopped(void);
 static void screenSettings(void);
@@ -279,12 +280,13 @@ static void clear(const char *title){
  physicalRect(0,0,384,216,C_BG);rect(0,0,384,32,C_PANEL);
  drawLogo(8,4,24);clipped(40,9,name,29,C_TEXT);
  rect(0,31,384,1,C_LINE);
- {
-  const char *status=linkOnline?"Verbonden":"Verbroken";
-  unsigned short color=linkOnline?C_GREEN:C_STATUS_RED;
-  ellipse(294,16,3,3,color);printAt(302,9,status,C_TEXT);
- }
 }
+static void connectionBadge(void){
+ const char *status=linkOnline?"Verbonden":"Verbroken";
+ unsigned short color=linkOnline?C_GREEN:C_STATUS_RED;
+ ellipse(294,16,3,3,color);printAt(302,9,status,C_TEXT);
+}
+
 static void configureDisplay(void){
  Bdisp_EnableColor(1);EnableStatusArea(3);
  Bdisp_DefineDMARange(0,383,0,215);
@@ -564,6 +566,7 @@ static void renderEditor(const char *buf,size_t cap,size_t cursor,const char *ti
  int letters,int shifted,int firstLetter,int first){
  int row,col,top=52,left=12,visible=ROWS;char mode[8];cursorPosition(buf,cursor,promptMode==1?MESSAGE_COLS:COLS,&row,&col);
  clear(title);
+ if(promptMode==1&&!hasConversation()&&activeChatSlot<0)connectionBadge();
  (void)cap;
  if(promptMode==1){
   visible=hasConversation()?conversationRows(buf):composerRows(buf);top=167-visible*14;left=16;
@@ -967,7 +970,7 @@ static void paintModels(int selected){
  }
  if(modelStopPending)printAt(14,177,"Accountcontrole stopt...",C_MUTED);
  else if(modelCheckFailed)printAt(14,177,"Accountcontrole mislukt",C_MUTED);
- scrollbar(378,58,114,first,5,rows);footer(selected<count?"Kies":"","",selected<count?"Info":"","","","");show();
+ scrollbar(378,58,114,first,5,rows);footer(selected<count?"Kies":"",selected<count?"Info":"","","","","");show();
 }
 static int modelPicker(void){
  int selected,k;char details[1024];modelShowAll=0;pickerConfirmedModel[0]=0;
@@ -988,7 +991,7 @@ static int modelPicker(void){
    if(k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT){modelShowAll=1;selected=modelSelection(publicModel);}
    continue;
   }
-  if(k==KEY_PRGM_F3&&count){modelDetails(modelViewPreset(selected),details,sizeof(details));message("Over dit model",details);}
+  if(k==KEY_PRGM_F2&&count){modelDetails(modelViewPreset(selected),details,sizeof(details));message("Over dit model",details);}
   if(count&&(k==KEY_PRGM_F1||k==KEY_PRGM_RETURN||k==KEY_PRGM_RIGHT)){
    const char *name=modelViewId(selected);
    if(!setting_valid(4,name,strlen(name)))continue;
@@ -1009,7 +1012,7 @@ static void deviceSettings(void){
   if(k==KEY_PRGM_UP&&selected>0)selected--;if(k==KEY_PRGM_DOWN&&selected<2)selected++;
   if(k!=KEY_PRGM_RETURN&&k!=KEY_PRGM_RIGHT)continue;
   if(selected==0)screenSettings();
-  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 40.0\n\nChats staan op je Casio. Wifi en je sleutel staan op de wifi-module.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
+  if(selected==1)message("Over deze app","ChatGPT voor Casio fx-CG50\nVersie 40.1\n\nChats staan op je Casio. Wifi en je sleutel staan op de wifi-module.\n\nEigen API-tegoed en internet zijn nodig. AI kan fouten maken.");
   if(selected==2&&confirm("Wifi en API-sleutel wissen? Je opgeslagen chats blijven behouden.")){
    if(checkedRpc(W_WIPE,(const uint8_t*)"WIPE",4,&reply)){settingsEpoch++;settingsKnown=0;remoteModelCount=0;modelAccountChecked=0;publicSSID[0]=publicModel[0]=0;message("Gegevens gewist","Open Wifi en account om opnieuw in te stellen.");}
   }
@@ -1060,6 +1063,7 @@ static void settings(void){
   if(selected==3){deviceSettings();if(!settingsKnown&&linkOnline)refreshSettings(configured);}
  }
 }
+static char diagnosisModelName[256];
 static int diagnosisCommand=W_DIAG;
 static int diagnosisAttempted=0,diagnosisInternet=0,diagnosisAccount=0,diagnosisModel=0;
 static int diagnosisWifiKnown=0,diagnosisWifiQuality=0,diagnosisWifiError=0,diagnosisNeedsUpdate=0,diagnosisStopPending=0;
@@ -1093,7 +1097,7 @@ static void paintDiagnosis(int successes,int checked){
  if(diagnosisWifiKnown){diagnosisRow(y,"Wifi",diagnosisWifiText());y+=27;}
  if(diagnosisAttempted&2){diagnosisRow(y,"Internet",diagnosisInternet?"Verbonden":"Verbinding mislukt");y+=27;}
  if(diagnosisAttempted&4){diagnosisRow(y,"API-account",diagnosisAccountText());y+=27;}
- if(diagnosisAttempted&8){diagnosisRow(y,"Model",diagnosisModel?"Bevestigd":"Niet bevestigd");y+=27;}
+ if(diagnosisAttempted&8){diagnosisRow(y,"Model",diagnosisModel&&diagnosisModelName[0]?modelDisplayName(diagnosisModelName):"Niet bevestigd");y+=27;}
  if(diagnosisNeedsUpdate)printAt(18,165,"Werk de wifi-module bij naar V40.",C_MUTED);
  else if(diagnosisWifiError==E_CONFIG&&!(diagnosisAttempted&4))printAt(18,165,"Stel wifi en je API-sleutel in.",C_MUTED);
  else if(diagnosisWifiError==E_TIME)printAt(18,165,"Tijd bijwerken mislukt.",C_MUTED);
@@ -1162,7 +1166,7 @@ static int runConnectionCheck(void){
  WFrame r;uint8_t action=0,b[5];int result,started,k;
  if(!ensureDiagnosticStopped()||!ensureQuestionStopped()||!ensureModelStopped()||quitting)return 0;
  diagnosisWifiKnown=diagnosisWifiQuality=diagnosisWifiError=diagnosisNeedsUpdate=0;
- diagnosisAttempted=diagnosisInternet=diagnosisAccount=diagnosisModel=0;
+ diagnosisAttempted=diagnosisInternet=diagnosisAccount=diagnosisModel=0;diagnosisModelName[0]=0;
  result=rpc(W_DEVICE,0,0,&r,1);if(result==-2||quitting)return -2;
  if(result!=1||r.len<4){diagnosisWifiError=result==0?r.data[0]:E_TIMEOUT;return 0;}
  if(r.data[1]<40){diagnosisNeedsUpdate=1;return 0;}
@@ -1187,6 +1191,10 @@ static int runConnectionCheck(void){
  diagnosisStopPending=0;diagnosisAttempted=r.data[4]&15;diagnosisWifiKnown=(diagnosisAttempted&1)!=0;
  diagnosisWifiQuality=r.data[2]<=3?r.data[2]:0;diagnosisWifiError=r.data[3];
  diagnosisInternet=r.data[5]==1;diagnosisAccount=r.data[6]==1;diagnosisModel=r.data[7]==1;
+ if(diagnosisModel){uint32_t owner=0;int verified=0,wasCancelled=0;char reported[256];
+  if(!readModelFieldEx(W_ACTIVE,0,&owner,diagnosisModelName,sizeof(diagnosisModelName),&verified,1,&wasCancelled)||!readModelFieldEx(W_ACTIVE,1,&owner,reported,sizeof(reported),&verified,1,&wasCancelled)||!verified||!reported[0]){diagnosisModel=0;diagnosisModelName[0]=0;}
+  if(wasCancelled||quitting)return -2;
+ }
  return 1;
 }
 static void checkModelChoice(void){
@@ -1209,17 +1217,19 @@ static void diagnose(void){
   }
  }while(!quitting);
 }
-static int readModelField(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete){
+static int readModelFieldEx(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete,int cancellable,int *wasCancelled){
  size_t at=0,total=0;uint8_t b[7];WFrame r;out[0]=0;
  do{
   b[0]=(uint8_t)target;w_put16(b+1,(uint16_t)at);w_put32(b+3,*owner);
-  if(rpc(command,b,sizeof(b),&r,0)!=1||r.len<7)return 0;
+  int result=rpc(command,b,sizeof(b),&r,cancellable);if(result==-2&&wasCancelled)*wasCancelled=1;
+  if(result!=1||r.len<7)return 0;
   if(!at){if(*owner&&w_get32(r.data+2)!=*owner)return 0;*owner=w_get32(r.data+2);*complete=r.data[1];total=r.data[6];}
   if(r.data[1]>1||(r.data[1]&&!w_get32(r.data+2))||w_get32(r.data+2)!=*owner||r.data[1]!=*complete||r.data[6]!=total||total>=cap||at+r.len-7>total||(r.len==7&&at<total))return 0;
   memcpy(out+at,r.data+7,r.len-7);at+=r.len-7;
  }while(at<total&&!quitting);
  out[at]=0;return !quitting;
 }
+static int readModelField(int command,int target,uint32_t *owner,char *out,size_t cap,int *complete){return readModelFieldEx(command,target,owner,out,cap,complete,0,0);}
 static int readReceiptField(int target,uint32_t *owner,char *out,size_t cap,int *complete){return readModelField(W_RECEIPT,target,owner,out,cap,complete);}
 static void modelProof(void){
  WFrame r;char requested[256],reported[256],body[700];uint32_t owner=0;int complete=0;

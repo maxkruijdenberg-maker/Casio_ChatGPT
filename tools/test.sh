@@ -44,3 +44,6 @@ build/tests/test_connection_check
 
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_tx_lease.cpp -o build/tests/test_tx_lease
 build/tests/test_tx_lease
+
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_idle_power.cpp -o build/tests/test_idle_power
+build/tests/test_idle_power

@@ -35,6 +35,15 @@ int main(void){
  assert(answer_display("⩶",triple,sizeof(triple))&&!strcmp(triple,"==="));
  assert(!answer_display("⩶",pair,sizeof(pair))&&!pair[0]);
  assert(answer_display("Is x = ?; x ≟ 3",out,sizeof(out))&&!strcmp(out,"Is x = ?; x ≟ 3"));
+ /* A valid invisible modifier must not become the diamond replacement glyph. */
+ assert(answer_display("Klaar? ✅️\xe2\x80\x8b",out,sizeof(out))&&!strcmp(out,"Klaar? ✓"));
+ assert(answer_display("Antwoord.\xe2\x81\xa0\xef\xbb\xbf",out,sizeof(out))&&!strcmp(out,"Antwoord."));
+ assert(answer_display("Ja 👍🏽; nee ❌; bewijs ∎ □ ■",out,sizeof(out))&&!strcmp(out,"Ja ✓; nee ✗; bewijs ∎ □ ■"));
+ char inplace[128]="Klaar ✅️\xe2\x80\x8b";assert(answer_display(inplace,inplace,sizeof(inplace))&&!strcmp(inplace,"Klaar ✓"));
+ for(const char *symbols="✓✔✗✘☑☐■□●○★☆∎♥☺ℝ∈∅⁴₄";*symbols;){
+  uint32_t code;symbols+=u_decode(symbols,strlen(symbols),&code);const Glyph *g=find_glyph(code);assert(g&&memcmp(g->rows,find_glyph(0xfffd)->rows,14));
+  int ink=0;for(int row=0;row<14;row++)ink|=g->rows[row];assert(ink);
+ }
  char original[]="𝑥＝6";assert(answer_display(original,out,sizeof(out))&&!strcmp(original,"𝑥＝6"));
  char small[4];assert(!answer_display("1234",small,sizeof(small))&&!small[0]);
  assert(answer_display("123",small,sizeof(small))&&!strcmp(small,"123"));

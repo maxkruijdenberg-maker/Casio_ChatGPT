@@ -1,4 +1,4 @@
-/* ChatGPT V40 Rev E ESP32-C6-MINI-1-H4. No sleep. TX inversion for Q2/Q3.
+/* ChatGPT V40.1 Rev E ESP32-C6-MINI-1-H4. No sleep. TX inversion for Q2/Q3.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select ESP32C6 Dev Module, 4MB, Huge APP, USB CDC off.
    Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
@@ -17,6 +17,7 @@
 #include "api_response.h"
 #include "wifi_check.h"
 #include "connection_check.h"
+#include "idle_power.h"
 #include "context.h"
 #include "wire.h"
 #include "ledger.h"
@@ -44,6 +45,8 @@ static WParser parser={};
 static WFrame cachedIn={},cachedOut={};
 static bool cached=false;
 static uint32_t lastByte=0,bootId=0;
+static IdlePower idlePower;
+static uint32_t activeCpuMHz=0;
 struct Lock { Lock(){xSemaphoreTake(gate,portMAX_DELAY);} ~Lock(){xSemaphoreGive(gate);} };
 static ModelReceipt modelReceipt;
 static ActiveModel activeModel;
@@ -161,7 +164,7 @@ static void performApi(){
   JsonDocument req;req["model"]=model;req["max_completion_tokens"]=1200;req["stream"]=false;
   JsonArray msgs=req["messages"].to<JsonArray>();
   JsonObject system=msgs.add<JsonObject>();system["role"]="system";
-  system["content"]=String("De applicatie vraagt in dit verzoek model ")+model+" aan. Als de gebruiker naar het gebruikte model vraagt, noem dit als de aangevraagde model-ID; de API-modelbevestiging is apart te controleren via Instellingen, Hulp, Actief model. "+"Antwoord standaard in het Nederlands. Gebruik platte tekst en lineaire formules, zonder LaTeX of tabellen. Wees beknopt: maximaal ongeveer 1800 tekens. Dit scherm is klein.";
+  system["content"]=String("De applicatie vraagt in dit verzoek model ")+model+" aan. Als de gebruiker naar het gebruikte model vraagt, noem dit als de aangevraagde model-ID; de API-modelbevestiging is apart te controleren via Instellingen, Hulp, Actief model. "+"Antwoord standaard in het Nederlands. Gebruik platte tekst en lineaire formules, zonder LaTeX, tabellen, emoji of afsluitende decoraties. Wees beknopt: maximaal ongeveer 1800 tekens. Dit scherm is klein.";
   for(int i=0;i<context.count;i++){
    JsonObject u=msgs.add<JsonObject>();u["role"]="user";u["content"]=context.q[i];
    JsonObject a=msgs.add<JsonObject>();a["role"]="assistant";a["content"]=context.a[i];
@@ -321,6 +324,23 @@ static void runCatalog(void*){performCatalog();vTaskDelete(nullptr);}
 
 #include "phone_setup.h"
 
+/* Radio off after peer loss; UART remains running for automatic reopening.
+ * None of these transitions allocates or sends an API request. */
+static void powerActivity(const WFrame &frame){
+ if(frame.type<W_HELLO||frame.type>W_ACTIVE)return;
+ if(!idlePower.contact(millis()))return;
+ if(activeCpuMHz)setCpuFrequencyMhz(activeCpuMHz);
+ WiFi.mode(WIFI_STA);
+ String ssid,pass;{Lock l;ssid=cfg[0];pass=cfg[1];wifiDirty=true;}
+ if(ssid.length()){WiFi.begin(ssid.c_str(),pass.c_str());Lock l;wifiDirty=false;}
+}
+static void servicePower(){
+ {Lock l;if(!idlePower.park(millis(),busy()))return;wifiDirty=true;}
+ if(portalActive)stopPortal();
+ WiFi.disconnect(false,false);WiFi.mode(WIFI_OFF);
+ setCpuFrequencyMhz(80);
+}
+
 static bool sameFrame(const WFrame&a,const WFrame&b){return a.type==b.type&&a.seq==b.seq&&a.len==b.len&&!memcmp(a.data,b.data,a.len);}
 static void sendFrame(const WFrame& f){uint8_t out[WIRE_ENCODED];size_t n=w_encode(&f,out);Calc.write(out,n);}
 static void handle(const WFrame& in) {
@@ -456,7 +476,7 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=40;out.data[2]=0;out.data[3]=255;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=40;out.data[2]=1;out.data[3]=255;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
@@ -483,6 +503,7 @@ static void handle(const WFrame& in) {
 }
 void setup(){
  /* USB logging deliberately disabled. GPIO21 uses TX-only inversion and the gated open-drain output. */
+ activeCpuMHz=getCpuFrequencyMhz();idlePower.begin(millis());
  boardInitPins();bootId=esp_random();pinMode(TX_PIN,INPUT);gate=xSemaphoreCreateMutex();if(!gate)return;
  prefs.begin("casiochat",false);cfg[0]=prefs.getString("ssid","");cfg[1]=prefs.getString("pass","");
  cfg[2]=prefs.getString("key","");cfg[3]=prefs.getString("model","gpt-4.1-mini");
@@ -498,7 +519,7 @@ void loop(){
  boardServiceLease();servicePortal();
  if(parser.n&&millis()-lastByte>500)memset(&parser,0,sizeof(parser));
  while(Calc.available()){
-  WFrame f;uint8_t c=Calc.read();lastByte=millis();if(w_feed(&parser,c,&f)==1&&boardAcceptFrame(f))handle(f);
+  WFrame f;uint8_t c=Calc.read();lastByte=millis();if(w_feed(&parser,c,&f)==1){powerActivity(f);if(boardAcceptFrame(f))handle(f);}
  }
- boardServiceLease();delay(1);
+ boardServiceLease();servicePower();delay(idlePower.parked?20:1);
 }

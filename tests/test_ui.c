@@ -569,7 +569,7 @@ static void testV40ChecksAndCleanup(void){
  questionStopPending=modelStopPending=diagnosisStopPending=0;fakeApiCancelAt=-1;modelCancelAt=-1;modelsLoading=0;
  int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC],starts=fakeCheckStarts;
  SCRIPT(quiet);assert(runConnectionCheck()==1&&fakeCheckStarts==starts+1&&!loadingActive&&!diagnosisStopPending);
- assert(diagnosisAttempted==15&&diagnosisInternet&&diagnosisAccount&&diagnosisModel);
+ assert(diagnosisAttempted==15&&diagnosisInternet&&diagnosisAccount&&diagnosisModel&&!strcmp(diagnosisModelName,storedModel));
  /* Preserve the draft, reply, history and ordinary paid request ledger. */
  strcpy(prompt,"Bewaar dit concept");strcpy(answer,"Bewaar dit antwoord");
  fakeDiagError=E_CREDIT;fakeCheckAccount=fakeCheckModel=0;fakeCheckFlags=7;
@@ -643,7 +643,7 @@ static void testV14NavigationAndModels(void){
  strcpy(publicModel,modelChoices[0].id);strcpy(storedModel,publicModel);
  const int pickerCancel[]={28,0,28,0,48,0,0,0,69,0,0,0,31};SCRIPT(pickerCancel);
  assert(modelPicker()&&!strcmp(storedModel,modelChoices[1].id)&&!quitting);
- const int explain[]={59,0,47,0,47};SCRIPT(explain);assert(!modelPicker());
+ const int explain[]={69,0,47,0,47};SCRIPT(explain);assert(!modelPicker());
  /* Normal F3 is unused: no duplicate Vraag button or modal; SHIFT still
   * opens the full question. Neither route does diagnosis/network requests. */
  strcpy(lastQuestion,"23 + 42 = ?");strcpy(answer,"23 + 42 = 65");activeChatSlot=-1;
@@ -732,11 +732,11 @@ static void testAccountModels(void){
  chooseTestModel("gpt-5.4-mini");
  chooseTestModel("gpt-6.1-sol");
  /* Information never applies a model or dispatches a paid question. */
- int writes=requestCount[W_APPLY];const int info[]={59,0,47,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
+ int writes=requestCount[W_APPLY];const int info[]={69,0,47,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
  char details[1024];modelDetails(1,details,sizeof(details));
  assert(strstr(details,"GPT-6.1 Sol")&&strstr(details,modelChoices[1].description)&&strstr(details,modelChoices[1].advice)&&strstr(details,"Kosten:")&&strstr(details,"gpt-6.1-sol")&&strstr(details,"staat in je account"));
- /* F2 account shortcut was removed; it does not refresh or change the model. */
- int beforeRefresh=modelRefreshes;int refresh[180]={69};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==beforeRefresh&&!strcmp(storedModel,"gpt-6.1-sol"));
+ /* F3 has no action; F2 opens Info without refreshing the account. */
+ int beforeRefresh=modelRefreshes;int refresh[180]={59};refresh[179]=47;SCRIPT(refresh);modelPicker();assert(modelRefreshes==beforeRefresh&&!strcmp(storedModel,"gpt-6.1-sol"));
  strcpy(remoteModels,"gpt-good\nbad name\n");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
  strcpy(remoteModels,"gpt-no-final-newline");assert(!parseModelList(strlen(remoteModels))&&!remoteModelCount);
  modelsLoading=1;modelCancelAt=-1;const int cancel[]={47};SCRIPT(cancel);assert(!fetchModels()&&!loadingActive&&!remoteModelCount);
@@ -865,7 +865,7 @@ static void testV31ModelsAndCancellation(void){
  assert(modelPicker()&&modelShowAll&&modelViewCount()==MODEL_COUNT-3&&!strcmp(storedModel,"gpt-4.1-mini")&&requestCount[W_APPLY]==writes);
  const int noToggle[]={49,0,47};SCRIPT(noToggle);assert(!modelPicker()&&!modelShowAll);
  /* Info and selection use the appropriate recommended/other view index. */
- const int info[]={59,0,38,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
+ const int info[]={69,0,38,0,47};SCRIPT(info);assert(!modelPicker()&&requestCount[W_APPLY]==writes);
  chooseTestModel("gpt-6-luna");
  if(!remoteModels)remoteModels=(char*)malloc(REMOTE_MODELS_CAP);assert(remoteModels);
  strcpy(remoteModels,"gpt-4.1-mini\n");assert(parseModelList(strlen(remoteModels)));modelShowAll=0;
@@ -1157,12 +1157,19 @@ int main(int argc,char **argv){
  assert(ringPixels>200);
  assert(modelChoiceIndex("gpt-6-astra")>=0&&modelChoiceIndex("gpt-6.1-sol")>=0&&modelChoiceIndex("gpt-6-luna")>=0);
  /* Status text and background stay neutral. Only the round dot is colored. */
- linkOnline=1;clear("ChatGPT");int greenInk=0,redInk=0,neutralInk=0;
+ newLocalChat();linkOnline=1;renderEditor("",1025,0,"ChatGPT",0,1,0,0,1,0);int greenInk=0,redInk=0,neutralInk=0;
  for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;neutralInk+=framebuffer[y*384+x]==C_TEXT;}
  assert(!greenInk&&!redInk&&neutralInk>20&&vram[16*384+294]==C_GREEN&&vram[6*384+286]==C_PANEL);
- linkOnline=0;clear("ChatGPT");greenInk=redInk=neutralInk=0;
+ linkOnline=0;renderEditor("",1025,0,"ChatGPT",0,1,0,0,1,0);greenInk=redInk=neutralInk=0;
  for(int y=9;y<24;y++)for(int x=302;x<374;x++){greenInk+=framebuffer[y*384+x]==C_GREEN;redInk+=framebuffer[y*384+x]==C_STATUS_RED;neutralInk+=framebuffer[y*384+x]==C_TEXT;}
  assert(!greenInk&&!redInk&&neutralInk>20&&vram[16*384+294]==C_STATUS_RED&&vram[6*384+286]==C_PANEL);linkOnline=1;
+ /* The connectivity badge belongs only to the blank chat home. */
+ paintSettings(0);for(int y=4;y<28;y++)for(int x=286;x<383;x++)assert(framebuffer[y*384+x]==C_PANEL);
+ strcpy(lastQuestion,"Vraag");strcpy(answer,"Antwoord");renderEditor("",1025,0,"ChatGPT",0,1,0,0,1,0);
+ for(int y=4;y<28;y++)for(int x=286;x<383;x++)assert(framebuffer[y*384+x]==C_PANEL);
+ paintLoading(0);for(int y=4;y<28;y++)for(int x=286;x<383;x++)assert(framebuffer[y*384+x]==C_PANEL);
+ newLocalChat();
+
  if(argc==3&&!strcmp(argv[1],"--screens")){
   strcpy(storedModel,"gpt-6.1-sol");strcpy(publicModel,storedModel);
   assert(lib_delete(&disk,'C',0));savedChats[0]=lib_entry(&disk,'C',0);storageClose();
@@ -1201,7 +1208,7 @@ int main(int argc,char **argv){
   paintAccountResult(0);snprintf(path,sizeof(path),"%s/account-failure.ppm",argv[2]);dumpFrame(path);
   modelCheckFailed=1;paintModels(1);snprintf(path,sizeof(path),"%s/models-unchecked.ppm",argv[2]);dumpFrame(path);modelCheckFailed=0;
   strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(1);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
-  linkOnline=1;diagnosisAttempted=15;diagnosisInternet=diagnosisAccount=diagnosisModel=1;diagnosisWifiKnown=1;diagnosisWifiQuality=3;diagnosisWifiError=diagnosisNeedsUpdate=0;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
+  strcpy(diagnosisModelName,"gpt-6.1-sol");linkOnline=1;diagnosisAttempted=15;diagnosisInternet=diagnosisAccount=diagnosisModel=1;diagnosisWifiKnown=1;diagnosisWifiQuality=3;diagnosisWifiError=diagnosisNeedsUpdate=0;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
   fakeAtomMajor=40;SCRIPT(leave);modelProof();snprintf(path,sizeof(path),"%s/model-proof.ppm",argv[2]);dumpFrame(path);
   char modelText[1024];modelDetails(1,modelText,sizeof(modelText));SCRIPT(leave);message("Over dit model",modelText);snprintf(path,sizeof(path),"%s/model-info.ppm",argv[2]);dumpFrame(path);
   for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
@@ -1210,6 +1217,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V40 customer text cleanup, F3 model info, full wifi/internet/account/model results, isolated automatic model test, pre-start cancellation without diagnostic dispatch, no chat mutation and cleared caption pixels; V32.4 separate Casio/Atom and hotspot checks, signal/missing/auth/busy/cancel/update paths, no paid admission while diagnostics stop, request-bound configured/requested/reported model evidence and missing/stale metadata; V32.3 photo mapping: all 30 ALPHA characters and 22 SHIFT input functions in four physical press/release modes, ALPHA lock, UTF-8 clipboard selection/paste, overwrite and Undo; V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V40 customer text cleanup, F2 model info, full wifi/internet/account/model results, actual API-confirmed model name, home-only connection badge, isolated automatic model test, pre-start cancellation without diagnostic dispatch, no chat mutation and cleared caption pixels; V32.4 separate Casio/Atom and hotspot checks, signal/missing/auth/busy/cancel/update paths, no paid admission while diagnostics stop, request-bound configured/requested/reported model evidence and missing/stale metadata; V32.3 photo mapping: all 30 ALPHA characters and 22 SHIFT input functions in four physical press/release modes, ALPHA lock, UTF-8 clipboard selection/paste, overwrite and Undo; V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

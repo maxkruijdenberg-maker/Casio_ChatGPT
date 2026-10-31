@@ -1,6 +1,6 @@
-# ChatGPT voor Casio — V40
+# ChatGPT voor Casio — V40.1
 
-Pak het pakket volledig uit en open START-HIER.html of docs/Handleiding-V40.0.pdf.
+Pak het pakket volledig uit en open START-HIER.html of docs/Handleiding-V40.1.pdf.
 
 Werk zowel dist/ChatGPT.g3a als je wifi-module bij. Bewaar CGPT3 op de Casio en wis niet de hele flash.
 
@@ -11,4 +11,4 @@ Vervang COM5 door je eigen COM-poort. Gebruik de flasher voor jouw apparaat; C6 
 
 Modelkeuze en Verbinding controleren starten elk een kleine betaalde API-test. Actief model wordt alleen bevestigd op basis van API-modelgegevens. Het openen van modelinformatie of het actieve-modelscherm kost geen API-aanvraag.
 
-Klantpakket: dist/ChatGPT-V40.0-installatie.zip. De hardwareproductiebestanden staan apart op GitHub en veranderen niet bij deze software-update.
+Klantpakket: dist/ChatGPT-V40.1-installatie.zip. De hardwareproductiebestanden staan apart op GitHub en veranderen niet bij deze software-update.
