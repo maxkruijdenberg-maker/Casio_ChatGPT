@@ -1,0 +1,49 @@
+{
+  "repository": "maxkruijdenberg-maker/Casio_ChatGPT",
+  "entries": [
+    {
+      "id": "v40.1",
+      "title": "ChatGPT V40.1 installatie — ATOM-testbench / Rev E",
+      "tag": "download-v40.1-r1",
+      "archive": "dist/ChatGPT-V40.1-installatie.zip",
+      "strip_prefix": "ChatGPT-V40.1/"
+    },
+    {
+      "id": "pcb-revg",
+      "title": "Actuele Rev G PCB — XIAO, drie Casio-draden",
+      "tag": "download-pcb-revg-r1",
+      "files": [
+        "hardware/RevG-XIAO-3wire-06mm-OSP/GERBER-RevG-XIAO-3wire-06mm-OSP.zip",
+        "hardware/RevG-XIAO-3wire-06mm-OSP/BOM-JLCPCB.csv",
+        "hardware/RevG-XIAO-3wire-06mm-OSP/CPL-JLCPCB.csv"
+      ]
+    },
+    {
+      "id": "xiao-revg",
+      "title": "Rev G XIAO-firmware en Casio-app",
+      "tag": "download-xiao-revg-r1",
+      "archive": "xiao-revg/ChatGPT-XIAO-RevG-3wire-installatie.zip",
+      "strip_prefix": ""
+    },
+    {
+      "id": "pcb-reve",
+      "title": "ARCHIEF Rev E — niet voor de huidige XIAO-print",
+      "tag": "download-pcb-reve-r1",
+      "files": [
+        "hardware/RevE-06mm-OSP/Gerbers-RevE-06mm-OSP.zip",
+        "hardware/RevE-06mm-OSP/BOM-JLCPCB.csv",
+        "hardware/RevE-06mm-OSP/CPL-JLCPCB.csv"
+      ]
+    },
+    {
+      "id": "pcb-revf",
+      "title": "ARCHIEF Rev F — vereist een vierde Casio-VIO-draad",
+      "tag": "download-pcb-revf-r1",
+      "files": [
+        "hardware/RevF-XIAO-06mm-OSP/GERBER-RevF-XIAO-06mm-OSP.zip",
+        "hardware/RevF-XIAO-06mm-OSP/BOM-JLCPCB.csv",
+        "hardware/RevF-XIAO-06mm-OSP/CPL-JLCPCB.csv"
+      ]
+    }
+  ]
+}

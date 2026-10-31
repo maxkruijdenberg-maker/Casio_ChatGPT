@@ -1,0 +1,29 @@
+name: Verify published downloads
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'downloads/**'
+      - 'dist/**'
+      - 'hardware/**'
+      - 'xiao/**'
+      - 'xiao-revg/**'
+      - 'tools/publish_downloads.py'
+      - 'tests/test_download_publication.py'
+      - '.github/workflows/downloads.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Publication guard tests
+        run: python3 tests/test_download_publication.py -v
+      - name: Download real GitHub ZIPs and compare all files
+        run: python3 tools/publish_downloads.py verify

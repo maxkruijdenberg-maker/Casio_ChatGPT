@@ -2,7 +2,7 @@
 
 Rustigere interface, modelinfo op F2 en een volledige verbindingscontrole. Na iedere bevestigde modelkeuze volgt automatisch één kleine betaalde API-test. Het actieve model wordt alleen bevestigd met passende API-modelmetadata.
 
-[Download V40](https://raw.githubusercontent.com/maxkruijdenberg-maker/Casio_ChatGPT/v40.1.0/dist/ChatGPT-V40.1-installatie.zip) · [Handleiding](docs/V40.1-HANDLEIDING.md) · [Bijwerken](UPGRADE-V40.1.md)
+[V40.1 downloaden](https://github.com/maxkruijdenberg-maker/Casio_ChatGPT/archive/refs/tags/download-v40.1-r1.zip) · [Handleiding](docs/V40.1-HANDLEIDING.md) · [Bijwerken](UPGRADE-V40.1.md) · [Alle downloads](DOWNLOADS.md)
 
 Werk de Casio-app én je wifi-module bij. Er zijn aparte builds voor de ATOM-testbench en de ESP32-C6 Rev E-print. Behoud CGPT3; volledig wissen is niet nodig. Internet/account/modelcontrole gebruikt een echte kleine aanvraag en geeft geen exact tegoedsaldo. Zie de handleiding voor kosten en annuleren.
 
@@ -12,7 +12,7 @@ De builds en hosttests slagen; echte hardware/API-tests voor deze nieuwe versie 
 
 **Voor alleen Casio TX/RX/GND: gebruik Rev G. Rev F vereist een vierde VIO-draad en is daarvoor niet geschikt.**
 
-[Download JLCPCB-set](hardware/CG50-WiFi-RevG-3wire-JLCPCB.zip) · [Drie productie-bestanden](hardware/RevG-XIAO-3wire-06mm-OSP) · [Onderdeelcontrole](hardware/RevG-XIAO-ontwerp/ONDERDELENCONTROLE.md) · [Nieuwe XIAO-firmware + Casio-app](xiao-revg/ChatGPT-XIAO-RevG-3wire-installatie.zip)
+[Download JLCPCB-set](https://github.com/maxkruijdenberg-maker/Casio_ChatGPT/archive/refs/tags/download-pcb-revg-r1.zip) · [Drie productie-bestanden](hardware/RevG-XIAO-3wire-06mm-OSP) · [Onderdeelcontrole](hardware/RevG-XIAO-ontwerp/ONDERDELENCONTROLE.md) · [Nieuwe XIAO-firmware + Casio-app](https://github.com/maxkruijdenberg-maker/Casio_ChatGPT/archive/refs/tags/download-xiao-revg-r1.zip)
 
 Rev G: eigen XIAO zonder headerrails; 38 fabriekscomponenten / 20 codes; 89×34mm, 0,6mm, 2 lagen, OSP. Driepolige JST GH-uitgang; geen VIO-draad. TI-voedingsland/mask/stencil-patroon verwerkt; nieuwe uitgang met normale 3V3 UART-polariteit. Alleen de bijbehorende Rev G-firmware gebruiken. 26 hosttestgroepen en XIAO-build slagen; digitale controles schoon. Eerste PCBA nog fysiek te testen. [Handleiding en schema](hardware/RevG-XIAO-ontwerp/README.md).
 
@@ -30,7 +30,7 @@ V40.1: Info op F2; Model toont de bevestigde naam. De statusbadge verschijnt all
 
 ## Oudere PCB: Rev F, met vierde Casio-VIO-aansluiting
 
-[Download JLCPCB-pakket](hardware/CG50-WiFi-RevF-JLCPCB.zip) · [Alleen drie productie-bestanden](hardware/RevF-XIAO-06mm-OSP) · [Ontwerp, maatvoering en controles](hardware/RevF-XIAO-ontwerp/README.md) · [Download XIAO-firmware + Casio-app](xiao/ChatGPT-XIAO-RevF-installatie.zip)
+[Download JLCPCB-pakket](https://github.com/maxkruijdenberg-maker/Casio_ChatGPT/archive/refs/tags/download-pcb-revf-r1.zip) · [Alleen drie productie-bestanden](hardware/RevF-XIAO-06mm-OSP) · [Ontwerp, maatvoering en controles](hardware/RevF-XIAO-ontwerp/README.md) · [Download XIAO-firmware + Casio-app](xiao/ChatGPT-XIAO-RevF-installatie.zip)
 
 89 × 34 mm L-vorm, 0,6 mm, 2 lagen, OSP. JLCPCB monteert 41 SMT-onderdelen; U5 blijft leeg voor jouw eigen Seeed XIAO ESP32-C6. Veertien soldeergaten, geen headerrails, USB-C binnen de getekende contour, J3/J4 aan het rechteruiteinde. Geen schakelaar: programmeer de XIAO eerst los. Voor eventueel later USB-onderhoud altijd J3 los vóór USB; USB los vóór J3 terugplaatsen.
 

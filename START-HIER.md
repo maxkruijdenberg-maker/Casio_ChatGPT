@@ -11,4 +11,8 @@ Vervang COM5 door je eigen COM-poort. Gebruik de flasher voor jouw apparaat; C6 
 
 Modelkeuze en Verbinding controleren starten elk een kleine betaalde API-test. Actief model wordt alleen bevestigd op basis van API-modelgegevens. Het openen van modelinformatie of het actieve-modelscherm kost geen API-aanvraag.
 
-Klantpakket: dist/ChatGPT-V40.1-installatie.zip. De hardwareproductiebestanden staan apart op GitHub en veranderen niet bij deze software-update.
+Klantpakket: dist/ChatGPT-V40.1-installatie.zip. De hardwareproductiebestanden staan apart op GitHub. Voor de nieuwe Rev G XIAO-print met drie Casio-draden gebruik je uitsluitend de aparte Rev G XIAO-firmware.
+
+Vaste downloads: https://github.com/maxkruijdenberg-maker/Casio_ChatGPT/blob/main/DOWNLOADS.md
+
+Deze opnieuw verpakte V40.1-download bevat dezelfde gecontroleerde firmwarebestanden. Pak alles volledig uit; de GitHub ZIP-mapnaam kan een downloadversie bevatten.
