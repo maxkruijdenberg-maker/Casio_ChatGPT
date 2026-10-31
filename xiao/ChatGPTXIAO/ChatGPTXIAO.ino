@@ -504,7 +504,7 @@ static void handle(const WFrame& in) {
  if(start&&xTaskCreate(runApi,"openai",16384,nullptr,1,nullptr)!=pdPASS){Lock l;apiRunning=false;state=cancelled?S_CANCELLED:S_ERROR;errorCode=cancelled?0:E_MEMORY;}
 }
 void setup(){
- /* USB logging deliberately disabled. GPIO21 uses TX-only inversion and the gated open-drain output. */
+ /* USB logging deliberately disabled. GPIO16 uses TX-only inversion and the gated open-drain output. */
  activeCpuMHz=getCpuFrequencyMhz();idlePower.begin(millis());
  boardInitPins();bootId=esp_random();pinMode(TX_PIN,INPUT);gate=xSemaphoreCreateMutex();if(!gate)return;
  prefs.begin("casiochat",false);cfg[0]=prefs.getString("ssid","");cfg[1]=prefs.getString("pass","");

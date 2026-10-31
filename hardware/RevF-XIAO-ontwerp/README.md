@@ -35,3 +35,7 @@ KiCad 9.0.2: **DRC 0, onverbonden 0, schema/print-verschillen 0, ERC 0**. Bron/p
 De XIAO-firmware compileert met ESP32-core 3.3.0 en ArduinoJson 7.4.2: 1.183.641 bytes programma en 52.076 bytes statische RAM. De gedeelde applicatiecode is gelijk aan V40.1; UART-pinnen zijn aangepast naar RX17/TX16.
 
 Dit zijn digitale controles. De eerste PCBA moet nog worden beoordeeld op reflowkwaliteit, werkelijke 7mm-passing, kabelruimte, RF-bereik, piekbelasting, temperatuur en UART-signalen. De TPS63070-footprint is het eerder gebruikte aangepaste RNM0015A-landpatroon; inspecteer de fijne soldeerverbindingen bij de eerste assemblage. De bestanden zijn een bouwbaar prototypeontwerp, geen fysiek gekwalificeerde verkoopserie.
+
+## Aanvullende functionele controle
+
+Zie [CONTROLE-WERKING.md](CONTROLE-WERKING.md): 24 softwaretestgroepen, een herstelde GPIO-initialisatiefout en een vereenvoudigd UART-model. Gebruik de bijgewerkte XIAO-firmware. Gerber/BOM/CPL zijn ongewijzigd; fysieke werking blijft te meten.

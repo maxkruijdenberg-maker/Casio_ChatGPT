@@ -1,17 +1,20 @@
 #pragma once
 /* Rev F XIAO ESP32-C6. Native USB is on the XIAO.
  * UART1 uses a gated open-drain TX. Radio/CPU idle policy keeps UART awake. */
-#if !defined(CONFIG_IDF_TARGET_ESP32C6) || !CONFIG_IDF_TARGET_ESP32C6
+#if !defined(CONFIG_IDF_TARGET_ESP32C6) || !CONFIG_IDF_TARGET_ESP32C6 || !defined(ARDUINO_XIAO_ESP32C6)
 #error "Select XIAO_ESP32C6, 4MB flash. This firmware is for Rev F."
 #endif
 #include <driver/uart.h>
+#include <driver/gpio.h>
 #include "tx_lease.h"
 static const int RX_PIN=17,TX_PIN=16,TX_ARM_PIN=2,HEARTBEAT_PIN=1;
 static bool boardUartReady=false;
 static TxLease boardLease;
 static void boardInitPins(){
- digitalWrite(TX_ARM_PIN,LOW);pinMode(TX_ARM_PIN,OUTPUT);
- digitalWrite(HEARTBEAT_PIN,LOW);pinMode(HEARTBEAT_PIN,OUTPUT);
+ /* digitalWrite is ignored before GPIO ownership in Arduino core 3.3.0.
+  * Preload the output latches through IDF before enabling either output. */
+ gpio_set_level((gpio_num_t)TX_ARM_PIN,LOW);pinMode(TX_ARM_PIN,OUTPUT);
+ gpio_set_level((gpio_num_t)HEARTBEAT_PIN,LOW);pinMode(HEARTBEAT_PIN,OUTPUT);
  pinMode(TX_PIN,INPUT);
 }
 static void boardPulse(){

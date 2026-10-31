@@ -11,6 +11,9 @@
   "tx_inverted": true,
   "heartbeat_gpio": 1,
   "arm_gpio": 2,
-  "application_and_common_headers_identical_to_V40_1_C6": true,
-  "physical_upload_and_uart_verified": false
+  "physical_upload_and_uart_verified": false,
+  "gpio_initialization_corrected": true,
+  "gpio_hook_host_regression_test": "pass; original code failed stale-HIGH-latch test",
+  "wrong_generic_C6_board_rejected": true,
+  "application_logic_unchanged_from_V40_1_C6": true
 }

@@ -9,3 +9,5 @@ Casio: bestaande V40.1 `ChatGPT.g3a`. Geen gewijzigde Casio-app nodig.
 Rev F heeft geen USB/batterij-isolatie. Programmeer vóór montage. Voor later onderhoud: eerst J3-batterijstekker los, daarna USB aansluiten. USB verwijderen vóór J3 terugplaatsen. Ook zonder batterij kan USB spanning op de carrier zetten; dit is geen veilige vervanger voor loskoppelen van J3.
 
 Pinindeling: UART1 RX GPIO17 / D7; TX GPIO16 / D6 (geïnverteerd voor Q2/Q3); heartbeat GPIO1 / D1; arm GPIO2 / D2. De hardware-gate blokkeert ROM-opstartuitvoer vóór het geldige Casio-protocolcontact.
+
+Controle-update: de GPIO-uitgangswaarden voor de zendsper worden nu vóór het inschakelen van de uitgangen via de ESP-IDF GPIO-API laag gezet. Een regressietest met oude hoge uitgangswaarden faalde vóór de correctie en slaagt erna. Alleen het exacte XIAO_ESP32C6-bord wordt nu geaccepteerd, zodat de ingebouwde antenne correct wordt ingesteld.

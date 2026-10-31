@@ -1,0 +1,29 @@
+{
+  "source_hardware_commit": "0a74894",
+  "netlist_path_expectations": "pass",
+  "uart_ideal_RC_model_byte_cases": 3072,
+  "baud": 9600,
+  "assumed_capacitance_pf_range": [
+    1,
+    5000
+  ],
+  "assumed_VIO_volts": [
+    3,
+    3.3,
+    5
+  ],
+  "minimum_sample_high_ratio": 0.9101173914918252,
+  "maximum_sample_low_ratio": 0.17547022320393513,
+  "assumed_receiver_threshold_ratios": [
+    0.3,
+    0.7
+  ],
+  "if_internal_pullup_present_minimum_ohms_for_this_model": 4635.643648043277,
+  "nominal_output_V_assuming_0_8V_feedback_reference": 4.9775456919060055,
+  "xiao_variant_selects_builtin_antenna": true,
+  "real_Casio_input_load_and_thresholds_measured": false,
+  "manufacturer_converter_SPICE_simulation_performed": false,
+  "converter_datasheet_retrieval": "blocked by HTTP 403; no new primary-datasheet signoff",
+  "physical_power_RF_UART_USB_measurement": false,
+  "production_qualified": false
+}

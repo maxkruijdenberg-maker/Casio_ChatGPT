@@ -47,3 +47,7 @@ build/tests/test_tx_lease
 
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_idle_power.cpp -o build/tests/test_idle_power
 build/tests/test_idle_power
+
+# Rev F actual GPIO hooks; host stub follows Arduino 3.3.0 GPIO ownership.
+c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-unused-function -Itests/xiao_stubs tests/test_xiao_hardware.cpp -o build/tests/test_xiao_hardware
+build/tests/test_xiao_hardware

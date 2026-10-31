@@ -1,7 +1,7 @@
 {
     "$schema": "https://schemas.kicad.org/drc.v1.json",
     "coordinate_units": "mm",
-    "date": "2026-10-31T18:19:48+0000",
+    "date": "2026-10-31T18:57:30+0000",
     "kicad_version": "9.0.2",
     "schematic_parity": [],
     "source": "CG50-WiFi.kicad_pcb",
