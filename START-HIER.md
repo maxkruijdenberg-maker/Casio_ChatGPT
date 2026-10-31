@@ -1,13 +1,23 @@
-# ChatGPT voor Casio — V32.3
+# ChatGPT voor Casio — V32.4
 
 Pak de ZIP volledig uit en open START-HIER.html. De handleiding werkt offline:
-docs/Handleiding-V32.3.pdf of docs/Handleiding-V32.3.html.
+docs/Handleiding-V32.4.pdf of docs/Handleiding-V32.4.html.
 
-Heb je Atom V31 al geïnstalleerd? Vervang alleen dist/ChatGPT.g3a op de Casio,
-laat CGPT3 staan en herstart de Casio eenmaal. De Atom-code en firmware zijn
-ongewijzigd V31. Heb je een oudere Atom, upload dan eerst de meegeleverde
-V31-firmware. Laat Erase All Flash / volledig wissen uitgeschakeld.
+Voor V32.4 moet je Atom én Casio bijwerken, ook als je al Atom V31 had.
+Upload de meegeleverde Atom-firmware V32.4 en vervang dist/ChatGPT.g3a op de Casio.
+Laat volledig wissen uitgeschakeld en bewaar CGPT3. Herstart de Casio eenmaal.
 De volledige stappen staan in de handleiding.
+
+Instellingen → Hulp → Verbinding controleren test nu apart Casio/Atom en wifi.
+De Atom maakt zo nodig verbinding met je opgeslagen hotspot. Dit verstuurt geen
+AI-vraag; internet, API-account en tegoed worden niet door deze wifi-test getest.
+
+Instellingen → Hulp → Gebruikt model toont de huidige instelling, de aangevraagde
+ID en de model-ID uit het laatste afgeronde API-antwoord op de Atom. De API kan
+een specifieke versie-ID terugmelden. Ontbrekende metadata wordt niet geraden.
+Deze bevestiging is niet per oude chat opgeslagen en kan na een herstart,
+nieuwe chat of contextwissel ontbreken. Het antwoord van het model op Welke AI
+ben je? is geen betrouwbaar modelbewijs.
 
 De invoerstand staat in de berichtenbalk vóór de verstuurpijl. De losse teksthints
 en hoofdletterknop zijn weg. Na een punt komt automatisch een hoofdletter.
@@ -59,7 +69,7 @@ prijs- of prestatiegarantie. Bij een model geeft F4 Info uitleg; de groepsregel
 heeft geen modelinformatie en verandert je ingestelde model niet. Na accountcontrole
 blijven alleen de namen die jouw account teruggeeft zichtbaar.
 
-F2 Account gebruikt met Atom V31 één geheugenbegrensde controle. Succes toont
+F2 Account gebruikt met Atom V32.4 één geheugenbegrensde controle. Succes toont
 Account gecontroleerd en kort een groen vinkje, ook bij nul passende modellen.
 Bij een fout verschijnt kort een rood kruis, gevolgd door de reden en
 ongecontroleerde vaste keuzes. Annuleren toont geen rood kruis. EXIT of F1
@@ -74,7 +84,7 @@ wacht ook daarbij op de bevestiging van de Atom. Er wordt
 niet automatisch een nieuwe betaalde vraag gestart bij annuleren of een fout. Een al verzonden
 vraag kan nog kosten maken. Je gebruikt eigen API-toegang en tegoed.
 Deel je sleutel niet met een verkoper.
-V32.3 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
+V32.4 is een kandidaat voor praktijkcontrole, geen aangetoonde verkoopvrijgave.
 Echte apparaten en live betaalde antwoorden zijn hier niet getest.
 Fysieke controles en een proef met een nieuwe gebruiker:
-docs/V32.3-CONTROLE-VOOR-VERKOOP.md.
+docs/V32.4-CONTROLE-VOOR-VERKOOP.md.

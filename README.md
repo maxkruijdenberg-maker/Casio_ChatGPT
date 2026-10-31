@@ -1,8 +1,11 @@
-# ChatGPT V32.3 voor Casio fx-CG50 + originele M5Stack Atom Lite
+# ChatGPT V32.4 voor Casio fx-CG50 + originele M5Stack Atom Lite
 
-[Installatiepakket](dist/ChatGPT-V32.3-installatie.zip) · [START-HIER](START-HIER.md) ·
-[PDF](docs/Handleiding-V32.3.pdf) · [Offline handleiding](docs/Handleiding-V32.3.html)
+[Installatiepakket](dist/ChatGPT-V32.4-installatie.zip) · [START-HIER](START-HIER.md) ·
+[PDF](docs/Handleiding-V32.4.pdf) · [Offline handleiding](docs/Handleiding-V32.4.html)
 
+- Verbinding controleren toont apart Casio/Atom-contact en de verbinding met je wifi/hotspot.
+- Hulp → Gebruikt model toont de huidige instelling en de aangevraagde/API-model-ID van het laatste afgeronde antwoord op de Atom.
+- Deze modelbevestiging is geen modelnaam uit gegenereerde antwoordtekst en is niet per oude chat opgeslagen.
 - Alle 30 roze invoerlabels en 22 gele invoerfuncties zijn gecontroleerd tegen de foto.
 - CLIP, PASTE, INS en UNDO werken lokaal in het invoerveld; native Casio-systeemacties voegen geen verkeerde tekens toe.
 - SHIFT werkt eenmalig bij aantikken én bij vasthouden met een functietoets.
@@ -21,18 +24,16 @@
 - Openen en teruggaan met rechts/links of EXE/EXIT; Hulp staat alleen in Instellingen.
 - Doorlopende chat, automatische zinshoofdletters en blijvende ALPHA-lock behouden.
 
-**Atom V31 al geïnstalleerd?** Vervang alleen dist/ChatGPT.g3a op de Casio,
-laat CGPT3 staan en herstart de Casio eenmaal. De meegeleverde Atom-code en
-firmware zijn ongewijzigd V31. Voor een oudere Atom upload je eerst de
-meegeleverde V31-firmware zonder volledig wissen. Zo blijven wifi, API-sleutel en
-opgeslagen chats normaal behouden.
-[Bijwerken](UPGRADE-V32.3.md) · [Schermen](docs/design/V32.3-actual-screens.png).
+**Voor V32.4 werk je Atom én Casio bij.** Upload de meegeleverde Atom-firmware
+V32.4 zonder volledig wissen, vervang ChatGPT.g3a, bewaar CGPT3 en herstart eenmaal.
+De bestaande wifi-, sleutel- en modelinstellingen gebruiken dezelfde opslag.
+[Bijwerken](UPGRADE-V32.4.md) · [Schermen](docs/design/V32.4-actual-screens.png).
 
 Bestaande chats, acht paren per gesprek en begrensde API-context blijven behouden.
-V32.3 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
+V32.4 is een kandidaat voor praktijkcontrole. Softwaretests zijn geen bewijs dat een
 specifiek gebouwd apparaat klaar is voor verkoop. Er is in deze bouwomgeving geen
 fysieke Casio/Atom of live betaald API-account getest. Zie de
-[praktijk- en overdrachtscontrole](docs/V32.3-CONTROLE-VOOR-VERKOOP.md).
+[praktijk- en overdrachtscontrole](docs/V32.4-CONTROLE-VOOR-VERKOOP.md).
 
 ## Windows: installeren
 
@@ -146,7 +147,7 @@ Annuleren vóór de verstuuropdracht voorkomt dat de vraag alsnog wordt verstuur
 Het concept blijft beschikbaar. Zodra de verstuuropdracht al naar de Atom is
 verzonden, kan een API-vraag wel al gestart zijn. De laadplaneet verdwijnt bij
 annuleren en de app vraagt de Atom waar nodig om te stoppen. Een al verstuurde
-API-aanvraag kan nog kosten maken. De bestaande Atom V31 beëindigt zijn netwerkwerk bij annulering of de totale tijdslimiet.
+API-aanvraag kan nog kosten maken. De meegeleverde Atom V32.4 beëindigt zijn netwerkwerk bij annulering of de totale tijdslimiet.
 Een lopende netwerkleesactie kan nog enkele seconden nodig hebben om terug te
 keren. De app wacht op de bevestiging dat de Atom klaar is met stoppen.
 Zonder bevestiging verschijnt Stoppen niet bevestigd en blijft een nieuwe vraag
@@ -180,7 +181,7 @@ verandert je ingestelde model niet. Na accountcontrole tonen beide lijsten
 alleen de passende namen uit jouw account; ontbrekende namen worden niet als
 beschikbaar toegevoegd. Andere gevonden modellen blijven via Overige modellen
 bereikbaar als jouw account geen van de drie aanbevelingen aanbiedt.
-Zie docs/V32.3-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
+Zie docs/V32.4-MODELLEN.md voor namen, bronnen en aangekondigde einddatums.
 
 Omhoog/omlaag kiest een regel. Bij een model geeft F4 Info uitleg en bewaart
 F1 Kies, rechts of EXE de keuze. Overige modellen is een groepsregel, geen model;
@@ -192,7 +193,7 @@ Bij succes verschijnt Account gecontroleerd; een fout laat herkenbare vaste,
 ongecontroleerde keuzes zien. Accountmetadata bewijst geen werkende chatvraag.
 Modelrechten, dienstcompatibiliteit, internet en tegoed moeten ook kloppen.
 
-Voor accountcontrole en daadwerkelijk stoppen blijft Atom V31 nodig. EXIT of F1 tijdens
+Voor accountcontrole en daadwerkelijk stoppen is de meegeleverde Atom V32.4 geschikt. EXIT of F1 tijdens
 de controle vraagt de Atom om te stoppen. De laadplaneet verdwijnt en de app laat
 zien wanneer de afronding nog bezig is; die wordt niet verborgen achter een normaal
 klaar-scherm. Zonder bevestiging verschijnt Stoppen niet bevestigd en wordt geen
@@ -297,7 +298,7 @@ de originele SDK 0.6-bibliotheken/linkerscript en mkg3a.
 ## Softwaretests en bekende grenzen
 
 Op Linux met een C-compiler: `sh tools/test.sh`. De tests gebruiken AddressSanitizer
-en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32.3-tests.log`.
+en UndefinedBehaviorSanitizer. Resultaten voor deze versie staan in `docs/logs/v32.4-tests.log`.
 De regressieproeven uit V32 voor vroege annulering blijven behouden. Die controleren dat een
 annulering tijdens de voorbereiding geen W_ASK-verstuuropdracht laat volgen; de
 proeven gebruiken vertraagde host-UART-antwoorden, geen echte API-aanvraag.

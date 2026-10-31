@@ -33,3 +33,8 @@ build/tests/test_catalog_stream
 # Shared V31 API/account cancellation and total-deadline transport guards.
 c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function tests/test_network_operation.cpp -o build/tests/test_network_operation
 build/tests/test_network_operation
+
+for name in wifi_check model_receipt; do
+ c++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -Wall -Wno-misleading-indentation -Wno-unused-function "tests/test_$name.cpp" -o "build/tests/test_$name"
+ "build/tests/test_$name"
+done

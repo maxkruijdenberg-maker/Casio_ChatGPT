@@ -1,0 +1,6 @@
+PASS: 20 ASan/UBSan groups; separate hotspot association/no-HTTP diagnosis; request-owned requested/reported API metadata.
+PASS: ZIP integrity, 5 binary hashes, all packaged Atom/Casio sources, PDF and offline HTML links.
+PASS: application binary matches actual Arduino build output; wifi-check worker present.
+PASS: native-menu code, UART RPC, keyboard, ledger/context/network guards, configuration, phone setup, CA and three boot/partition binaries unchanged vs V32.3.
+PASS: exactly one paid POST call; configured model used directly, no fallback.
+Customer ZIP SHA256 fb763e7c777617c6f2460f88b0c3896d5ec3e05f089e83308ea75a009142bf79

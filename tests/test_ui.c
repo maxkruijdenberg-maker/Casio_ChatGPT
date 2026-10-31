@@ -24,6 +24,9 @@ static void (*timerCallback)(void);
 static jmp_buf lifecycleDone;
 static void (*quitCallback)(void);
 static int fakeAtomMajor=3,fakePortal=0;
+static int fakeDiagState=0,fakeDiagPolls=0,fakeDiagQuality=3,fakeDiagError=0,fakeDiagStartError=0,fakeDiagCancelFail=0;
+static const char *fakeReceiptRequested="gpt-6.1-sol",*fakeReceiptReported="gpt-6.1-sol-2026-10-29";
+static uint32_t fakeReceiptOwner=1234;static int fakeReceiptComplete=1,fakeReceiptCorrupt=0;
 static void menuReturned(void);
 typedef struct {unsigned char*data;size_t size,pos;} TestFile;
 static TestFile testFiles[32];
@@ -181,6 +184,20 @@ int Serial_Write(const unsigned char*p,int n){
  if(!connected){if(!autoProbeActive)busyUntil=timeTicks+((f.type==W_HELLO||f.type==W_INFO||f.type==W_DEVICE||f.type==W_GET_CONFIG)?1200:800);return 0;}
  r.type=f.type|0x80;r.seq=f.seq;r.len=1;
  switch(f.type){
+ case W_DIAG:
+  assert(fakeAtomMajor>=32&&f.len==1);
+  if(f.data[0]==1){if(fakeDiagStartError){r.data[0]=fakeDiagStartError;break;}fakeDiagState=1;fakeDiagPolls=1;}
+  if(f.data[0]==3){if(fakeDiagCancelFail){r.data[0]=E_BUSY;break;}fakeDiagState=4;fakeDiagPolls=0;}
+  if(f.data[0]==0&&fakeDiagState==1&&!--fakeDiagPolls)fakeDiagState=fakeDiagError?3:2;
+  r.len=5;r.data[1]=fakeDiagState;r.data[2]=fakeDiagError?0:fakeDiagQuality;r.data[3]=fakeDiagError;r.data[4]=1;break;
+ case W_RECEIPT:{
+  assert(fakeAtomMajor>=32&&f.len==7);uint32_t expected=w_get32(f.data+3);size_t at=w_get16(f.data+1);
+  if(expected&&expected!=fakeReceiptOwner){r.data[0]=E_REQUEST;break;}
+  const char *value=fakeReceiptComplete?(f.data[0]?fakeReceiptReported:fakeReceiptRequested):"";size_t len=strlen(value),n=len-at;
+  if(at>len){r.data[0]=E_REQUEST;break;}if(n>17)n=17;
+  r.len=7+n;r.data[1]=fakeReceiptComplete;w_put32(r.data+2,fakeReceiptComplete?fakeReceiptOwner:0);r.data[6]=len;memcpy(r.data+7,value+at,n);
+  if(fakeReceiptCorrupt&&at)w_put32(r.data+2,fakeReceiptOwner+1);break;
+ }
  case W_MODELS:
   assert(fakeAtomMajor>=17);
   if(f.data[0]==3){
@@ -212,7 +229,7 @@ int Serial_Write(const unsigned char*p,int n){
   if(amount>WIRE_MAX-1)amount=WIRE_MAX-1;r.len=amount+1;memcpy(r.data+1,servedAnswer+offset,amount);break;
  }
  case W_INFO:r.len=5;for(int i=1;i<5;i++)r.data[i]=1;break;
- case W_DEVICE:r.len=8;r.data[1]=fakeAtomMajor;r.data[2]=3;r.data[3]=15;w_put32(r.data+4,fakeBoot);break;
+ case W_DEVICE:r.len=8;r.data[1]=fakeAtomMajor;r.data[2]=3;r.data[3]=fakeAtomMajor>=32?255:15;w_put32(r.data+4,fakeBoot);break;
  case W_SETUP:
   assert(f.len==1);fakePortal=f.data[0]==1?1:f.data[0]==2?0:fakePortal;
   r.len=17;r.data[1]=fakePortal;w_put16(r.data+3,0x1234);if(fakePortal)memcpy(r.data+5,"EXAMPLE23456",12);break;
@@ -495,6 +512,37 @@ static void testPhotoKeyboardMap(void){
  assert(editor(text,sizeof(text),"Geheim",1,0,1,0)==79&&!strcmp(text,"dummy-secret")&&!strcmp(editClipboard,"safe")&&!editObserved[0]&&!editUndo[0]);
  const int released[]={0,0,0};SCRIPT(released);endSession();assert(!editClipboard[0]);
  assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc&&serialCloses==closed);
+}
+
+static void testWifiAndModelEvidence(void){
+ int paid=requestCount[W_ASK],alloc=requestCount[W_ALLOC],closed=serialCloses,oldMajor=fakeAtomMajor;
+ int quiet[110];memset(quiet,0,sizeof(quiet));quiet[109]=47;const int back[]={47};
+ fakeAtomMajor=32;connected=1;replyDelay=0;
+ for(int quality=1;quality<=3;quality++){
+  fakeDiagQuality=quality;fakeDiagError=0;SCRIPT(quiet);diagnose();
+  assert(diagnosisWifiKnown&&diagnosisWifiQuality==quality&&!diagnosisWifiError&&!diagnosisStopPending&&!diagnosisNeedsUpdate);
+  assert(!strcmp(diagnosisWifiText(),quality==3?"Sterke verbinding":quality==2?"Goede verbinding":"Zwakke verbinding"));
+ }
+ const int failures[]={E_CONFIG,E_WIFI_NOT_FOUND,E_WIFI_AUTH};
+ for(size_t i=0;i<sizeof(failures)/sizeof(failures[0]);i++){
+  fakeDiagError=failures[i];SCRIPT(quiet);diagnose();assert(diagnosisWifiKnown&&!diagnosisWifiQuality&&diagnosisWifiError==failures[i]);
+ }
+ fakeDiagError=0;fakeDiagStartError=E_BUSY;SCRIPT(back);diagnose();assert(diagnosisWifiError==E_BUSY);fakeDiagStartError=0;
+ SCRIPT(back);diagnose();assert(fakeDiagState==4&&!diagnosisStopPending);
+ fakeDiagState=1;fakeDiagPolls=100;fakeDiagCancelFail=1;diagnosisStopPending=1;SCRIPT(back);ask();
+ assert(diagnosisStopPending&&requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc);
+ fakeDiagCancelFail=0;fakeDiagState=4;assert(ensureDiagnosticStopped()&&!diagnosisStopPending);
+ fakeAtomMajor=31;int checks=requestCount[W_DIAG];SCRIPT(back);diagnose();assert(diagnosisNeedsUpdate&&!diagnosisWifiKnown&&requestCount[W_DIAG]==checks);
+ fakeAtomMajor=32;uint32_t owner=0;int complete=0;char requested[256],reported[256];
+ assert(readReceiptField(0,&owner,requested,sizeof(requested),&complete)&&complete&&owner==1234&&!strcmp(requested,fakeReceiptRequested));
+ assert(readReceiptField(1,&owner,reported,sizeof(reported),&complete)&&!strcmp(reported,fakeReceiptReported));
+ strcpy(storedModel,"gpt-6-luna");SCRIPT(back);modelProof();assert(strcmp(storedModel,requested)&&!strcmp(requested,"gpt-6.1-sol"));
+ fakeReceiptReported="";owner=0;assert(readReceiptField(1,&owner,reported,sizeof(reported),&complete)&&complete&&!reported[0]);fakeReceiptReported="gpt-6.1-sol-2026-10-29";
+ fakeReceiptComplete=0;owner=0;assert(readReceiptField(0,&owner,requested,sizeof(requested),&complete)&&!complete&&!owner&&!requested[0]);fakeReceiptComplete=1;
+ fakeReceiptCorrupt=1;owner=0;assert(!readReceiptField(1,&owner,reported,sizeof(reported),&complete));fakeReceiptCorrupt=0;
+ owner=1235;assert(!readReceiptField(0,&owner,requested,sizeof(requested),&complete));
+ assert(requestCount[W_ASK]==paid&&requestCount[W_ALLOC]==alloc&&serialCloses==closed&&!privateReads);
+ fakeAtomMajor=oldMajor;strcpy(storedModel,"gpt-6.1-sol");
 }
 
 static void testV14NavigationAndModels(void){
@@ -1029,7 +1077,7 @@ int main(int argc,char **argv){
  }
  testMathInput();testAutoConnect();testUARTRecovery();testTypingConnection();
  testLifecycle(1);testLifecycle(0);
- testMenuFailures();testShiftChordsAndCubeRoot();testPhotoKeyboardMap();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
+ testMenuFailures();testShiftChordsAndCubeRoot();testPhotoKeyboardMap();testWifiAndModelEvidence();testV14NavigationAndModels();testV17BuyerInterface();testAccountModels();testUnifiedConversation();testSentenceInput();testV30NavigationAndSymbols();testV31ModelsAndCancellation();testV31QuestionCleanupPaths();testV32EarlyCancellation();testNewAnswerStartsAtBeginning();testAccountResultFeedback();
  /* Placeholder is painted only; the real draft remains empty. The chat
   * field grows upward without drawing over header, mode or function keys. */
  applyView(view_default());char composed[1025]="";assert(composerRows(composed)==1);
@@ -1099,7 +1147,8 @@ int main(int argc,char **argv){
   paintAccountResult(0);snprintf(path,sizeof(path),"%s/account-failure.ppm",argv[2]);dumpFrame(path);
   modelCheckFailed=1;paintModels(1);snprintf(path,sizeof(path),"%s/models-unchecked.ppm",argv[2]);dumpFrame(path);modelCheckFailed=0;
   strcpy(remoteModels,"gpt-6-astra\ngpt-6.1-sol\ngpt-6.1-terra\ngpt-6-sol\ngpt-6-luna\ngpt-image-1\nwhisper-1\ntext-embedding-3-small\nomni-moderation-latest\nsora-2\n");assert(parseModelList(strlen(remoteModels)));atomMajor=20;paintModels(1);snprintf(path,sizeof(path),"%s/all-models.ppm",argv[2]);dumpFrame(path);
-  linkOnline=1;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
+  linkOnline=1;diagnosisWifiKnown=1;diagnosisWifiQuality=3;diagnosisWifiError=diagnosisNeedsUpdate=0;paintDiagnosis(3,3);snprintf(path,sizeof(path),"%s/diagnosis.ppm",argv[2]);dumpFrame(path);
+  fakeAtomMajor=32;SCRIPT(leave);modelProof();snprintf(path,sizeof(path),"%s/model-proof.ppm",argv[2]);dumpFrame(path);
   char modelText[1024];modelDetails(1,modelText,sizeof(modelText));SCRIPT(leave);message("Over dit model",modelText);snprintf(path,sizeof(path),"%s/model-info.ppm",argv[2]);dumpFrame(path);
   for(int phase=0;phase<8;phase++){paintLoading(phase);snprintf(path,sizeof(path),"%s/loading-%d.ppm",argv[2],phase);dumpFrame(path);}
   paintLoading(0);snprintf(path,sizeof(path),"%s/loading.ppm",argv[2]);dumpFrame(path);
@@ -1107,6 +1156,6 @@ int main(int argc,char **argv){
   linkOnline=0;paintSettings(0);snprintf(path,sizeof(path),"%s/offline.ppm",argv[2]);dumpFrame(path);
  }
  releaseModels();storageClose();for(int i=0;i<32;i++)free(testFiles[i].data);
- puts("PASS: V32.3 photo mapping: all 30 ALPHA characters and 22 SHIFT input functions in four physical press/release modes, ALPHA lock, UTF-8 clipboard selection/paste, overwrite and Undo; V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
+ puts("PASS: V32.4 separate Casio/Atom and hotspot checks, signal/missing/auth/busy/cancel/update paths, no paid admission while diagnostics stop, request-bound configured/requested/reported model evidence and missing/stale metadata; V32.3 photo mapping: all 30 ALPHA characters and 22 SHIFT input functions in four physical press/release modes, ALPHA lock, UTF-8 clipboard selection/paste, overwrite and Undo; V32.2 tapped/held/simultaneous one-shot SHIFT, both release orders, cancellation, ALPHA and cube-root glyph; V32.1 green/red account result feedback (no false failure on cancel), sidebar F1 delete/F2 new; three recommended models plus nested other-model list, all 21 choices unique and available through real key navigation; newly received answers focus first sentence, long/short/follow-up/unsaved answers and manual scroll preservation; V32 EXIT/F1 cancellation in 56 pre-admission paths plus UART-reclaim boundaries, no W_ASK after early cancellation, no repeated admission after delayed ACK and no partial answer save and successful explicit context recovery; V31 confirmed account/API cancellation, pending-state payment gates and three recommended models with all21 accessible; V30 local EXIT home, safe draft/reply warnings, clean cancellation before slow UART, forty visible symbol tiles, arrow navigation and account results; V22.9 no manual caps lock, automatic sentence case and exact secret case retained; inline input controls and sentence capitalization; V22.6 arrow-only model navigation and styled role labels with question-answer spacing; V22.5 unified scrolling conversation and direct continuation; V22.4 neutral status text/background with colored dot only; V22.3 empty checked accounts remain empty and compact account buffer; V22.2 contextual account JSON errors and no duplicate Vraag answer button; V22.1 explicit fixed versus checked account state; no automatic model fetch on entry; failed account check retains fixed choices without claiming access; purple-blue planet identity and logo-only loading; V22 curated current named models, filtered account availability, informative choices, safe empty list and metadata-only refresh; V21.1 growing chat composer, placeholder and round status dot; symmetric planet ring and extended SDK model selection; antialiased native-size logo with mint-lilac shading; dark abstract identity, green/red status badges and centered captions; V13 transport recovery/raw keyboard; buyer settings Right/EXE/Left/EXIT, preserved drafts and MENU-only close, answer equality without rewriting history, animated waiting with captions/cancel without paid requests; 40 native menu returns, phone setup, model presets, storage and full-screen rendering.");
  return 0;
 }

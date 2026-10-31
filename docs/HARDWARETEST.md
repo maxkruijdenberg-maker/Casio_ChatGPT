@@ -532,3 +532,33 @@ Unicode-kopiëren, selecteren, plakken, buffergrenzen, Undo/redo, beveiligde
 velden, lokale kopiewissing en geen betaalde verstuur- of allocatieberichten
 door toetsenbewerking. Alle Atom-bronnen en vier firmwarebestanden blijven
 ongewijzigd V31. Deze patch is niet fysiek of met een live API getest.
+
+
+## V32.4 — wifi-diagnose en API-modelbevestiging
+
+Verbinding controleren toont apart Casio/Atom-contact en de verbinding met de
+ingestelde hotspot. Een eigen Atom-taak verbindt zo nodig met die hotspot,
+meet signaalsterkte en geeft klantentaal voor ontbrekende instellingen, hotspot
+en wachtwoordfouten. De taak gebruikt geen HTTP/API, heeft een 20s wifi-wachtbudget
+en kan worden geannuleerd. Een nog niet gestopte diagnose blokkeert nieuwe
+betaalde vraagvoorbereiding. Een bestaande juiste wifi-associatie blijft normaal
+behouden. Internet, API-account en tegoed zijn geen onderdeel van deze wifi-test.
+
+Hulp → Gebruikt model toont de huidige instelling, de model-ID van de laatste
+geslaagde aanvraag en de model-ID uit het API-antwoord. Een vaste modelbevestiging
+wordt met request-ID gepubliceerd onder hetzelfde slot als antwoord/cancel.
+Ontbrekende of ongeldige metadata wordt niet met de configuratienaam ingevuld;
+versie-ID's worden letterlijk getoond. Er is geen automatische modeluitwijking.
+De model-ID wordt ook in de systeemcontext genoemd, maar gegenereerde tekst
+geldt niet als bewijs. De bevestiging is vluchtig op de Atom en niet per oude
+Casio-chat opgeslagen. Nieuwe aanvraag/context, wissen en herstart wissen die
+bevestiging; een latere modelkeuze verandert de oude aangevraagde ID niet.
+
+Casio en Atom zijn beide gebouwd; Atom V32.4 gebruikt core 3.3.0, ArduinoJson
+7.4.2. De lokale Arduino-index/discoverywaarschuwingen verhinderden de geslaagde
+build niet. Twintig ASan/UBSan-groepen slagen, inclusief nieuwe wifi-deadline/
+annulerings- en modelmetadata/chunk-eigenaarschaptests; LeakSanitizer staat uit
+in deze omgeving. De betaalde POST-route, ledger, UART-configuratie en native
+menucode blijven behouden. Geen fysieke of live API-test van deze patch.
+Voor deze update moeten zowel Atom-firmware als ChatGPT.g3a worden vervangen;
+volledig wissen blijft uitgeschakeld en CGPT3 blijft behouden.

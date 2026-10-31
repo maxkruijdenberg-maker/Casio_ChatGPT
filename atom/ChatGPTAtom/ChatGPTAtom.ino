@@ -1,4 +1,4 @@
-/* ChatGPT V31 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
+/* ChatGPT V32.4 Atom Lite, ORIGINAL ESP32-PICO-D4. No sleep, no TX inversion.
    ESP32 Arduino core 3.3.0; ArduinoJson 7.4.2. Select M5Atom (ESP32).
    Secrets are entered on the Casio or temporary phone setup page; never USB logs. */
 #include <Arduino.h>
@@ -15,6 +15,7 @@
 #include "upload.h"
 #include "config_validation.h"
 #include "api_response.h"
+#include "wifi_check.h"
 #include "context.h"
 #include "wire.h"
 #include "ledger.h"
@@ -43,10 +44,14 @@ static WFrame cachedIn={},cachedOut={};
 static bool cached=false;
 static uint32_t lastByte=0,bootId=0;
 struct Lock { Lock(){xSemaphoreTake(gate,portMAX_DELAY);} ~Lock(){xSemaphoreGive(gate);} };
+static ModelReceipt modelReceipt;
+static std::atomic_bool diagnosticCancelled{false};
+static bool diagnosticRunning=false;
+static uint8_t diagnosticState=0,diagnosticQuality=0,diagnosticError=0;
 static bool catalogRunning=false;
 static uint8_t catalogState=0,catalogError=0;
 static String catalog;
-static bool busy(){return apiRunning||catalogRunning||(state>=S_WIFI&&state<=S_API);}
+static bool busy(){return diagnosticRunning||apiRunning||catalogRunning||(state>=S_WIFI&&state<=S_API);}
 static void phase(uint8_t s,uint8_t e=0){Lock l;state=s;errorCode=e;}
 static void fail(uint8_t e){phase(cancelled?S_CANCELLED:S_ERROR,e);}
 static void clearHistory(){context.clear();}
@@ -120,7 +125,7 @@ static uint8_t httpError(int code){
 }
 static void performApi(){
  NetworkWork work(millis,cancelled,120000,networkPause);
- String resultQuestion,resultAnswer;uint8_t resultError=E_NONE;bool success=false;
+ String resultQuestion,resultAnswer,resultRequested,resultReported;uint8_t resultError=E_NONE;bool success=false;
  { // Destroy HTTP/TLS/JSON and credentials before publishing a terminal state.
  String ssid,pass,key,model,q;bool resetWiFi;
  {Lock l;ssid=cfg[0];pass=cfg[1];key=cfg[2];model=cfg[3];q=question;resetWiFi=wifiDirty;wifiDirty=false;}
@@ -149,7 +154,7 @@ static void performApi(){
   JsonDocument req;req["model"]=model;req["max_completion_tokens"]=1200;req["stream"]=false;
   JsonArray msgs=req["messages"].to<JsonArray>();
   JsonObject system=msgs.add<JsonObject>();system["role"]="system";
-  system["content"]="Antwoord standaard in het Nederlands. Gebruik platte tekst en lineaire formules, zonder LaTeX of tabellen. Wees beknopt: maximaal ongeveer 1800 tekens. Dit scherm is klein.";
+  system["content"]=String("De applicatie vraagt in dit verzoek model ")+model+" aan. Als de gebruiker naar het gebruikte model vraagt, noem dit als de aangevraagde model-ID; de API-modelbevestiging is apart te controleren via Instellingen, Hulp, Gebruikt model. "+"Antwoord standaard in het Nederlands. Gebruik platte tekst en lineaire formules, zonder LaTeX of tabellen. Wees beknopt: maximaal ongeveer 1800 tekens. Dit scherm is klein.";
   for(int i=0;i<context.count;i++){
    JsonObject u=msgs.add<JsonObject>();u["role"]="user";u["content"]=context.q[i];
    JsonObject a=msgs.add<JsonObject>();a["role"]="assistant";a["content"]=context.a[i];
@@ -180,6 +185,7 @@ static void performApi(){
    if(a.length()+strlen(note)>ANSWER_MAX){resultError=E_BIG;break;}
    if(!a.concat(note)){resultError=E_MEMORY;break;}
   }
+  resultRequested=model;resultReported=completion_model(response.as<JsonVariantConst>());
   resultQuestion=std::move(q);resultAnswer=std::move(a);success=true;
  }while(false);
  }
@@ -190,12 +196,33 @@ static void performApi(){
    else{state=S_ERROR;errorCode=E_TIMEOUT;}
   }else if(success){
    if(!context.append(resultQuestion,resultAnswer)){clearHistory();context.dropped=true;}
+   receipt_publish(&modelReceipt,ledger.last,resultRequested.c_str(),resultReported.c_str());
    answer=std::move(resultAnswer);state=S_READY;errorCode=0;
   }else{state=S_ERROR;errorCode=resultError?resultError:E_REQUEST;}
   apiRunning=false;
  }
 }
 static void runApi(void*){performApi();vTaskDelete(nullptr);}
+
+/* Wifi diagnosis runs independently of the API. UART remains on the main task. */
+static void performWifiDiagnostic(){
+ String ssid,pass;bool dirty;
+ {Lock l;ssid=cfg[0];pass=cfg[1];dirty=wifiDirty;wifiDirty=false;}
+ struct Hotspot {
+  String &ssid,&pass;
+  bool ready(){return WiFi.status()==WL_CONNECTED&&WiFi.SSID()==ssid;}
+  void begin(){WiFi.mode(WIFI_STA);WiFi.disconnect(false,false);WiFi.begin(ssid.c_str(),pass.c_str());}
+  int rssi(){return WiFi.RSSI();}
+  uint8_t error(){wl_status_t s=WiFi.status();return s==WL_NO_SSID_AVAIL?E_WIFI_NOT_FOUND:s==WL_CONNECT_FAILED?E_WIFI_AUTH:E_WIFI;}
+ } hotspot{ssid,pass};
+ WifiCheckResult result=check_wifi(hotspot,ssid.length()>0,dirty,millis,diagnosticCancelled,[](){delay(30);});
+ {Lock l;
+  if(diagnosticCancelled||result.cancelled){diagnosticState=4;diagnosticQuality=0;diagnosticError=0;}
+  else{diagnosticState=result.error?3:2;diagnosticQuality=result.quality;diagnosticError=result.error;}
+  diagnosticRunning=false;
+ }
+}
+static void runWifiDiagnostic(void*){performWifiDiagnostic();vTaskDelete(nullptr);}
 
 /* Model discovery is free GET work on a separate task, never a completion. */
 static void performCatalog(){
@@ -254,9 +281,15 @@ static void handle(const WFrame& in) {
  if(in.type&0x80)return;
  if(cached&&sameFrame(in,cachedIn)){sendFrame(cachedOut);return;}
  WFrame out={};out.type=in.type|0x80;out.seq=in.seq;out.len=1;out.data[0]=E_NONE;
- bool start=false,startCatalog=false;
+ bool start=false,startCatalog=false,startDiagnostic=false;
  {Lock l;
  if(portalActive && in.type!=W_SETUP && in.type!=W_HELLO && in.type!=W_INFO && in.type!=W_DEVICE && in.type!=W_STATUS && in.type!=W_GET_CONFIG){out.data[0]=E_BUSY;}else switch(in.type){
+ case W_RECEIPT:receipt_read(&modelReceipt,&in,&out);break;
+ case W_DIAG:
+  if(in.len!=1||(in.data[0]!=0&&in.data[0]!=1&&in.data[0]!=3)){out.data[0]=E_REQUEST;break;}
+  if(in.data[0]==1){if(busy()){out.data[0]=E_BUSY;break;}diagnosticCancelled=false;diagnosticRunning=true;diagnosticState=1;diagnosticQuality=diagnosticError=0;startDiagnostic=true;}
+  if(in.data[0]==3){diagnosticCancelled=true;if(!diagnosticRunning){diagnosticState=4;diagnosticQuality=diagnosticError=0;}}
+  out.len=5;out.data[1]=diagnosticState;out.data[2]=diagnosticQuality;out.data[3]=diagnosticError;out.data[4]=cfg[0].length()>0;break;
  case W_MODELS:
   /* 0 status, 1 refresh, 2 read(offset), 3 cancel; cancellation is idempotent. */
   if(!in.len||in.data[0]>3||(in.data[0]==2?in.len!=3:in.len!=1)){out.data[0]=E_REQUEST;break;}
@@ -324,7 +357,7 @@ static void handle(const WFrame& in) {
   {int g=g_admit(&ledger,w_get32(in.data),busy(),saveId);
    if(g==G_REPLAY){out.len=2;out.data[1]=state;break;}
    if(g!=G_NEW){out.data[0]=g==G_BUSY?E_BUSY:g==G_STORE?E_MEMORY:E_REQUEST;break;}}
-  answer="";cancelled=false;apiRunning=true;state=S_WIFI;errorCode=0;start=true;break;
+  receipt_clear(&modelReceipt);answer="";cancelled=false;apiRunning=true;state=S_WIFI;errorCode=0;start=true;break;
  case W_STATUS:
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=10;out.data[1]=state;out.data[2]=errorCode;w_put16(out.data+3,answer.length());
@@ -341,11 +374,12 @@ static void handle(const WFrame& in) {
   upload_clear(&upload);
   if(apiRunning||(state>=S_WIFI&&state<=S_API))cancelled=true;
   if(catalogRunning)catalogCancelled=true;
+  if(diagnosticRunning)diagnosticCancelled=true;
   if(!busy()){ledger.allocated=0;if(context.restoring)clearHistory();context.restoring=false;context.pending="";}break;
  case W_NEW:
   if(in.len){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
-  upload_clear(&upload);context.restoring=false;context.pending="";ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  upload_clear(&upload);context.restoring=false;context.pending="";ledger.allocated=0;clearHistory();receipt_clear(&modelReceipt);question="";answer="";state=S_IDLE;errorCode=0;break;
  case W_INFO:
   if(in.len){out.data[0]=E_REQUEST;break;}
   out.len=5;for(int i=0;i<4;i++)out.data[i+1]=cfg[i].length()>0;break;
@@ -358,12 +392,12 @@ static void handle(const WFrame& in) {
   break;
  case W_DEVICE:
   if(in.len){out.data[0]=E_REQUEST;break;}
-  out.len=8;out.data[1]=31;out.data[2]=0;out.data[3]=63;w_put32(out.data+4,bootId);break;
+  out.len=8;out.data[1]=32;out.data[2]=4;out.data[3]=255;w_put32(out.data+4,bootId);break;
  case W_CONTEXT:
   if(in.len!=1||in.data[0]>1){out.data[0]=E_REQUEST;break;}
   if(busy()){out.data[0]=E_BUSY;break;}
   if(in.data[0]==0){
-   upload_clear(&upload);context.beginRestore();ledger.allocated=0;question="";answer="";state=S_IDLE;errorCode=0;
+   upload_clear(&upload);context.beginRestore();receipt_clear(&modelReceipt);ledger.allocated=0;question="";answer="";state=S_IDLE;errorCode=0;
   }else {
    out.data[0]=context.finishRestore();if(out.data[0])break;upload_clear(&upload);
   }break;
@@ -374,11 +408,12 @@ static void handle(const WFrame& in) {
   {String empty[4];empty[3]="gpt-4.1-mini";
    if(!saveConfiguration(empty)){out.data[0]=E_MEMORY;break;}
    const char *names[]={"ssid","pass","key","model"};for(int i=0;i<4;i++)prefs.remove(names[i]);}
-  catalog="";catalogState=0;upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();question="";answer="";state=S_IDLE;errorCode=0;break;
+  catalog="";catalogState=0;upload_clear(&upload);context.restoring=false;context.pending="";wifiDirty=true;ledger.allocated=0;clearHistory();receipt_clear(&modelReceipt);question="";answer="";state=S_IDLE;errorCode=0;break;
  default:out.data[0]=E_REQUEST;
  }
  }
  cachedIn=in;cachedOut=out;cached=true;sendFrame(out);
+ if(startDiagnostic&&xTaskCreate(runWifiDiagnostic,"wifi-check",4096,nullptr,1,nullptr)!=pdPASS){Lock l;diagnosticRunning=false;diagnosticState=3;diagnosticError=E_MEMORY;}
  if(startCatalog&&xTaskCreate(runCatalog,"models",16384,nullptr,1,nullptr)!=pdPASS){Lock l;catalogRunning=false;catalogState=3;catalogError=E_MEMORY;}
  if(start&&xTaskCreate(runApi,"openai",16384,nullptr,1,nullptr)!=pdPASS){Lock l;apiRunning=false;state=cancelled?S_CANCELLED:S_ERROR;errorCode=cancelled?0:E_MEMORY;}
 }

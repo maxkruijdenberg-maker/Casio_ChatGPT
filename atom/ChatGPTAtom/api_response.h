@@ -3,6 +3,12 @@
 #include <ArduinoJson.h>
 #include "wire.h"
 #include "utf8.h"
+#include "model_receipt.h"
+static const char *completion_model(JsonVariantConst root){
+ if(!root["model"].is<const char*>())return "";
+ JsonString value=root["model"].as<JsonString>();
+ return receipt_model_valid(value.c_str(),value.size())?value.c_str():"";
+}
 struct CompletionView {const char *text;size_t size;bool truncated;};
 static int completion_view(JsonVariantConst root,size_t max,CompletionView *out){
  JsonVariantConst choice=root["choices"][0],msg=choice["message"];

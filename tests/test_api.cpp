@@ -17,5 +17,9 @@ int main(){
  assert(parse("{\"choices\":[{\"message\":{\"content\":\"no\"},\"finish_reason\":\"content_filter\"}]}")==E_REFUSED);
  JsonDocument doc;deserializeJson(doc,"{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"length\"}]}");
  CompletionView v={};assert(completion_view(doc.as<JsonVariantConst>(),8192,&v)==0&&v.truncated&&v.size==2);
+ JsonDocument metadata;assert(!deserializeJson(metadata,"{\"model\":\"gpt-selected-2026-10-30\"}"));assert(!strcmp(completion_model(metadata.as<JsonVariantConst>()),"gpt-selected-2026-10-30"));
+ assert(!deserializeJson(metadata,"{\"model\":\"bad\\nmodel\"}"));assert(!*completion_model(metadata.as<JsonVariantConst>()));
+ assert(!deserializeJson(metadata,"{\"model\":\"abc\\u0000def\"}"));assert(!*completion_model(metadata.as<JsonVariantConst>()));
+ metadata.clear();assert(!*completion_model(metadata.as<JsonVariantConst>()));metadata["model"]=42;assert(!*completion_model(metadata.as<JsonVariantConst>()));
  puts("PASS: actual OpenAI response parser; success, accents, size limits, null/array/empty text, embedded NUL, refusal, filtering and truncation.");
 }
