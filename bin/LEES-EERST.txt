@@ -1,0 +1,1 @@
+ALLEEN REV G XIAO 3-wire met SN74LVC1G126 buffer. Niet Rev F, Rev E of Atom. Merged 4MB image, offset 0x0; volledige image kan instellingen wissen. Programmeer losse XIAO voor montage. Batterij J3 los voor later USB-onderhoud; USB weg voor J3 terug. Arduino IDE broncode en Casio-app zitten in dit pakket.
